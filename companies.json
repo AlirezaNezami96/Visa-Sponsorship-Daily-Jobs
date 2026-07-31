@@ -1,0 +1,595 @@
+{
+  "scrapable": [
+    {
+      "name": "Stripe",
+      "careers_url": "https://boards.greenhouse.io/stripe",
+      "ats": "greenhouse",
+      "slug": "stripe",
+      "source": "shubheksha"
+    },
+    {
+      "name": "Datadog",
+      "careers_url": "https://boards.greenhouse.io/datadog",
+      "ats": "greenhouse",
+      "slug": "datadog",
+      "source": "shubheksha"
+    },
+    {
+      "name": "HelloFresh",
+      "careers_url": "https://boards.greenhouse.io/hellofresh",
+      "ats": "greenhouse",
+      "slug": "hellofresh",
+      "source": "shubheksha"
+    },
+    {
+      "name": "Monzo",
+      "careers_url": "https://boards.greenhouse.io/monzo",
+      "ats": "greenhouse",
+      "slug": "monzo",
+      "source": "shubheksha"
+    },
+    {
+      "name": "GoCardless",
+      "careers_url": "https://boards.greenhouse.io/gocardless",
+      "ats": "greenhouse",
+      "slug": "gocardless",
+      "source": "shubheksha"
+    },
+    {
+      "name": "Adyen",
+      "careers_url": "https://boards.greenhouse.io/adyen",
+      "ats": "greenhouse",
+      "slug": "adyen",
+      "source": "shubheksha"
+    },
+    {
+      "name": "Twilio",
+      "careers_url": "https://boards.greenhouse.io/twilio",
+      "ats": "greenhouse",
+      "slug": "twilio",
+      "source": "shubheksha"
+    },
+    {
+      "name": "Lendi",
+      "careers_url": "https://careers.smartrecruiters.com/LendiGroup1",
+      "ats": "smartrecruiters",
+      "slug": "LendiGroup1",
+      "source": "geshan"
+    },
+    {
+      "name": "Optiver",
+      "careers_url": "https://boards.greenhouse.io/optiver",
+      "ats": "greenhouse",
+      "slug": "optiver",
+      "source": "geshan"
+    },
+    {
+      "name": "SquareUp",
+      "careers_url": "https://boards.greenhouse.io/block",
+      "ats": "greenhouse",
+      "slug": "block",
+      "source": "geshan"
+    },
+    {
+      "name": "Brighte",
+      "careers_url": "https://jobs.lever.co/brighte",
+      "ats": "lever",
+      "slug": "brighte",
+      "source": "geshan"
+    },
+    {
+      "name": "Celonis",
+      "careers_url": "https://boards.greenhouse.io/celonis",
+      "ats": "greenhouse",
+      "slug": "celonis",
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "Coinbase",
+      "careers_url": "https://boards.greenhouse.io/coinbase",
+      "ats": "greenhouse",
+      "slug": "coinbase",
+      "source": "curated"
+    },
+    {
+      "name": "Airbnb",
+      "careers_url": "https://boards.greenhouse.io/airbnb",
+      "ats": "greenhouse",
+      "slug": "airbnb",
+      "source": "curated"
+    },
+    {
+      "name": "Figma",
+      "careers_url": "https://boards.greenhouse.io/figma",
+      "ats": "greenhouse",
+      "slug": "figma",
+      "source": "curated"
+    },
+    {
+      "name": "Affirm",
+      "careers_url": "https://boards.greenhouse.io/affirm",
+      "ats": "greenhouse",
+      "slug": "affirm",
+      "source": "curated"
+    },
+    {
+      "name": "GitLab",
+      "careers_url": "https://boards.greenhouse.io/gitlab",
+      "ats": "greenhouse",
+      "slug": "gitlab",
+      "source": "curated"
+    },
+    {
+      "name": "CircleCI",
+      "careers_url": "https://boards.greenhouse.io/circleci",
+      "ats": "greenhouse",
+      "slug": "circleci",
+      "source": "curated"
+    },
+    {
+      "name": "Cloudflare",
+      "careers_url": "https://boards.greenhouse.io/cloudflare",
+      "ats": "greenhouse",
+      "slug": "cloudflare",
+      "source": "curated"
+    },
+    {
+      "name": "Databricks",
+      "careers_url": "https://boards.greenhouse.io/databricks",
+      "ats": "greenhouse",
+      "slug": "databricks",
+      "source": "curated"
+    },
+    {
+      "name": "MongoDB",
+      "careers_url": "https://boards.greenhouse.io/mongodb",
+      "ats": "greenhouse",
+      "slug": "mongodb",
+      "source": "curated"
+    },
+    {
+      "name": "Elastic",
+      "careers_url": "https://boards.greenhouse.io/elastic",
+      "ats": "greenhouse",
+      "slug": "elastic",
+      "source": "curated"
+    },
+    {
+      "name": "Grafana Labs",
+      "careers_url": "https://boards.greenhouse.io/grafanalabs",
+      "ats": "greenhouse",
+      "slug": "grafanalabs",
+      "source": "curated"
+    },
+    {
+      "name": "PagerDuty",
+      "careers_url": "https://boards.greenhouse.io/pagerduty",
+      "ats": "greenhouse",
+      "slug": "pagerduty",
+      "source": "curated"
+    },
+    {
+      "name": "HubSpot",
+      "careers_url": "https://boards.greenhouse.io/hubspot",
+      "ats": "greenhouse",
+      "slug": "hubspot",
+      "source": "curated"
+    },
+    {
+      "name": "Block",
+      "careers_url": "https://boards.greenhouse.io/block",
+      "ats": "greenhouse",
+      "slug": "block",
+      "source": "curated"
+    },
+    {
+      "name": "Discord",
+      "careers_url": "https://boards.greenhouse.io/discord",
+      "ats": "greenhouse",
+      "slug": "discord",
+      "source": "curated"
+    },
+    {
+      "name": "Reddit",
+      "careers_url": "https://boards.greenhouse.io/reddit",
+      "ats": "greenhouse",
+      "slug": "reddit",
+      "source": "curated"
+    },
+    {
+      "name": "Pinterest",
+      "careers_url": "https://boards.greenhouse.io/pinterest",
+      "ats": "greenhouse",
+      "slug": "pinterest",
+      "source": "curated"
+    },
+    {
+      "name": "Roblox",
+      "careers_url": "https://boards.greenhouse.io/roblox",
+      "ats": "greenhouse",
+      "slug": "roblox",
+      "source": "curated"
+    },
+    {
+      "name": "Riot Games",
+      "careers_url": "https://boards.greenhouse.io/riotgames",
+      "ats": "greenhouse",
+      "slug": "riotgames",
+      "source": "curated"
+    },
+    {
+      "name": "Epic Games",
+      "careers_url": "https://boards.greenhouse.io/epicgames",
+      "ats": "greenhouse",
+      "slug": "epicgames",
+      "source": "curated"
+    },
+    {
+      "name": "Postman",
+      "careers_url": "https://boards.greenhouse.io/postman",
+      "ats": "greenhouse",
+      "slug": "postman",
+      "source": "curated"
+    },
+    {
+      "name": "PlanetScale",
+      "careers_url": "https://boards.greenhouse.io/planetscale",
+      "ats": "greenhouse",
+      "slug": "planetscale",
+      "source": "curated"
+    },
+    {
+      "name": "Together AI",
+      "careers_url": "https://boards.greenhouse.io/togetherai",
+      "ats": "greenhouse",
+      "slug": "togetherai",
+      "source": "curated"
+    },
+    {
+      "name": "Anthropic",
+      "careers_url": "https://boards.greenhouse.io/anthropic",
+      "ats": "greenhouse",
+      "slug": "anthropic",
+      "source": "curated"
+    }
+  ],
+  "custom_ats": [
+    {
+      "name": "Deliveryhero",
+      "careers_url": "https://careers.deliveryhero.com/global/en",
+      "ats": "custom",
+      "slug": null,
+      "source": "shubheksha"
+    },
+    {
+      "name": "Diet Doctor",
+      "careers_url": "https://careers.dietdoctor.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "shubheksha"
+    },
+    {
+      "name": "Etsy",
+      "careers_url": "https://www.etsy.com/uk/careers#engineering",
+      "ats": "custom",
+      "slug": null,
+      "source": "shubheksha"
+    },
+    {
+      "name": "Transferwise",
+      "careers_url": "https://www.transferwise.jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "shubheksha"
+    },
+    {
+      "name": "Skyscanner",
+      "careers_url": "https://www.skyscanner.net/jobs/current-jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "shubheksha"
+    },
+    {
+      "name": "Weaveworks",
+      "careers_url": "https://www.weave.works/company/hiring/",
+      "ats": "custom",
+      "slug": null,
+      "source": "shubheksha"
+    },
+    {
+      "name": "VMWare",
+      "careers_url": "https://pages.beamery.com/vmware/page/tanzu",
+      "ats": "custom",
+      "slug": null,
+      "source": "shubheksha"
+    },
+    {
+      "name": "Booking.com",
+      "careers_url": "https://careers.booking.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "shubheksha"
+    },
+    {
+      "name": "QuantumBlack",
+      "careers_url": "https://quantumblack.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "shubheksha"
+    },
+    {
+      "name": "Trivago",
+      "careers_url": "https://company.trivago.com/open-positions/",
+      "ats": "custom",
+      "slug": null,
+      "source": "shubheksha"
+    },
+    {
+      "name": "AirTasker",
+      "careers_url": "https://www.airtasker.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "BigCommerce",
+      "careers_url": "https://www.bigcommerce.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "ClipChamp",
+      "careers_url": "https://clipchamp.com/en/work-with-us/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "CSIRO's Data61",
+      "careers_url": "https://jobs.csiro.au/search/?q=data61&locationsearch=",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Domain Group",
+      "careers_url": "https://domaingroup.csod.com/ux/ats/careersite/4/home?c=domaingroup",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "DriveYello",
+      "careers_url": "https://www.driveyello.com/yello-jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Easygo",
+      "careers_url": "https://easygo.io/pages/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Elmo",
+      "careers_url": "https://elmosoftware.com.au/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Expedia Group",
+      "careers_url": "https://careers.expediagroup.com/jobs/?filter[country]=Australia",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "GlamCorner",
+      "careers_url": "https://www.glamcorner.com.au/opportunities",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Healthshare",
+      "careers_url": "https://www.healthsharedigital.com/company/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "HiPages",
+      "careers_url": "https://hipagesgroup.com.au/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "HireUp",
+      "careers_url": "https://hireup.com.au/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Home Care Heroes",
+      "careers_url": "https://homecareheroes.com.au/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "IRESS",
+      "careers_url": "https://www.iress.com/au/company/join-us/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Isentia",
+      "careers_url": "https://apply.workable.com/isentia/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "JXT Global",
+      "careers_url": "https://www.jxt.com.au/join-us",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Kayo Sports",
+      "careers_url": "https://www.linkedin.com/company/kayo-sports/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Koala",
+      "careers_url": "https://www.linkedin.com/company/koala-mattress/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Learnosity",
+      "careers_url": "https://learnosity.com/company/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "LegalVision",
+      "careers_url": "https://legalvision.com.au/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Local Measure",
+      "careers_url": "https://www.localmeasure.com/company/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Nine",
+      "careers_url": "https://www.nineforbrands.com.au/about/careers-at-nine/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Oppizi",
+      "careers_url": "https://jobs.oppizi.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Orica",
+      "careers_url": "https://www.orica.com/Careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Papercut Software",
+      "careers_url": "https://www.papercut.com/about/life-at-papercut/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Pragmateam",
+      "careers_url": "https://pragma.team/join-us#roles",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Procreate",
+      "careers_url": "https://www.procreate.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Quantium",
+      "careers_url": "https://quantium.elmotalent.com.au/careers/external/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Red Ant",
+      "careers_url": "https://redant.com.au/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Rockend",
+      "careers_url": "https://www.rockend.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Shippit",
+      "careers_url": "https://www.shippit.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "SiteMinder",
+      "careers_url": "https://www.siteminder.com/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Spaceship",
+      "careers_url": "https://www.spaceship.com.au/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "SwitchMedia",
+      "careers_url": "https://www.switch.tv/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "WiseTech Global",
+      "careers_url": "https://www.wisetechglobal.com/careers/current-openings",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Zepto",
+      "careers_url": "https://www.zepto.com.au/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    },
+    {
+      "name": "Zip",
+      "careers_url": "https://zip.co/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan"
+    }
+  ],
+  "last_updated": "2026-07-31"
+}
