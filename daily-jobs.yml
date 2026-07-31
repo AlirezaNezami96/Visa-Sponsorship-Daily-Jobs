@@ -9,7 +9,7 @@ on:
     # Cron: minute hour day-of-month month day-of-week (UTC)
     # 08:00 UTC = 00:00 PST = 09:00 CET = 16:00 SGT
     # Change to your preferred time. Use https://crontab.guru to convert.
-    - cron: "0 8 * * *"
+    - cron: "30 3 * * *"
   workflow_dispatch:
     # Allows manual trigger from GitHub Actions tab
     inputs:
