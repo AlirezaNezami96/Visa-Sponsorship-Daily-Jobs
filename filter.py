@@ -9,17 +9,15 @@ import time
 # Edit these to match what you're looking for.
 # The scraper only alerts you for jobs whose title contains at least one keyword.
 KEYWORDS_INCLUDE = [
-    "android", "mobile", "flutter", "ios", "react native",
-    "software engineer", "developer", "backend", "frontend", "fullstack",
-    "full stack", "data engineer", "devops", "sre", "platform engineer",
-    "python", "java", "go ", "golang", "rust", "typescript", "javascript",
+    "android", "mobile", "flutter", "react native",
+    "software engineer", "developer",
 ]
 
 # Titles containing these words are EXCLUDED even if they match a keyword above.
 # Prevents false positives like "Mobile Crisis Counselor".
 KEYWORDS_EXCLUDE = [
-    "senior", "staff", "principal", "lead ", "director", "manager",
-    "vp ", "head ", "intern", "co-op", "contractor",
+    "staff", "principal", "lead ", "director", "manager",
+    "vp ", "head ", "intern", "co-op",
 ]
 
 # Maximum age (in seconds) for entries in the seen store. Default: 30 days.
