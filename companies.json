@@ -5,266 +5,266 @@
       "careers_url": "https://boards.greenhouse.io/stripe",
       "ats": "greenhouse",
       "slug": "stripe",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Shopify",
       "careers_url": "https://boards.greenhouse.io/shopify",
       "ats": "greenhouse",
       "slug": "shopify",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Spotify",
       "careers_url": "https://boards.greenhouse.io/spotify",
       "ats": "greenhouse",
       "slug": "spotify",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Klarna",
       "careers_url": "https://jobs.lever.co/klarna",
       "ats": "lever",
       "slug": "klarna",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Zalando",
       "careers_url": "https://boards.greenhouse.io/zalando",
       "ats": "greenhouse",
       "slug": "zalando",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Delivery Hero",
       "careers_url": "https://boards.greenhouse.io/deliveryhero",
       "ats": "greenhouse",
       "slug": "deliveryhero",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Datadog",
       "careers_url": "https://boards.greenhouse.io/datadog",
       "ats": "greenhouse",
       "slug": "datadog",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Revolut",
       "careers_url": "https://jobs.lever.co/revolut",
       "ats": "lever",
       "slug": "revolut",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Intercom",
       "careers_url": "https://jobs.lever.co/intercom",
       "ats": "lever",
       "slug": "intercom",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "HelloFresh",
       "careers_url": "https://boards.greenhouse.io/hellofresh",
       "ats": "greenhouse",
       "slug": "hellofresh",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Monzo",
       "careers_url": "https://boards.greenhouse.io/monzo",
       "ats": "greenhouse",
       "slug": "monzo",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Deliveroo",
       "careers_url": "https://boards.greenhouse.io/deliveroo",
       "ats": "greenhouse",
       "slug": "deliveroo",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "GoCardless",
       "careers_url": "https://boards.greenhouse.io/gocardless",
       "ats": "greenhouse",
       "slug": "gocardless",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Adyen",
       "careers_url": "https://boards.greenhouse.io/adyen",
       "ats": "greenhouse",
       "slug": "adyen",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Wise",
       "careers_url": "https://boards.greenhouse.io/wise",
       "ats": "greenhouse",
       "slug": "wise",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "GitLab",
       "careers_url": "https://boards.greenhouse.io/gitlab",
       "ats": "greenhouse",
       "slug": "gitlab",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Cloudflare",
       "careers_url": "https://boards.greenhouse.io/cloudflare",
       "ats": "greenhouse",
       "slug": "cloudflare",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Databricks",
       "careers_url": "https://boards.greenhouse.io/databricks",
       "ats": "greenhouse",
       "slug": "databricks",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Elastic",
       "careers_url": "https://boards.greenhouse.io/elastic",
       "ats": "greenhouse",
       "slug": "elastic",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Grafana Labs",
       "careers_url": "https://boards.greenhouse.io/grafanalabs",
       "ats": "greenhouse",
       "slug": "grafanalabs",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "HashiCorp",
       "careers_url": "https://boards.greenhouse.io/hashicorp",
       "ats": "greenhouse",
       "slug": "hashicorp",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Weights & Biases",
       "careers_url": "https://boards.greenhouse.io/wandb",
       "ats": "greenhouse",
       "slug": "wandb",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Hugging Face",
       "careers_url": "https://boards.greenhouse.io/huggingface",
       "ats": "greenhouse",
       "slug": "huggingface",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Mistral AI",
       "careers_url": "https://boards.greenhouse.io/mistralai",
       "ats": "greenhouse",
       "slug": "mistralai",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Snyk",
       "careers_url": "https://jobs.lever.co/snyk",
       "ats": "lever",
       "slug": "snyk",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "PostHog",
       "careers_url": "https://jobs.lever.co/posthog",
       "ats": "lever",
       "slug": "posthog",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Celonis",
       "careers_url": "https://boards.greenhouse.io/celonis",
       "ats": "greenhouse",
       "slug": "celonis",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "SAP SE",
       "careers_url": "https://boards.greenhouse.io/sap",
       "ats": "greenhouse",
       "slug": "sap",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Backbase",
       "careers_url": "https://boards.greenhouse.io/backbase",
       "ats": "greenhouse",
       "slug": "backbase",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "ING",
       "careers_url": "https://boards.greenhouse.io/ing",
       "ats": "greenhouse",
       "slug": "ing",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "MongoDB",
       "careers_url": "https://boards.greenhouse.io/mongodb",
       "ats": "greenhouse",
       "slug": "mongodb",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "GitHub",
       "careers_url": "https://boards.greenhouse.io/github",
       "ats": "greenhouse",
       "slug": "github",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Unity",
       "careers_url": "https://boards.greenhouse.io/unity",
       "ats": "greenhouse",
       "slug": "unity",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Automattic",
       "careers_url": "https://boards.greenhouse.io/automattic",
       "ats": "greenhouse",
       "slug": "automattic",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Canonical",
       "careers_url": "https://boards.greenhouse.io/canonical",
       "ats": "greenhouse",
       "slug": "canonical",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Fastly",
       "careers_url": "https://boards.greenhouse.io/fastly",
       "ats": "greenhouse",
       "slug": "fastly",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Zendesk",
       "careers_url": "https://boards.greenhouse.io/zendesk",
       "ats": "greenhouse",
       "slug": "zendesk",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "PagerDuty",
       "careers_url": "https://boards.greenhouse.io/pagerduty",
       "ats": "greenhouse",
       "slug": "pagerduty",
-      "source": "global_eu"
+      "source": "global_tech"
     },
     {
       "name": "Checkout.com",
@@ -477,97 +477,6 @@
       "source": "europe_uk"
     },
     {
-      "name": "Causal",
-      "careers_url": "https://jobs.lever.co/causal",
-      "ats": "lever",
-      "slug": "causal",
-      "source": "europe_uk"
-    },
-    {
-      "name": "Bloom & Wild",
-      "careers_url": "https://boards.greenhouse.io/bloomwild",
-      "ats": "greenhouse",
-      "slug": "bloomwild",
-      "source": "europe_uk"
-    },
-    {
-      "name": "Cuvva",
-      "careers_url": "https://jobs.lever.co/cuvva",
-      "ats": "lever",
-      "slug": "cuvva",
-      "source": "europe_uk"
-    },
-    {
-      "name": "MessageBird",
-      "careers_url": "https://boards.greenhouse.io/messagebird",
-      "ats": "greenhouse",
-      "slug": "messagebird",
-      "source": "europe_uk"
-    },
-    {
-      "name": "Pendo",
-      "careers_url": "https://boards.greenhouse.io/pendoio",
-      "ats": "greenhouse",
-      "slug": "pendoio",
-      "source": "europe_uk"
-    },
-    {
-      "name": "Amplience",
-      "careers_url": "https://boards.greenhouse.io/amplience",
-      "ats": "greenhouse",
-      "slug": "amplience",
-      "source": "europe_uk"
-    },
-    {
-      "name": "Wayflyer",
-      "careers_url": "https://boards.greenhouse.io/wayflyer",
-      "ats": "greenhouse",
-      "slug": "wayflyer",
-      "source": "europe_uk"
-    },
-    {
-      "name": "Pollen",
-      "careers_url": "https://boards.greenhouse.io/pollen",
-      "ats": "greenhouse",
-      "slug": "pollen",
-      "source": "europe_uk"
-    },
-    {
-      "name": "Samsara",
-      "careers_url": "https://boards.greenhouse.io/samsara",
-      "ats": "greenhouse",
-      "slug": "samsara",
-      "source": "europe_uk"
-    },
-    {
-      "name": "Babylon Health",
-      "careers_url": "https://boards.greenhouse.io/babylonhealth",
-      "ats": "greenhouse",
-      "slug": "babylonhealth",
-      "source": "europe_uk"
-    },
-    {
-      "name": "Plaid",
-      "careers_url": "https://boards.greenhouse.io/plaid",
-      "ats": "greenhouse",
-      "slug": "plaid",
-      "source": "europe_uk"
-    },
-    {
-      "name": "Uncapped",
-      "careers_url": "https://jobs.lever.co/uncapped",
-      "ats": "lever",
-      "slug": "uncapped",
-      "source": "europe_uk"
-    },
-    {
-      "name": "Nested",
-      "careers_url": "https://jobs.lever.co/nested",
-      "ats": "lever",
-      "slug": "nested",
-      "source": "europe_uk"
-    },
-    {
       "name": "N26",
       "careers_url": "https://boards.greenhouse.io/n26",
       "ats": "greenhouse",
@@ -764,55 +673,6 @@
       "source": "europe_de"
     },
     {
-      "name": "Infarm",
-      "careers_url": "https://boards.greenhouse.io/infarm",
-      "ats": "greenhouse",
-      "slug": "infarm",
-      "source": "europe_de"
-    },
-    {
-      "name": "Signavio",
-      "careers_url": "https://boards.greenhouse.io/signavio",
-      "ats": "greenhouse",
-      "slug": "signavio",
-      "source": "europe_de"
-    },
-    {
-      "name": "LIQID",
-      "careers_url": "https://jobs.lever.co/liqid",
-      "ats": "lever",
-      "slug": "liqid",
-      "source": "europe_de"
-    },
-    {
-      "name": "Moonfare",
-      "careers_url": "https://jobs.lever.co/moonfare",
-      "ats": "lever",
-      "slug": "moonfare",
-      "source": "europe_de"
-    },
-    {
-      "name": "Thermondo",
-      "careers_url": "https://jobs.lever.co/thermondo",
-      "ats": "lever",
-      "slug": "thermondo",
-      "source": "europe_de"
-    },
-    {
-      "name": "Relayr",
-      "careers_url": "https://jobs.lever.co/relayr",
-      "ats": "lever",
-      "slug": "relayr",
-      "source": "europe_de"
-    },
-    {
-      "name": "Studio71",
-      "careers_url": "https://jobs.lever.co/studio71",
-      "ats": "lever",
-      "slug": "studio71",
-      "source": "europe_de"
-    },
-    {
       "name": "Booking.com",
       "careers_url": "https://boards.greenhouse.io/bookingcom",
       "ats": "greenhouse",
@@ -918,41 +778,6 @@
       "source": "europe_nl"
     },
     {
-      "name": "Fuse",
-      "careers_url": "https://boards.greenhouse.io/fuse",
-      "ats": "greenhouse",
-      "slug": "fuse",
-      "source": "europe_nl"
-    },
-    {
-      "name": "Seenit",
-      "careers_url": "https://jobs.lever.co/seenit",
-      "ats": "lever",
-      "slug": "seenit",
-      "source": "europe_nl"
-    },
-    {
-      "name": "IMCD",
-      "careers_url": "https://boards.greenhouse.io/imcd",
-      "ats": "greenhouse",
-      "slug": "imcd",
-      "source": "europe_nl"
-    },
-    {
-      "name": "Vistaprint",
-      "careers_url": "https://boards.greenhouse.io/vistaprint",
-      "ats": "greenhouse",
-      "slug": "vistaprint",
-      "source": "europe_nl"
-    },
-    {
-      "name": "Takeaway.com",
-      "careers_url": "https://boards.greenhouse.io/takeawaycom",
-      "ats": "greenhouse",
-      "slug": "takeawaycom",
-      "source": "europe_nl"
-    },
-    {
       "name": "King",
       "careers_url": "https://boards.greenhouse.io/king",
       "ats": "greenhouse",
@@ -1009,27 +834,6 @@
       "source": "europe_se"
     },
     {
-      "name": "Bambora",
-      "careers_url": "https://jobs.lever.co/bambora",
-      "ats": "lever",
-      "slug": "bambora",
-      "source": "europe_se"
-    },
-    {
-      "name": "Yepstr",
-      "careers_url": "https://boards.greenhouse.io/yepstr",
-      "ats": "greenhouse",
-      "slug": "yepstr",
-      "source": "europe_se"
-    },
-    {
-      "name": "Zimpler",
-      "careers_url": "https://jobs.lever.co/zimpler",
-      "ats": "lever",
-      "slug": "zimpler",
-      "source": "europe_se"
-    },
-    {
       "name": "Wolt",
       "careers_url": "https://boards.greenhouse.io/wolt",
       "ats": "greenhouse",
@@ -1065,536 +869,67 @@
       "source": "europe_nordics"
     },
     {
-      "name": "Futurice",
-      "careers_url": "https://boards.greenhouse.io/futurice",
+      "name": "Trendyol",
+      "careers_url": "https://boards.greenhouse.io/trendyol",
       "ats": "greenhouse",
-      "slug": "futurice",
-      "source": "europe_nordics"
+      "slug": "trendyol",
+      "source": "turkey"
     },
     {
-      "name": "Reaktor",
-      "careers_url": "https://jobs.lever.co/reaktor",
-      "ats": "lever",
-      "slug": "reaktor",
-      "source": "europe_nordics"
-    },
-    {
-      "name": "HubSpot",
-      "careers_url": "https://boards.greenhouse.io/hubspot",
+      "name": "Insider",
+      "careers_url": "https://boards.greenhouse.io/useinsider",
       "ats": "greenhouse",
-      "slug": "hubspot",
-      "source": "europe_ie"
+      "slug": "useinsider",
+      "source": "turkey"
     },
     {
-      "name": "Workday",
-      "careers_url": "https://boards.greenhouse.io/workday",
+      "name": "Getir",
+      "careers_url": "https://boards.greenhouse.io/getir",
       "ats": "greenhouse",
-      "slug": "workday",
-      "source": "europe_ie"
+      "slug": "getir",
+      "source": "turkey"
     },
     {
-      "name": "Salesforce",
-      "careers_url": "https://boards.greenhouse.io/salesforce",
+      "name": "Peak Games",
+      "careers_url": "https://boards.greenhouse.io/peakgames",
       "ats": "greenhouse",
-      "slug": "salesforce",
-      "source": "europe_ie"
+      "slug": "peakgames",
+      "source": "turkey"
     },
     {
-      "name": "Asana",
-      "careers_url": "https://boards.greenhouse.io/asana",
+      "name": "Dream Games",
+      "careers_url": "https://boards.greenhouse.io/dreamgames",
       "ats": "greenhouse",
-      "slug": "asana",
-      "source": "europe_ie"
+      "slug": "dreamgames",
+      "source": "turkey"
     },
     {
-      "name": "Squarespace",
-      "careers_url": "https://boards.greenhouse.io/squarespace",
+      "name": "Papara",
+      "careers_url": "https://boards.greenhouse.io/papara",
       "ats": "greenhouse",
-      "slug": "squarespace",
-      "source": "europe_ie"
+      "slug": "papara",
+      "source": "turkey"
     },
     {
-      "name": "Slack",
-      "careers_url": "https://boards.greenhouse.io/slack",
+      "name": "iyzico",
+      "careers_url": "https://boards.greenhouse.io/iyzico",
       "ats": "greenhouse",
-      "slug": "slack",
-      "source": "europe_ie"
+      "slug": "iyzico",
+      "source": "turkey"
     },
     {
-      "name": "Flipdish",
-      "careers_url": "https://boards.greenhouse.io/flipdish",
+      "name": "Hepsiburada",
+      "careers_url": "https://boards.greenhouse.io/hepsiburada",
       "ats": "greenhouse",
-      "slug": "flipdish",
-      "source": "europe_ie"
+      "slug": "hepsiburada",
+      "source": "turkey"
     },
     {
-      "name": "Workhuman",
-      "careers_url": "https://boards.greenhouse.io/workhuman",
+      "name": "Enuygun",
+      "careers_url": "https://boards.greenhouse.io/enuygun",
       "ats": "greenhouse",
-      "slug": "workhuman",
-      "source": "europe_ie"
-    },
-    {
-      "name": "Phorest",
-      "careers_url": "https://boards.greenhouse.io/phorest",
-      "ats": "greenhouse",
-      "slug": "phorest",
-      "source": "europe_ie"
-    },
-    {
-      "name": "Teamwork",
-      "careers_url": "https://jobs.lever.co/teamwork",
-      "ats": "lever",
-      "slug": "teamwork",
-      "source": "europe_ie"
-    },
-    {
-      "name": "Ledger",
-      "careers_url": "https://jobs.lever.co/ledger",
-      "ats": "lever",
-      "slug": "ledger",
-      "source": "europe_fr"
-    },
-    {
-      "name": "Doctolib",
-      "careers_url": "https://jobs.lever.co/doctolib",
-      "ats": "lever",
-      "slug": "doctolib",
-      "source": "europe_fr"
-    },
-    {
-      "name": "Contentsquare",
-      "careers_url": "https://jobs.lever.co/contentsquare",
-      "ats": "lever",
-      "slug": "contentsquare",
-      "source": "europe_fr"
-    },
-    {
-      "name": "BlaBlaCar",
-      "careers_url": "https://jobs.lever.co/blablacar",
-      "ats": "lever",
-      "slug": "blablacar",
-      "source": "europe_fr"
-    },
-    {
-      "name": "Deezer",
-      "careers_url": "https://boards.greenhouse.io/deezer",
-      "ats": "greenhouse",
-      "slug": "deezer",
-      "source": "europe_fr"
-    },
-    {
-      "name": "Alan",
-      "careers_url": "https://jobs.lever.co/alan",
-      "ats": "lever",
-      "slug": "alan",
-      "source": "europe_fr"
-    },
-    {
-      "name": "Swile",
-      "careers_url": "https://jobs.lever.co/swile",
-      "ats": "lever",
-      "slug": "swile",
-      "source": "europe_fr"
-    },
-    {
-      "name": "Qonto",
-      "careers_url": "https://jobs.lever.co/qonto",
-      "ats": "lever",
-      "slug": "qonto",
-      "source": "europe_fr"
-    },
-    {
-      "name": "Back Market",
-      "careers_url": "https://jobs.lever.co/backmarket",
-      "ats": "lever",
-      "slug": "backmarket",
-      "source": "europe_fr"
-    },
-    {
-      "name": "Luko",
-      "careers_url": "https://jobs.lever.co/luko",
-      "ats": "lever",
-      "slug": "luko",
-      "source": "europe_fr"
-    },
-    {
-      "name": "Dataiku",
-      "careers_url": "https://boards.greenhouse.io/dataiku",
-      "ats": "greenhouse",
-      "slug": "dataiku",
-      "source": "europe_fr"
-    },
-    {
-      "name": "Exotec",
-      "careers_url": "https://boards.greenhouse.io/exotec",
-      "ats": "greenhouse",
-      "slug": "exotec",
-      "source": "europe_fr"
-    },
-    {
-      "name": "Inato",
-      "careers_url": "https://jobs.lever.co/inato",
-      "ats": "lever",
-      "slug": "inato",
-      "source": "europe_fr"
-    },
-    {
-      "name": "ManoMano",
-      "careers_url": "https://jobs.lever.co/manomano",
-      "ats": "lever",
-      "slug": "manomano",
-      "source": "europe_fr"
-    },
-    {
-      "name": "Meero",
-      "careers_url": "https://jobs.lever.co/meero",
-      "ats": "lever",
-      "slug": "meero",
-      "source": "europe_fr"
-    },
-    {
-      "name": "Mirakl",
-      "careers_url": "https://jobs.lever.co/mirakl",
-      "ats": "lever",
-      "slug": "mirakl",
-      "source": "europe_fr"
-    },
-    {
-      "name": "Shift Technology",
-      "careers_url": "https://jobs.lever.co/shifttechnology",
-      "ats": "lever",
-      "slug": "shifttechnology",
-      "source": "europe_fr"
-    },
-    {
-      "name": "Spendesk",
-      "careers_url": "https://jobs.lever.co/spendesk",
-      "ats": "lever",
-      "slug": "spendesk",
-      "source": "europe_fr"
-    },
-    {
-      "name": "Glovo",
-      "careers_url": "https://jobs.lever.co/glovoapp",
-      "ats": "lever",
-      "slug": "glovoapp",
-      "source": "europe_es"
-    },
-    {
-      "name": "Cabify",
-      "careers_url": "https://boards.greenhouse.io/cabify",
-      "ats": "greenhouse",
-      "slug": "cabify",
-      "source": "europe_es"
-    },
-    {
-      "name": "Wallapop",
-      "careers_url": "https://boards.greenhouse.io/wallapop",
-      "ats": "greenhouse",
-      "slug": "wallapop",
-      "source": "europe_es"
-    },
-    {
-      "name": "Typeform",
-      "careers_url": "https://boards.greenhouse.io/typeform",
-      "ats": "greenhouse",
-      "slug": "typeform",
-      "source": "europe_es"
-    },
-    {
-      "name": "Factorial",
-      "careers_url": "https://boards.greenhouse.io/factorial",
-      "ats": "greenhouse",
-      "slug": "factorial",
-      "source": "europe_es"
-    },
-    {
-      "name": "Travelperk",
-      "careers_url": "https://boards.greenhouse.io/travelperk",
-      "ats": "greenhouse",
-      "slug": "travelperk",
-      "source": "europe_es"
-    },
-    {
-      "name": "Lingokids",
-      "careers_url": "https://jobs.lever.co/lingokids",
-      "ats": "lever",
-      "slug": "lingokids",
-      "source": "europe_es"
-    },
-    {
-      "name": "Packlink",
-      "careers_url": "https://jobs.lever.co/packlink",
-      "ats": "lever",
-      "slug": "packlink",
-      "source": "europe_es"
-    },
-    {
-      "name": "Housfy",
-      "careers_url": "https://jobs.lever.co/housfy",
-      "ats": "lever",
-      "slug": "housfy",
-      "source": "europe_es"
-    },
-    {
-      "name": "Signifyd",
-      "careers_url": "https://boards.greenhouse.io/signifyd",
-      "ats": "greenhouse",
-      "slug": "signifyd",
-      "source": "europe_es"
-    },
-    {
-      "name": "Bolt",
-      "careers_url": "https://boards.greenhouse.io/bolt",
-      "ats": "greenhouse",
-      "slug": "bolt",
-      "source": "europe_ee"
-    },
-    {
-      "name": "Pipedrive",
-      "careers_url": "https://boards.greenhouse.io/pipedrive",
-      "ats": "greenhouse",
-      "slug": "pipedrive",
-      "source": "europe_ee"
-    },
-    {
-      "name": "Starship Technologies",
-      "careers_url": "https://jobs.lever.co/starship",
-      "ats": "lever",
-      "slug": "starship",
-      "source": "europe_ee"
-    },
-    {
-      "name": "Montonio",
-      "careers_url": "https://jobs.lever.co/montonio",
-      "ats": "lever",
-      "slug": "montonio",
-      "source": "europe_ee"
-    },
-    {
-      "name": "Skeleton Technologies",
-      "careers_url": "https://jobs.lever.co/skeletontech",
-      "ats": "lever",
-      "slug": "skeletontech",
-      "source": "europe_ee"
-    },
-    {
-      "name": "Allegro",
-      "careers_url": "https://boards.greenhouse.io/allegro",
-      "ats": "greenhouse",
-      "slug": "allegro",
-      "source": "europe_pl"
-    },
-    {
-      "name": "Docplanner",
-      "careers_url": "https://boards.greenhouse.io/docplanner",
-      "ats": "greenhouse",
-      "slug": "docplanner",
-      "source": "europe_pl"
-    },
-    {
-      "name": "Brainly",
-      "careers_url": "https://boards.greenhouse.io/brainly",
-      "ats": "greenhouse",
-      "slug": "brainly",
-      "source": "europe_pl"
-    },
-    {
-      "name": "LiveChat",
-      "careers_url": "https://boards.greenhouse.io/livechat",
-      "ats": "greenhouse",
-      "slug": "livechat",
-      "source": "europe_pl"
-    },
-    {
-      "name": "Booksy",
-      "careers_url": "https://boards.greenhouse.io/booksy",
-      "ats": "greenhouse",
-      "slug": "booksy",
-      "source": "europe_pl"
-    },
-    {
-      "name": "Infermedica",
-      "careers_url": "https://jobs.lever.co/infermedica",
-      "ats": "lever",
-      "slug": "infermedica",
-      "source": "europe_pl"
-    },
-    {
-      "name": "Nethone",
-      "careers_url": "https://jobs.lever.co/nethone",
-      "ats": "lever",
-      "slug": "nethone",
-      "source": "europe_pl"
-    },
-    {
-      "name": "Netguru",
-      "careers_url": "https://boards.greenhouse.io/netguru",
-      "ats": "greenhouse",
-      "slug": "netguru",
-      "source": "europe_pl"
-    },
-    {
-      "name": "EPAM Systems",
-      "careers_url": "https://boards.greenhouse.io/epamsystems",
-      "ats": "greenhouse",
-      "slug": "epamsystems",
-      "source": "europe_pl"
-    },
-    {
-      "name": "Scandit",
-      "careers_url": "https://jobs.lever.co/scandit",
-      "ats": "lever",
-      "slug": "scandit",
-      "source": "europe_ch"
-    },
-    {
-      "name": "Beekeeper",
-      "careers_url": "https://boards.greenhouse.io/beekeeper",
-      "ats": "greenhouse",
-      "slug": "beekeeper",
-      "source": "europe_ch"
-    },
-    {
-      "name": "Yokoy",
-      "careers_url": "https://jobs.lever.co/yokoy",
-      "ats": "lever",
-      "slug": "yokoy",
-      "source": "europe_ch"
-    },
-    {
-      "name": "Pricehubble",
-      "careers_url": "https://jobs.lever.co/pricehubble",
-      "ats": "lever",
-      "slug": "pricehubble",
-      "source": "europe_ch"
-    },
-    {
-      "name": "Frontify",
-      "careers_url": "https://boards.greenhouse.io/frontify",
-      "ats": "greenhouse",
-      "slug": "frontify",
-      "source": "europe_ch"
-    },
-    {
-      "name": "GetSafe",
-      "careers_url": "https://jobs.lever.co/getsafe",
-      "ats": "lever",
-      "slug": "getsafe",
-      "source": "europe_ch"
-    },
-    {
-      "name": "Moneyfarm",
-      "careers_url": "https://boards.greenhouse.io/moneyfarm",
-      "ats": "greenhouse",
-      "slug": "moneyfarm",
-      "source": "europe_ch"
-    },
-    {
-      "name": "Sword Health",
-      "careers_url": "https://boards.greenhouse.io/swordhealth",
-      "ats": "greenhouse",
-      "slug": "swordhealth",
-      "source": "europe_pt"
-    },
-    {
-      "name": "Feedzai",
-      "careers_url": "https://boards.greenhouse.io/feedzai",
-      "ats": "greenhouse",
-      "slug": "feedzai",
-      "source": "europe_pt"
-    },
-    {
-      "name": "OutSystems",
-      "careers_url": "https://boards.greenhouse.io/outsystems",
-      "ats": "greenhouse",
-      "slug": "outsystems",
-      "source": "europe_pt"
-    },
-    {
-      "name": "Unbabel",
-      "careers_url": "https://jobs.lever.co/unbabel",
-      "ats": "lever",
-      "slug": "unbabel",
-      "source": "europe_pt"
-    },
-    {
-      "name": "Farfetch",
-      "careers_url": "https://boards.greenhouse.io/farfetch",
-      "ats": "greenhouse",
-      "slug": "farfetch",
-      "source": "europe_pt"
-    },
-    {
-      "name": "Rows",
-      "careers_url": "https://jobs.lever.co/rows",
-      "ats": "lever",
-      "slug": "rows",
-      "source": "europe_pt"
-    },
-    {
-      "name": "Jungle AI",
-      "careers_url": "https://jobs.lever.co/jungleai",
-      "ats": "lever",
-      "slug": "jungleai",
-      "source": "europe_pt"
-    },
-    {
-      "name": "Hostelworld",
-      "careers_url": "https://boards.greenhouse.io/hostelworld",
-      "ats": "greenhouse",
-      "slug": "hostelworld",
-      "source": "europe_pt"
-    },
-    {
-      "name": "Uniplaces",
-      "careers_url": "https://jobs.lever.co/uniplaces",
-      "ats": "lever",
-      "slug": "uniplaces",
-      "source": "europe_pt"
-    },
-    {
-      "name": "Musixmatch",
-      "careers_url": "https://boards.greenhouse.io/musixmatch",
-      "ats": "greenhouse",
-      "slug": "musixmatch",
-      "source": "europe_it"
-    },
-    {
-      "name": "Prima Assicurazioni",
-      "careers_url": "https://boards.greenhouse.io/primaassicurazioni",
-      "ats": "greenhouse",
-      "slug": "primaassicurazioni",
-      "source": "europe_it"
-    },
-    {
-      "name": "Satispay",
-      "careers_url": "https://boards.greenhouse.io/satispay",
-      "ats": "greenhouse",
-      "slug": "satispay",
-      "source": "europe_it"
-    },
-    {
-      "name": "Scalapay",
-      "careers_url": "https://boards.greenhouse.io/scalapay",
-      "ats": "greenhouse",
-      "slug": "scalapay",
-      "source": "europe_it"
-    },
-    {
-      "name": "Bending Spoons",
-      "careers_url": "https://boards.greenhouse.io/bendingspoons",
-      "ats": "greenhouse",
-      "slug": "bendingspoons",
-      "source": "europe_it"
-    },
-    {
-      "name": "Soldo",
-      "careers_url": "https://boards.greenhouse.io/soldo",
-      "ats": "greenhouse",
-      "slug": "soldo",
-      "source": "europe_it"
+      "slug": "enuygun",
+      "source": "turkey"
     },
     {
       "name": "Wealthsimple",
@@ -1814,144 +1149,186 @@
       "source": "canada"
     },
     {
-      "name": "Avidbots",
-      "careers_url": "https://jobs.lever.co/avidbots",
+      "name": "Canva",
+      "careers_url": "https://boards.greenhouse.io/canva",
+      "ats": "greenhouse",
+      "slug": "canva",
+      "source": "australia"
+    },
+    {
+      "name": "Atlassian",
+      "careers_url": "https://boards.greenhouse.io/atlassian",
+      "ats": "greenhouse",
+      "slug": "atlassian",
+      "source": "australia"
+    },
+    {
+      "name": "AirTasker",
+      "careers_url": "https://boards.greenhouse.io/airtasker",
+      "ats": "greenhouse",
+      "slug": "airtasker",
+      "source": "australia"
+    },
+    {
+      "name": "BigCommerce",
+      "careers_url": "https://boards.greenhouse.io/bigcommerce",
+      "ats": "greenhouse",
+      "slug": "bigcommerce",
+      "source": "australia"
+    },
+    {
+      "name": "Brighte",
+      "careers_url": "https://jobs.lever.co/brighte",
       "ats": "lever",
-      "slug": "avidbots",
-      "source": "canada"
+      "slug": "brighte",
+      "source": "australia"
     },
     {
-      "name": "TouchBistro",
-      "careers_url": "https://boards.greenhouse.io/touchbistro",
+      "name": "ClipChamp",
+      "careers_url": "https://boards.greenhouse.io/clipchamp",
       "ats": "greenhouse",
-      "slug": "touchbistro",
-      "source": "canada"
+      "slug": "clipchamp",
+      "source": "australia"
     },
     {
-      "name": "Humi",
-      "careers_url": "https://boards.greenhouse.io/humi",
+      "name": "Deputy",
+      "careers_url": "https://boards.greenhouse.io/deputy",
       "ats": "greenhouse",
-      "slug": "humi",
-      "source": "canada"
+      "slug": "deputy",
+      "source": "australia"
     },
     {
-      "name": "Carbon6",
-      "careers_url": "https://boards.greenhouse.io/carbon6",
+      "name": "Domain Group",
+      "careers_url": "https://boards.greenhouse.io/domaingroup",
       "ats": "greenhouse",
-      "slug": "carbon6",
-      "source": "canada"
+      "slug": "domaingroup",
+      "source": "australia"
     },
     {
-      "name": "HiMama",
-      "careers_url": "https://boards.greenhouse.io/himama",
-      "ats": "greenhouse",
-      "slug": "himama",
-      "source": "canada"
+      "name": "Lendi",
+      "careers_url": "https://careers.smartrecruiters.com/LendiGroup1",
+      "ats": "smartrecruiters",
+      "slug": "LendiGroup1",
+      "source": "australia"
     },
     {
-      "name": "AbCellera",
-      "careers_url": "https://boards.greenhouse.io/abcellera",
-      "ats": "greenhouse",
-      "slug": "abcellera",
-      "source": "canada"
-    },
-    {
-      "name": "Clearco",
-      "careers_url": "https://boards.greenhouse.io/clearco",
-      "ats": "greenhouse",
-      "slug": "clearco",
-      "source": "canada"
-    },
-    {
-      "name": "BrainStation",
-      "careers_url": "https://boards.greenhouse.io/brainstation",
-      "ats": "greenhouse",
-      "slug": "brainstation",
-      "source": "canada"
-    },
-    {
-      "name": "Fiix",
-      "careers_url": "https://boards.greenhouse.io/fiixsoftware",
-      "ats": "greenhouse",
-      "slug": "fiixsoftware",
-      "source": "canada"
-    },
-    {
-      "name": "Jane Software",
-      "careers_url": "https://boards.greenhouse.io/jane",
-      "ats": "greenhouse",
-      "slug": "jane",
-      "source": "canada"
-    },
-    {
-      "name": "Coconut Software",
-      "careers_url": "https://boards.greenhouse.io/coconutsoftware",
-      "ats": "greenhouse",
-      "slug": "coconutsoftware",
-      "source": "canada"
-    },
-    {
-      "name": "Tealbook",
-      "careers_url": "https://boards.greenhouse.io/tealbook",
-      "ats": "greenhouse",
-      "slug": "tealbook",
-      "source": "canada"
-    },
-    {
-      "name": "GreenShield",
-      "careers_url": "https://boards.greenhouse.io/greenshield",
-      "ats": "greenhouse",
-      "slug": "greenshield",
-      "source": "canada"
-    },
-    {
-      "name": "Mysa",
-      "careers_url": "https://jobs.lever.co/mysa",
+      "name": "SafetyCulture",
+      "careers_url": "https://jobs.lever.co/safetyculture",
       "ats": "lever",
-      "slug": "mysa",
-      "source": "canada"
+      "slug": "safetyculture",
+      "source": "australia"
     },
     {
-      "name": "BuildDirect",
-      "careers_url": "https://jobs.lever.co/builddirect",
-      "ats": "lever",
-      "slug": "builddirect",
-      "source": "canada"
-    },
-    {
-      "name": "Nicoya",
-      "careers_url": "https://jobs.lever.co/nicoya",
-      "ats": "lever",
-      "slug": "nicoya",
-      "source": "canada"
-    },
-    {
-      "name": "Intellicheck",
-      "careers_url": "https://jobs.lever.co/intellicheck",
-      "ats": "lever",
-      "slug": "intellicheck",
-      "source": "canada"
-    },
-    {
-      "name": "Xanadu Quantum",
-      "careers_url": "https://jobs.lever.co/xanadu",
-      "ats": "lever",
-      "slug": "xanadu",
-      "source": "canada"
-    },
-    {
-      "name": "Hyper Hippo",
-      "careers_url": "https://boards.greenhouse.io/hyperhippo",
+      "name": "Rokt",
+      "careers_url": "https://boards.greenhouse.io/rokt",
       "ats": "greenhouse",
-      "slug": "hyperhippo",
-      "source": "canada"
+      "slug": "rokt",
+      "source": "australia"
     },
     {
-      "name": "Pythian Group",
-      "careers_url": "https://jobs.lever.co/pythian",
+      "name": "Optiver",
+      "careers_url": "https://boards.greenhouse.io/optiver",
+      "ats": "greenhouse",
+      "slug": "optiver",
+      "source": "australia"
+    },
+    {
+      "name": "Propeller",
+      "careers_url": "https://boards.greenhouse.io/propelleraero",
+      "ats": "greenhouse",
+      "slug": "propelleraero",
+      "source": "australia"
+    },
+    {
+      "name": "Harrison.Ai",
+      "careers_url": "https://jobs.lever.co/harrisonai",
       "ats": "lever",
-      "slug": "pythian",
-      "source": "canada"
+      "slug": "harrisonai",
+      "source": "australia"
+    },
+    {
+      "name": "HealthEngine",
+      "careers_url": "https://boards.greenhouse.io/healthengine",
+      "ats": "greenhouse",
+      "slug": "healthengine",
+      "source": "australia"
+    },
+    {
+      "name": "Tyro",
+      "careers_url": "https://boards.greenhouse.io/tyro",
+      "ats": "greenhouse",
+      "slug": "tyro",
+      "source": "australia"
+    },
+    {
+      "name": "Expert360",
+      "careers_url": "https://boards.greenhouse.io/expert360",
+      "ats": "greenhouse",
+      "slug": "expert360",
+      "source": "australia"
+    },
+    {
+      "name": "Linktree",
+      "careers_url": "https://linktree.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "linktree",
+      "source": "australia"
+    },
+    {
+      "name": "SquareUp AU",
+      "careers_url": "https://boards.greenhouse.io/block",
+      "ats": "greenhouse",
+      "slug": "block",
+      "source": "australia"
+    },
+    {
+      "name": "Qwilr",
+      "careers_url": "https://jobs.lever.co/qwilr",
+      "ats": "lever",
+      "slug": "qwilr",
+      "source": "australia"
+    },
+    {
+      "name": "Finder",
+      "careers_url": "https://boards.greenhouse.io/finder",
+      "ats": "greenhouse",
+      "slug": "finder",
+      "source": "australia"
+    },
+    {
+      "name": "REA Group",
+      "careers_url": "https://jobs.lever.co/reagroup",
+      "ats": "lever",
+      "slug": "reagroup",
+      "source": "australia"
+    },
+    {
+      "name": "Xero",
+      "careers_url": "https://boards.greenhouse.io/xero",
+      "ats": "greenhouse",
+      "slug": "xero",
+      "source": "new_zealand"
+    },
+    {
+      "name": "Pushpay",
+      "careers_url": "https://boards.greenhouse.io/pushpay",
+      "ats": "greenhouse",
+      "slug": "pushpay",
+      "source": "new_zealand"
+    },
+    {
+      "name": "Rocket Lab",
+      "careers_url": "https://jobs.lever.co/rocketlab",
+      "ats": "lever",
+      "slug": "rocketlab",
+      "source": "new_zealand"
+    },
+    {
+      "name": "Trade Me",
+      "careers_url": "https://boards.greenhouse.io/trademe",
+      "ats": "greenhouse",
+      "slug": "trademe",
+      "source": "new_zealand"
     }
   ],
   "custom_ats": [
@@ -2012,11 +1389,2706 @@
       "source": "shubheksha"
     },
     {
-      "name": "Trivago",
-      "careers_url": "https://company.trivago.com/open-positions/",
+      "name": "CSIRO's Data61",
+      "careers_url": "https://jobs.csiro.au/search/?q=data61&locationsearch=",
       "ats": "custom",
       "slug": null,
-      "source": "shubheksha"
+      "source": "geshan_au"
+    },
+    {
+      "name": "DriveYello",
+      "careers_url": "https://www.driveyello.com/yello-jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Easygo",
+      "careers_url": "https://easygo.io/pages/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Elmo",
+      "careers_url": "https://elmosoftware.com.au/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Envato",
+      "careers_url": "https://envato.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Expedia Group",
+      "careers_url": "https://careers.expediagroup.com/jobs/?filter[country]=Australia",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "GlamCorner",
+      "careers_url": "https://www.glamcorner.com.au/opportunities",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Healthshare",
+      "careers_url": "https://www.healthsharedigital.com/company/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "HiPages",
+      "careers_url": "https://hipagesgroup.com.au/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "HireUp",
+      "careers_url": "https://hireup.com.au/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Home Care Heroes",
+      "careers_url": "https://homecareheroes.com.au/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "IRESS",
+      "careers_url": "https://www.iress.com/au/company/join-us/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Isentia",
+      "careers_url": "https://apply.workable.com/isentia/",
+      "ats": "workable",
+      "slug": "isentia",
+      "source": "geshan_au"
+    },
+    {
+      "name": "JXT Global",
+      "careers_url": "https://www.jxt.com.au/join-us",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Kayo Sports",
+      "careers_url": "https://www.linkedin.com/company/kayo-sports/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Koala",
+      "careers_url": "https://www.linkedin.com/company/koala-mattress/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Learnosity",
+      "careers_url": "https://learnosity.com/company/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "LegalVision",
+      "careers_url": "https://legalvision.com.au/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Local Measure",
+      "careers_url": "https://www.localmeasure.com/company/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Nine",
+      "careers_url": "https://www.nineforbrands.com.au/about/careers-at-nine/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Oppizi",
+      "careers_url": "https://jobs.oppizi.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Orica",
+      "careers_url": "https://www.orica.com/Careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Papercut Software",
+      "careers_url": "https://www.papercut.com/about/life-at-papercut/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Pragmateam",
+      "careers_url": "https://pragma.team/join-us#roles",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Procreate",
+      "careers_url": "https://www.procreate.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Quantium",
+      "careers_url": "https://quantium.elmotalent.com.au/careers/external/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Red Ant",
+      "careers_url": "https://redant.com.au/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "RedBubble",
+      "careers_url": "https://careers.redbubble.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Rockend",
+      "careers_url": "https://www.rockend.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Shippit",
+      "careers_url": "https://www.shippit.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "SiteMinder",
+      "careers_url": "https://www.siteminder.com/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Spaceship",
+      "careers_url": "https://www.spaceship.com.au/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "SwitchMedia",
+      "careers_url": "https://www.switch.tv/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "SquareUp",
+      "careers_url": "https://careers.squareup.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "WiseTech Global",
+      "careers_url": "https://www.wisetechglobal.com/careers/current-openings",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Zepto",
+      "careers_url": "https://www.zepto.com.au/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Zip",
+      "careers_url": "https://zip.co/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "geshan_au"
+    },
+    {
+      "name": "Wunderman Thompson MAP",
+      "careers_url": "https://www.linkedin.com/company/wundermanthompsonmap/",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Odoo",
+      "careers_url": "https://www.odoo.com/r/x6T",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "GameCare",
+      "careers_url": "https://www.linkedin.com/company/gamcare/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Vodafone",
+      "careers_url": "https://www.linkedin.com/company/vodafone/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Geeks LTD",
+      "careers_url": "https://www.linkedin.com/company/geeks-ltd/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Unilever",
+      "careers_url": "https://www.linkedin.com/company/unilever/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Jaja Finance",
+      "careers_url": "https://www.linkedin.com/company/jaja-finance/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "RELEX Solutions",
+      "careers_url": "https://www.linkedin.com/company/relexsolutions/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "SEGULA Technologies",
+      "careers_url": "https://www.linkedin.com/company/segula-technologies/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Siemens AG",
+      "careers_url": "https://www.linkedin.com/company/future-energy-group-srl/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "BASF SE",
+      "careers_url": "https://www.linkedin.com/company/basf/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Volkswagen AG",
+      "careers_url": "https://www.linkedin.com/company/volkswagen-group/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Deutsche Bank AG",
+      "careers_url": "https://www.linkedin.com/company/dkb/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Allianz SE",
+      "careers_url": "https://www.linkedin.com/company/allianz/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "BMW AG",
+      "careers_url": "https://www.linkedin.com/company/bmw-group/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Daimler AG",
+      "careers_url": "https://www.linkedin.com/company/daimlertruckag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Fresenius SE & Co. KGaA",
+      "careers_url": "https://www.linkedin.com/company/fresenius-se/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Bayer AG",
+      "careers_url": "https://www.linkedin.com/company/bayer-schweiz-ag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "IONOS",
+      "careers_url": "https://www.linkedin.com/company/ionos/",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Deutsche Telekom AG",
+      "careers_url": "https://www.linkedin.com/company/telekom/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Thyssenkrupp AG",
+      "careers_url": "https://www.linkedin.com/company/thyssenkrupp/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Henkel AG & Co. KGaA",
+      "careers_url": "https://www.linkedin.com/company/henkel-ag-&-co.-kgaa/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Continental AG",
+      "careers_url": "https://www.linkedin.com/company/continental/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Deutsche Lufthansa AG",
+      "careers_url": "https://www.linkedin.com/company/lufthansa-group/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Merck KGaA",
+      "careers_url": "https://www.linkedin.com/company/emd-affiliates-of-merck-kgaa-darmstadt-germany/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Deutsche Post DHL Group",
+      "careers_url": "https://www.linkedin.com/showcase/dpdhl-investor-relations/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Robert Bosch GmbH",
+      "careers_url": "https://www.linkedin.com/company/bosch/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Evonik Industries AG",
+      "careers_url": "https://www.linkedin.com/company/evonik/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Infineon Technologies AG",
+      "careers_url": "https://www.linkedin.com/company/infineon-technologies/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Beiersdorf AG",
+      "careers_url": "https://www.linkedin.com/company/beiersdorf/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Lanxess AG",
+      "careers_url": "https://www.linkedin.com/company/lanxess/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "HeidelbergCement AG",
+      "careers_url": "https://www.linkedin.com/company/heidelbergcementfrance/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Osram Licht AG",
+      "careers_url": "https://www.linkedin.com/company/osram-licht-ag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Wacker Neuson Linz GmbH",
+      "careers_url": "https://www.linkedin.com/company/wacker-neuson-linz-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Kärcher GmbH & Co. KG",
+      "careers_url": "https://www.linkedin.com/company/alfred-k%C3%A4rcher-gmbh-&-co.-kg/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Metro AG",
+      "careers_url": "https://www.linkedin.com/company/metro-ag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Bilfinger SE",
+      "careers_url": "https://www.linkedin.com/company/bilfinger/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "RWE AG",
+      "careers_url": "https://www.linkedin.com/company/rwe-/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "MTU Aero Engines AG",
+      "careers_url": "https://www.linkedin.com/company/mtu-aero-engines/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Metro Markets",
+      "careers_url": "https://www.linkedin.com/company/metro-markets-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Fresenius Medical Care AG & Co. KGaA",
+      "careers_url": "https://www.linkedin.com/company/freseniusmedicalcare/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Deutsche Bahn AG",
+      "careers_url": "https://www.linkedin.com/company/deutschebahn/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "E.ON SE",
+      "careers_url": "https://www.linkedin.com/company/e-on/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "FUCHS PETROLUB SE",
+      "careers_url": "https://www.linkedin.com/company/fuchs-petrolub-se/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Evonik Resource Efficiency GmbH",
+      "careers_url": "https://www.linkedin.com/company/evonik-resource-efficiency-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Deutsche Wohnen SE",
+      "careers_url": "https://www.linkedin.com/company/deutsche-wohnen-gruppe/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Symrise AG",
+      "careers_url": "https://www.linkedin.com/company/symrise/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Brenntag AG",
+      "careers_url": "https://www.linkedin.com/company/brenntag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "ProSiebenSat.1 Media SE",
+      "careers_url": "https://www.linkedin.com/company/prosiebensat1-media-se/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "PUMA SE",
+      "careers_url": "https://www.linkedin.com/company/puma/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Celesio AG",
+      "careers_url": "https://www.linkedin.com/company/celesio-ag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "KION Group AG",
+      "careers_url": "https://www.linkedin.com/company/kiongroup/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Wacker Chemie AG",
+      "careers_url": "https://www.linkedin.com/company/wacker/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Osram Continental GmbH",
+      "careers_url": "https://www.linkedin.com/company/osram-continental/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "TÜV SÜD AG",
+      "careers_url": "https://www.linkedin.com/company/tuvsud/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Knorr-Bremse AG",
+      "careers_url": "https://www.linkedin.com/company/knorr-bremse/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Stada Arzneimittel AG",
+      "careers_url": "https://www.linkedin.com/company/stada-arzneimittel-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Ceconomy AG",
+      "careers_url": "https://www.linkedin.com/company/ceconomy/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Deutsche Pfandbriefbank AG",
+      "careers_url": "https://www.linkedin.com/company/deutsche-pfandbriefbank-ag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Merck Life Science GmbH",
+      "careers_url": "https://www.linkedin.com/company/merck-life-science/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "ABB AG",
+      "careers_url": "https://www.linkedin.com/company/abb/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "ALTANA AG",
+      "careers_url": "https://www.linkedin.com/company/altana-ag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Wacker Silicones GmbH",
+      "careers_url": "https://www.linkedin.com/company/wacker/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Dürr AG",
+      "careers_url": "https://www.linkedin.com/company/duerr/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Klüber Lubrication München SE & Co. KG",
+      "careers_url": "https://www.linkedin.com/company/kluber-lubrication_102925/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "EnBW Energie Baden-Württemberg AG",
+      "careers_url": "https://www.linkedin.com/company/enbw/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Deutsche Apotheker- und Ärztebank eG",
+      "careers_url": "https://www.linkedin.com/company/apobank/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "KWS SAAT SE & Co. KGaA",
+      "careers_url": "https://www.linkedin.com/company/kwsgroup/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Axel Springer SE",
+      "careers_url": "https://www.linkedin.com/company/axelspringer/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Rheinmetall AG",
+      "careers_url": "https://www.linkedin.com/company/rheinmetall/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Fielmann AG",
+      "careers_url": "https://www.linkedin.com/company/fielmann-ag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Schaeffler AG",
+      "careers_url": "https://www.linkedin.com/company/schaeffler/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "TRUMPF GmbH + Co. KG",
+      "careers_url": "https://www.linkedin.com/company/trumpf-se-co-kg/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Commerzbank AG",
+      "careers_url": "https://www.linkedin.com/company/commerzbank-ag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "TÜV Rheinland AG",
+      "careers_url": "https://www.linkedin.com/company/tuv-rheinland-group/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Linde plc",
+      "careers_url": "https://www.linkedin.com/company/linde/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Vodafone GmbH",
+      "careers_url": "https://www.linkedin.com/company/vodafone/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "EON SE",
+      "careers_url": "https://www.linkedin.com/company/eon-inc/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Wintershall Dea GmbH",
+      "careers_url": "https://www.linkedin.com/company/wintershalldea/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Uniper SE",
+      "careers_url": "https://www.linkedin.com/company/uniper-se/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Nordex SE",
+      "careers_url": "https://www.linkedin.com/company/nordex/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "adidas AG",
+      "careers_url": "https://www.linkedin.com/company/adidas/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "MANN+HUMMEL GmbH",
+      "careers_url": "https://www.linkedin.com/company/mannhummel/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Fresenius Kabi Deutschland GmbH",
+      "careers_url": "https://www.linkedin.com/company/freseniuskabi/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Carl Zeiss AG",
+      "careers_url": "https://www.linkedin.com/company/carl-zeiss-do-brasil/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Fraport AG",
+      "careers_url": "https://www.linkedin.com/company/fraport-ag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Covestro Deutschland AG",
+      "careers_url": "https://www.linkedin.com/company/covestro-deutschland-ag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Siemens Energy AG",
+      "careers_url": "https://www.linkedin.com/company/siemens-energy/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Innogy SE",
+      "careers_url": "https://www.linkedin.com/company/innogy-se/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "EWE AG",
+      "careers_url": "https://www.linkedin.com/company/ewe-ag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "TUI AG",
+      "careers_url": "https://www.linkedin.com/company/tuigroup/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "ZF Friedrichshafen AG",
+      "careers_url": "https://www.linkedin.com/company/zf-group/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Hilti Deutschland AG",
+      "careers_url": "https://www.linkedin.com/company/hiltideutschlandag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "AUDI AG",
+      "careers_url": "https://www.linkedin.com/company/audi-ag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Osram GmbH",
+      "careers_url": "https://www.linkedin.com/company/ams-osram/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "B. Braun Melsungen AG",
+      "careers_url": "https://www.linkedin.com/company/bbraun-group/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Bertelsmann SE & Co. KGaA",
+      "careers_url": "https://www.linkedin.com/company/bertelsmann/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "KfW Bank",
+      "careers_url": "https://www.linkedin.com/company/kfw/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "DZ BANK AG",
+      "careers_url": "https://www.linkedin.com/company/dzbank/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Deutsche Börse AG",
+      "careers_url": "https://www.linkedin.com/company/deutscheboerse/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Merck Group",
+      "careers_url": "https://www.linkedin.com/company/merck-group/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Freudenberg Group",
+      "careers_url": "https://www.linkedin.com/company/freudenberg-group/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Boehringer Ingelheim GmbH",
+      "careers_url": "https://www.linkedin.com/company/boehringer-ingelheim/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "T-Systems International GmbH",
+      "careers_url": "https://www.linkedin.com/company/t-systems/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Siemens Healthineers AG",
+      "careers_url": "https://www.linkedin.com/company/siemens-healthineers/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Dr. Ing. h.c. F. Porsche AG",
+      "careers_url": "https://www.linkedin.com/company/porsche-ag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "PwC Germany",
+      "careers_url": "https://www.linkedin.com/company/pwc-deutschland/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Ernst & Young GmbH Wirtschaftsprüfungsgesellschaft",
+      "careers_url": "https://www.linkedin.com/company/ernst-&-young-gmbh-wirtschaftspr%C3%BCfungsgesellschaft/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Volkswagen Commercial Vehicles",
+      "careers_url": "https://www.linkedin.com/company/volkswagen-commercial-vehicles-/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "MAN Truck & Bus AG",
+      "careers_url": "https://www.linkedin.com/company/man-commercial-vehicles/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "SAP Concur",
+      "careers_url": "https://www.linkedin.com/company/sapconcur/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Zalando SE",
+      "careers_url": "https://www.linkedin.com/company/zalando/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Delivery Hero SE",
+      "careers_url": "https://www.linkedin.com/company/delivery-hero-se/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "HelloFresh SE",
+      "careers_url": "https://www.linkedin.com/company/hellofresh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "N26 GmbH",
+      "careers_url": "https://www.linkedin.com/company/n26/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "FlixBus GmbH",
+      "careers_url": "https://www.linkedin.com/company/flixbus/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "TeamViewer AG",
+      "careers_url": "https://www.linkedin.com/company/teamviewer/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Bosch Rexroth AG",
+      "careers_url": "https://www.linkedin.com/company/bosch-rexroth/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Mercedes-Benz AG",
+      "careers_url": "https://www.linkedin.com/company/mercedes-benz_ag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Fresenius Helios",
+      "careers_url": "https://www.linkedin.com/company/helios-kliniken-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Bosch Gruppe",
+      "careers_url": "https://www.linkedin.com/company/bosch/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Deutsche Bundesbank",
+      "careers_url": "https://www.linkedin.com/company/deutsche-bundesbank/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Schenker AG",
+      "careers_url": "https://www.linkedin.com/company/dbschenker/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "PricewaterhouseCoopers GmbH",
+      "careers_url": "https://www.linkedin.com/company/pwc/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "IBM Deutschland GmbH",
+      "careers_url": "https://www.linkedin.com/company/ibm/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Amazon Deutschland Services GmbH",
+      "careers_url": "https://www.linkedin.com/company/amazon/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "HUGO BOSS AG",
+      "careers_url": "https://www.linkedin.com/company/hugo-boss/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Fujitsu Technology Solutions GmbH",
+      "careers_url": "https://www.linkedin.com/company/fujitsu/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Kuehne + Nagel (AG & Co.) KG",
+      "careers_url": "https://www.linkedin.com/company/kuehne-nagel/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Merz Pharma GmbH & Co. KGaA",
+      "careers_url": "https://www.linkedin.com/company/merz-pharma-gmbh-co-kgaa-reinheim/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Aldi Group",
+      "careers_url": "https://www.linkedin.com/company/aldi-sued/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Schwarz Gruppe",
+      "careers_url": "https://www.linkedin.com/company/schwarzgruppeint/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "DMK Group",
+      "careers_url": "https://www.linkedin.com/company/dmkrestaurants/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "KUKA Robotics GmbH",
+      "careers_url": "https://www.linkedin.com/company/kukaglobal/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "FlixMobility GmbH",
+      "careers_url": "https://www.linkedin.com/company/flixmobility-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Sartorius AG",
+      "careers_url": "https://www.linkedin.com/company/sartorius/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Wayfair GmbH",
+      "careers_url": "https://www.linkedin.com/company/wayfair/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Home24 SE",
+      "careers_url": "https://www.linkedin.com/company/home24/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Mister Spex GmbH",
+      "careers_url": "https://www.linkedin.com/company/mister-spex/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Auto1 Group GmbH",
+      "careers_url": "https://www.linkedin.com/company/auto1-group/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Foodspring GmbH",
+      "careers_url": "https://www.linkedin.com/company/foodspring/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Raisin GmbH",
+      "careers_url": "https://www.linkedin.com/company/join-raisin-ds/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "smallpdf GmbH",
+      "careers_url": "https://www.linkedin.com/company/smallpdf/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Jimdo GmbH",
+      "careers_url": "https://www.linkedin.com/company/jimdo/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Personio GmbH",
+      "careers_url": "https://www.linkedin.com/company/personio/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Marley Spoon AG",
+      "careers_url": "https://www.linkedin.com/company/marley-spoon/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "HomeToGo GmbH",
+      "careers_url": "https://www.linkedin.com/company/hometogo/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Grover Group GmbH",
+      "careers_url": "https://www.linkedin.com/company/grover/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "reBuy reCommerce GmbH",
+      "careers_url": "https://www.linkedin.com/company/rebuy-recommerce-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "8fit GmbH",
+      "careers_url": "https://www.linkedin.com/company/8fit/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Personify XP GmbH",
+      "careers_url": "https://www.linkedin.com/company/personify-xp/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Sensorberg GmbH",
+      "careers_url": "https://www.linkedin.com/company/sensorberg-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "4tiitoo GmbH",
+      "careers_url": "https://www.linkedin.com/company/4tiitoo/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Emteria GmbH",
+      "careers_url": "https://www.linkedin.com/company/emteria/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Vizibl GmbH",
+      "careers_url": "https://www.linkedin.com/company/vizibl/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Joonko GmbH",
+      "careers_url": "https://www.linkedin.com/company/joonkorecruitmentsoftware/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Carla Cargo GmbH",
+      "careers_url": "https://www.linkedin.com/company/carlacargo/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "KINEXON GmbH",
+      "careers_url": "https://www.linkedin.com/company/kinexon/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "EyeEm Mobile GmbH",
+      "careers_url": "https://www.linkedin.com/company/eyeem/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Contentful GmbH",
+      "careers_url": "https://www.linkedin.com/company/contentful/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Aiven GmbH",
+      "careers_url": "https://www.linkedin.com/company/aiven/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Signavio GmbH",
+      "careers_url": "https://www.linkedin.com/company/signavio/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Coyo GmbH",
+      "careers_url": "https://www.linkedin.com/company/haiilo/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "InVision GmbH",
+      "careers_url": "https://www.linkedin.com/company/invisionapp/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Zenjob GmbH",
+      "careers_url": "https://www.linkedin.com/company/zenjob/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Spryker Systems GmbH",
+      "careers_url": "https://www.linkedin.com/company/spryker/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Mambu GmbH",
+      "careers_url": "https://www.linkedin.com/company/mambu/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "TIER Mobility GmbH",
+      "careers_url": "https://www.linkedin.com/company/tiermobility/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Quobyte GmbH",
+      "careers_url": "https://www.linkedin.com/company/quobyte/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Zattoo Europa AG",
+      "careers_url": "https://www.linkedin.com/company/zattoo/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "eGym GmbH",
+      "careers_url": "https://www.linkedin.com/company/egym-global/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Cirplus GmbH",
+      "careers_url": "https://www.linkedin.com/company/cirplus/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "CoachHub GmbH",
+      "careers_url": "https://www.linkedin.com/company/coachhub/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Beekeeper AG",
+      "careers_url": "https://www.linkedin.com/company/beekeeper/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "unu GmbH",
+      "careers_url": "https://www.linkedin.com/company/unu-ug/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "wefox Germany GmbH",
+      "careers_url": "https://www.linkedin.com/company/wefox/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Styla GmbH",
+      "careers_url": "https://www.linkedin.com/company/styla-com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Camunda Services GmbH",
+      "careers_url": "https://www.linkedin.com/company/camunda/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Airbus Group",
+      "careers_url": "https://www.linkedin.com/showcase/airbus/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Montblanc International GmbH",
+      "careers_url": "https://www.linkedin.com/company/montblanc/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "OTTO GmbH & Co. KG",
+      "careers_url": "https://www.linkedin.com/company/otto/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Tchibo GmbH",
+      "careers_url": "https://www.linkedin.com/company/tchibo/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Jungheinrich AG",
+      "careers_url": "https://www.linkedin.com/company/jungheinrich-ag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Aurubis AG",
+      "careers_url": "https://www.linkedin.com/company/aurubis/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Gruner + Jahr GmbH",
+      "careers_url": "https://www.linkedin.com/company/gruner-jahr-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Eppendorf AG",
+      "careers_url": "https://www.linkedin.com/company/eppendorf/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Körber AG",
+      "careers_url": "https://www.linkedin.com/company/k%C3%B6rber/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "DESY (Deutsches Elektronen-Synchrotron)",
+      "careers_url": "https://www.linkedin.com/company/desy/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Hapag-Lloyd AG",
+      "careers_url": "https://www.linkedin.com/company/hapag-lloyd-ag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Hermes Germany GmbH",
+      "careers_url": "https://www.linkedin.com/company/hermes/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "XING SE",
+      "careers_url": "https://www.linkedin.com/company/xing-marketing-solutions-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Haspa Finanzholding",
+      "careers_url": "https://www.linkedin.com/company/hamburger-sparkasse/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Gerresheimer AG",
+      "careers_url": "https://www.linkedin.com/company/gerresheimer/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "C&A Mode GmbH & Co. KG",
+      "careers_url": "https://www.linkedin.com/company/c-&-a-mode-gmbh-&-co.-kg/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "GEA Group AG",
+      "careers_url": "https://www.linkedin.com/company/geagroup/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Trivago GmbH",
+      "careers_url": "https://www.linkedin.com/company/trivagonv/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Klöckner & Co SE",
+      "careers_url": "https://www.linkedin.com/company/kl%C3%B6ckner-&-co-se/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Qiagen GmbH",
+      "careers_url": "https://www.linkedin.com/company/qiagen/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "SICK AG",
+      "careers_url": "https://www.linkedin.com/company/sicksensorintelligence/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Talanx AG",
+      "careers_url": "https://www.linkedin.com/company/talanx/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Amprion GmbH",
+      "careers_url": "https://www.linkedin.com/company/amprion-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "AWISTA Gesellschaft für Abfallwirtschaft und Stadtreinigung mbH",
+      "careers_url": "https://www.linkedin.com/company/awista-gesellschaft-f%C3%A3%C2%BCr-abfallwirtschaft-und-stadtreinigung-mbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "GESCO AG",
+      "careers_url": "https://www.linkedin.com/company/gesco/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "RHEINPFALZ Verlag und Druckerei GmbH & Co. KG",
+      "careers_url": "https://www.linkedin.com/company/rheinpfalz-verlag-und-druckerei-gmbh-&-co.-kg/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Käte Ahlmann Stiftung GmbH",
+      "careers_url": "https://www.linkedin.com/company/eggelbusch-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "MAN SE",
+      "careers_url": "https://www.linkedin.com/company/man-commercial-vehicles/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "HypoVereinsbank - Unicredit Bank AG",
+      "careers_url": "https://www.linkedin.com/company/hypovereinsbank-unicredit-bank-ag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "ADAC SE",
+      "careers_url": "https://www.linkedin.com/company/adac/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Giesecke+Devrient GmbH",
+      "careers_url": "https://www.linkedin.com/company/giesecke-devrient/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Knorr-Bremse Systeme für Nutzfahrzeuge GmbH",
+      "careers_url": "https://www.linkedin.com/company/knorr-bremse-systeme-f%C3%BCr-nutzfahrzeuge-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Rohde & Schwarz GmbH & Co KG",
+      "careers_url": "https://www.linkedin.com/company/rohde-&-schwarz/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Munich Airport",
+      "careers_url": "https://www.linkedin.com/company/munich-airport-international-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Konica Minolta Business Solutions Europe GmbH",
+      "careers_url": "https://www.linkedin.com/company/konica-minolta-business-solutions-europe-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Altran Deutschland S.A.S. & Co. KG",
+      "careers_url": "https://www.linkedin.com/company/altran/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Metaio GmbH",
+      "careers_url": "https://www.linkedin.com/company/metaio/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "KraussMaffei Group GmbH",
+      "careers_url": "https://www.linkedin.com/company/krauss-maffei/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "The Boston Consulting Group GmbH",
+      "careers_url": "https://www.linkedin.com/company/boston-consulting-group/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "All for One Group AG",
+      "careers_url": "https://www.linkedin.com/company/all-for-one-group-se/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "BFFT GmbH",
+      "careers_url": "https://www.linkedin.com/company/edaggroup/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "ERGO Group AG",
+      "careers_url": "https://www.linkedin.com/company/ergo-group-ag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Hubert Burda Media",
+      "careers_url": "https://www.linkedin.com/company/hubert-burda-media/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Dallmeier electronic GmbH & Co. KG",
+      "careers_url": "https://www.linkedin.com/company/dallmeier-electronic/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Nemetschek Group",
+      "careers_url": "https://www.linkedin.com/company/nemetschekgroup/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Knauf Gips KG",
+      "careers_url": "https://www.linkedin.com/company/knauf-gips-kg/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "ATOS IT Solutions and Services GmbH",
+      "careers_url": "https://www.linkedin.com/company/atos-it-solutions-and-services-a-s/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "MicroNova AG",
+      "careers_url": "https://www.linkedin.com/company/micronova/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Secunet Security Networks AG",
+      "careers_url": "https://www.linkedin.com/company/secunet-security-networks-ag/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "ESG Elektroniksystem- und Logistik-GmbH",
+      "careers_url": "https://www.linkedin.com/company/esg-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Nemak Europe GmbH",
+      "careers_url": "https://www.linkedin.com/company/nemak/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Sandoz GmbH",
+      "careers_url": "https://www.linkedin.com/company/sandoz/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "REWE Group",
+      "careers_url": "https://www.linkedin.com/company/rewegroup/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "KPMG AG",
+      "careers_url": "https://www.linkedin.com/company/kpmg-deutschland/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Unify Communications GmbH & Co. KG",
+      "careers_url": "https://www.linkedin.com/company/unify-communications-and-collaboration-gmbh-&-co.-kg-/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Sixt SE",
+      "careers_url": "https://www.linkedin.com/company/sixt/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Hubert Haupt Immobilien Holding GmbH",
+      "careers_url": "https://www.linkedin.com/company/hubert-haupt-immobilien-holding/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Linde Material Handling GmbH",
+      "careers_url": "https://www.linkedin.com/company/linde-material-handling/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Santander Consumer Bank AG",
+      "careers_url": "https://www.linkedin.com/company/nadia-taurino-finanziamenti/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "DELO Industrial Adhesives",
+      "careers_url": "https://de.linkedin.com/company/delo-industrial-adhesives/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "MCM Klosterfrau Vertriebsgesellschaft mbH",
+      "careers_url": "https://www.linkedin.com/company/mcm-klosterfrau-vertriebsgesellschaft-mbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Technische Universität München (TUM)",
+      "careers_url": "https://www.linkedin.com/company/technische-universitat-munchen/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "DocuWare GmbH",
+      "careers_url": "https://www.linkedin.com/company/docuware-corporation/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Limbach Gruppe SE",
+      "careers_url": "https://www.linkedin.com/company/limbach-gruppe-se/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "ABALON Recruitment GmbH",
+      "careers_url": "https://www.linkedin.com/company/abalon-group/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Flughafen München GmbH",
+      "careers_url": "https://www.linkedin.com/company/munich-airport/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Candis GmbH",
+      "careers_url": "https://www.linkedin.com/company/candis-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "OneFootball GmbH",
+      "careers_url": "https://www.linkedin.com/company/onefootball/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Check24",
+      "careers_url": "https://www.linkedin.com/company/check24-vergleichsportal-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Sportradar",
+      "careers_url": "https://www.linkedin.com/company/sportradar/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Blinkist",
+      "careers_url": "https://www.linkedin.com/company/blinkist/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "MBition",
+      "careers_url": "https://www.linkedin.com/company/mbitiongmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Holidu",
+      "careers_url": "https://www.linkedin.com/company/holidu/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Vimcar",
+      "careers_url": "https://www.linkedin.com/company/vimcar/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "DataGuard",
+      "careers_url": "https://www.linkedin.com/company/dataguard1/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Alasco",
+      "careers_url": "https://www.linkedin.com/company/alasco-software/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "SENSORY-MINDS GMBH",
+      "careers_url": "https://www.linkedin.com/company/sensory-minds/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Energy Robotics",
+      "careers_url": "https://www.linkedin.com/company/energy-robotics/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "AppsFactory",
+      "careers_url": "https://www.linkedin.com/company/appsfactory/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "OWWN",
+      "careers_url": "https://www.linkedin.com/company/owwnapp/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Solvians",
+      "careers_url": "https://www.linkedin.com/company/solvians-it-solutions-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Babbel",
+      "careers_url": "https://www.linkedin.com/company/babbel-com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Gameforge",
+      "careers_url": "https://www.linkedin.com/company/gameforge/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "The unbelievable Machine Company GmbH",
+      "careers_url": "https://www.linkedin.com/company/the-unbelievable-machine-company-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Scout24 Group",
+      "careers_url": "https://www.linkedin.com/company/scout24-group/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Mercedes-Benz Leasing Deutschland",
+      "careers_url": "https://www.linkedin.com/company/mercedes-benz-leasing-deutschland/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "JITpay™ Group",
+      "careers_url": "https://www.linkedin.com/company/jitpay-gmbh/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Pixida",
+      "careers_url": "https://www.linkedin.com/company/pixida-gmbh/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Enmacc",
+      "careers_url": "https://www.linkedin.com/company/enmacc/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Ryan Air",
+      "careers_url": "https://www.linkedin.com/company/ryan-air-inc/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Prospect Health",
+      "careers_url": "https://jobs.opticianonline.net/job/1402134919/independent-audiologist-hearing-aid-dispenser-j197938/?cmpid=PRC|JOBS|OPJOB-Jooble-organic#application-form",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Bending Spoons",
+      "careers_url": "https://www.linkedin.com/company/bendingspoons/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Harpa Italia s.r.l.",
+      "careers_url": "https://www.linkedin.com/company/harpa-italia-s.r.l./jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "DataChef",
+      "careers_url": "https://www.linkedin.com/company/datachefco/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Leaseweb",
+      "careers_url": "https://www.linkedin.com/company/leaseweb/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "DPGMedia",
+      "careers_url": "https://www.linkedin.com/company/dpg-media-nl/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "IO Consultancy",
+      "careers_url": "https://www.linkedin.com/company/iodigital-com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Touchtribe",
+      "careers_url": "https://www.linkedin.com/company/touchtribe/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Profoto",
+      "careers_url": "https://www.linkedin.com/company/profoto/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "AIHR",
+      "careers_url": "https://www.linkedin.com/school/aihr/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Mobiquity",
+      "careers_url": "https://www.linkedin.com/company/mobiquity-inc-europe/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Flow Traders",
+      "careers_url": "https://www.linkedin.com/company/flow-traders/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Farm21",
+      "careers_url": "https://www.linkedin.com/company/farm21/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "JustEatTakeaway.com",
+      "careers_url": "https://www.linkedin.com/company/just-eat-takeaway-com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Lunatech",
+      "careers_url": "https://www.linkedin.com/company/lunatech-labs/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Studocu",
+      "careers_url": "https://www.linkedin.com/company/studeersnel.nl/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Bunq",
+      "careers_url": "https://www.linkedin.com/company/bunq/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "NN",
+      "careers_url": "https://www.linkedin.com/company/nn/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Nearfield Instruments",
+      "careers_url": "https://www.linkedin.com/company/nearfield-instruments-bv/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Code nomadas",
+      "careers_url": "https://www.linkedin.com/company/code-nomads/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "bol.com",
+      "careers_url": "https://www.linkedin.com/company/bol-com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Knab",
+      "careers_url": "https://www.linkedin.com/company/knab/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Company.info",
+      "careers_url": "https://www.linkedin.com/company/company-info/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Eurail",
+      "careers_url": "https://www.linkedin.com/company/eurail/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Picnic",
+      "careers_url": "https://www.linkedin.com/company/picnictechnologies/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Albelli",
+      "careers_url": "https://www.linkedin.com/company/albelli-photoboxgroup/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "AG5 Skills Management Software",
+      "careers_url": "https://www.linkedin.com/company/ag5skillsintelligencesoftware/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "dé VakantieDiscounter",
+      "careers_url": "https://www.linkedin.com/company/vakantiediscounter/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Adevinta",
+      "careers_url": "https://www.linkedin.com/company/adevinta/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Media.Monks",
+      "careers_url": "https://www.linkedin.com/company/mediamonks/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "team.blue",
+      "careers_url": "https://www.linkedin.com/company/teamblue/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Vista",
+      "careers_url": "https://www.linkedin.com/company/vista-entertainment-solutions/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Shortcut",
+      "careers_url": "https://www.linkedin.com/company/shortcut-as/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Amadeus",
+      "careers_url": "https://www.linkedin.com/company/amadeus/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "eDreams ODIGEO",
+      "careers_url": "https://www.linkedin.com/company/edreamsodigeo/about/",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Oneflow",
+      "careers_url": "https://www.linkedin.com/company/oneflowcom/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Digital Route AB",
+      "careers_url": "https://www.linkedin.com/company/digital-route/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "LeoVegas",
+      "careers_url": "https://www.linkedin.com/company/leovegasgroup/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Soltia AB",
+      "careers_url": "https://www.linkedin.com/company/soltiaab/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Accedo",
+      "careers_url": "https://www.linkedin.com/company/accedo-tv/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "DoWhile",
+      "careers_url": "https://www.linkedin.com/company/dowhile-consulting-scandinavia-ab/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Rebtel",
+      "careers_url": "https://www.linkedin.com/company/rebtel/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Tele2",
+      "careers_url": "https://www.linkedin.com/company/tele2/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "Explipro",
+      "careers_url": "https://www.linkedin.com/company/explipro-group-ab/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "beije",
+      "careers_url": "https://www.linkedin.com/company/beije-tr/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "siaexplains"
+    },
+    {
+      "name": "StyleShoots",
+      "careers_url": "https://styleshoots.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "Code Nomads",
+      "careers_url": "https://www.codenomads.nl/career/",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "Capgemini",
+      "careers_url": "https://www.capgemini.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "Deloitte",
+      "careers_url": "https://www.deloitte.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "DLL",
+      "careers_url": "https://www.dllgroup.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "Bitvavo",
+      "careers_url": "https://jobs.bitvavo.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "Speakap",
+      "careers_url": "https://www.speakap.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "Vodafone Türkiye",
+      "careers_url": "https://www.vodafone.com.tr/",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "ARRK Engineering",
+      "careers_url": "https://engineering.arrk.com/jobs-career/",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "Sensory-Minds",
+      "careers_url": "https://www.sensory-minds.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "Sixt",
+      "careers_url": "https://www.sixt.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "OneFootball",
+      "careers_url": "https://onefootball.com/en/home",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "Adjust GmbH",
+      "careers_url": "https://www.adjust.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "The Unbelievable Machine",
+      "careers_url": "https://unbelievable-machine.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "Scout24 SE",
+      "careers_url": "https://www.scout24.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "Eurowings Digital",
+      "careers_url": "https://eurowings-digital.de/",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "Nexer Group",
+      "careers_url": "https://nexergroup.teamtailor.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "Havas",
+      "careers_url": "https://www.havas.com/who-we-are/our-careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "Vestiaire Collective",
+      "careers_url": "https://www.vestiairecollective.com/journal/join-the-team/",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "BendingSpoons",
+      "careers_url": "https://bendingspoons.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "Harpa Italia",
+      "careers_url": "https://www.harpaitalia.it/",
+      "ats": "custom",
+      "slug": null,
+      "source": "komeilmehranfar"
+    },
+    {
+      "name": "Glovo",
+      "careers_url": "https://jobs.glovoapp.com/en/",
+      "ats": "custom",
+      "slug": null,
+      "source": "amol_can"
+    },
+    {
+      "name": "Argo AI",
+      "careers_url": "https://www.argo.ai/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "amol_can"
+    },
+    {
+      "name": "UP42",
+      "careers_url": "https://up42.com/company/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "amol_can"
+    },
+    {
+      "name": "Sport Alliance",
+      "careers_url": "https://www.sportalliance.com/en/job-search/",
+      "ats": "custom",
+      "slug": null,
+      "source": "amol_can"
+    },
+    {
+      "name": "Wayfair",
+      "careers_url": "https://www.aboutwayfair.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "amol_can"
+    },
+    {
+      "name": "SAP",
+      "careers_url": "https://jobs.sap.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "amol_can"
+    },
+    {
+      "name": "SoundCloud",
+      "careers_url": "https://careers.soundcloud.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "amol_can"
+    },
+    {
+      "name": "FlixMobility",
+      "careers_url": "https://www.flixbus.com/company/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "amol_can"
+    },
+    {
+      "name": "Doctolib",
+      "careers_url": "https://careers.doctolib.fr/",
+      "ats": "custom",
+      "slug": null,
+      "source": "amol_can"
+    },
+    {
+      "name": "Criteo",
+      "careers_url": "https://www.criteo.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "amol_can"
+    },
+    {
+      "name": "BlaBlaCar",
+      "careers_url": "https://www.blablacar.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "amol_can"
+    },
+    {
+      "name": "Bitpanda",
+      "careers_url": "https://www.bitpanda.com/en/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "amol_can"
+    },
+    {
+      "name": "Cabify",
+      "careers_url": "https://cabify.com/en/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "amol_can"
+    },
+    {
+      "name": "Typeform",
+      "careers_url": "https://www.typeform.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "amol_can"
+    },
+    {
+      "name": "Factorial",
+      "careers_url": "https://factorialhr.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "amol_can"
     }
   ],
   "last_updated": "2026-08-03"

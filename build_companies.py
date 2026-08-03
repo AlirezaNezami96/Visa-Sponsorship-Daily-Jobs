@@ -1,13 +1,19 @@
 """
-Build companies.json from curated lists + GitHub repos.
+Build companies.json from curated lists + multiple live GitHub repositories and scrapers.
 Run locally or in GitHub Actions to refresh the company list.
 
 Sources:
-- Curated list: manually verified EU/Canada companies that sponsor work visas
-- shubheksha: https://github.com/shubheksha/companies-sponsoring-visas (EU/UK entries)
-- sponsorstats: https://www.sponsorstats.com — scraped when online, EU/Canada filtered
+- Curated list: verified Europe, Turkey, Canada, Australia & New Zealand tech companies with visa sponsorship history
+- shubheksha: https://github.com/shubheksha/companies-sponsoring-visas
+- geshan: https://github.com/geshan/au-companies-providing-work-visa-sponsorship (Australia)
+- SiaExplains: https://github.com/SiaExplains/visa-sponsorship-companies (Global/EU/Turkey/NZ)
+- komeilmehranfar: https://github.com/komeilmehranfar/visa-sponsors-companies-for-iranians (Verified visa sponsors for Iranian candidates in DE, NL, UK, SE, TR, NZ, FR, ES, AT, IT, EE...)
+- amol-can: https://github.com/amol-can/eu-visa-sponsoring-companies
+- sponsorstats: https://www.sponsorstats.com — scraped when online (filtered for allowed regions)
 
-RULES: Only Europe and Canada companies. No US-only, no Australia.
+RULES:
+- ONLY Europe, Turkey, Canada, Australia, and New Zealand companies.
+- EXCLUDE US-only, Asian (except Turkey), African, South American companies.
 """
 import re
 import json
@@ -15,114 +21,144 @@ import time
 import requests
 
 # ------------------------------------------------------------------ #
-#  Remote repos to pull from
+#  Allowed Regions & Country Keywords
 # ------------------------------------------------------------------ #
-REPOS = {
-    "shubheksha": "https://raw.githubusercontent.com/shubheksha/companies-sponsoring-visas/master/README.md",
-}
-
-# sponsorstats.com — iterate all 100 pages when the site is reachable
-SPONSORSTATS_BASE = (
-    "https://www.sponsorstats.com/sponsorlist/"
-    "?soc=Software%20Developers&experience=senior&page={page}"
-)
-SPONSORSTATS_TOTAL_PAGES = 100
-
-# Country keywords we accept when filtering sponsorstats / generic repos
-EU_CANADA_COUNTRIES = {
-    "united kingdom", "uk", "gb", "england", "scotland", "wales",
-    "germany", "de", "deutschland",
-    "netherlands", "nl", "holland",
-    "sweden", "se",
-    "denmark", "dk",
-    "finland", "fi",
-    "norway", "no",
-    "ireland", "ie",
-    "france", "fr",
-    "spain", "es",
-    "portugal", "pt",
-    "italy", "it",
-    "belgium", "be",
-    "austria", "at",
-    "switzerland", "ch",
-    "poland", "pl",
-    "czech republic", "cz", "czechia",
-    "hungary", "hu",
-    "romania", "ro",
-    "estonia", "ee",
-    "latvia", "lv",
-    "lithuania", "lt",
-    "slovakia", "sk",
-    "slovenia", "si",
-    "croatia", "hr",
-    "bulgaria", "bg",
-    "greece", "gr",
+ALLOWED_KEYWORDS = {
+    # Europe
+    "united kingdom", "uk", "gb", "england", "scotland", "wales", "london", "manchester", "edinburgh", "cambridge",
+    "germany", "de", "deutschland", "berlin", "munich", "hamburg", "frankfurt", "cologne", "stuttgart",
+    "netherlands", "nl", "holland", "amsterdam", "rotterdam", "utrecht", "eindhoven", "the hague",
+    "sweden", "se", "stockholm", "gothenburg", "malmo",
+    "denmark", "dk", "copenhagen", "aarhus",
+    "finland", "fi", "helsinki", "espoo",
+    "norway", "no", "oslo", "bergen",
+    "ireland", "ie", "dublin", "cork", "galway",
+    "france", "fr", "paris", "lyon", "toulouse",
+    "spain", "es", "barcelona", "madrid", "valencia",
+    "portugal", "pt", "lisbon", "porto",
+    "italy", "it", "milan", "rome", "turin",
+    "belgium", "be", "brussels", "antwerp", "ghent",
+    "austria", "at", "vienna", "linz",
+    "switzerland", "ch", "zurich", "geneva", "lausanne", "basel",
+    "poland", "pl", "warsaw", "krakow", "wroclaw",
+    "czech republic", "cz", "czechia", "prague", "brno",
+    "hungary", "hu", "budapest",
+    "romania", "ro", "bucharest", "cluj",
+    "estonia", "ee", "tallinn", "tartu",
+    "latvia", "lv", "riga",
+    "lithuania", "lt", "vilnius", "kaunas",
+    "slovakia", "sk", "bratislava",
+    "slovenia", "si", "ljubljana",
+    "croatia", "hr", "zagreb",
+    "bulgaria", "bg", "sofia",
+    "greece", "gr", "athens",
     "luxembourg", "lu",
     "malta", "mt",
     "cyprus", "cy",
-    "canada", "ca",
-    "europe", "eu", "european union",
+    "iceland", "is", "reykjavik",
+    # Turkey
+    "turkey", "tr", "türkiye", "turkiye", "istanbul", "ankara", "izmir",
+    # Canada
+    "canada", "ca", "toronto", "vancouver", "montreal", "ottawa", "calgary", "waterloo",
+    # Australia
+    "australia", "au", "sydney", "melbourne", "brisbane", "perth", "adelaide",
+    # New Zealand
+    "new zealand", "nz", "auckland", "wellington", "christchurch",
+    # Generic Europe
+    "europe", "eu", "european union", "nordics", "baltics"
 }
+
+EXCLUDED_KEYWORDS = {
+    "united states", "usa", "us", "india", "china", "japan", "singapore",
+    "brazil", "nigeria", "south africa", "egypt", "vietnam", "indonesia",
+    "philippines", "hong kong", "taiwan", "korea", "malaysia", "thailand",
+    "mexico", "colombia", "argentina", "chile", "pakistan", "bangladesh"
+}
+
+def is_allowed_region(text: str) -> bool:
+    """Return True if text matches Europe, Turkey, Canada, Australia, or NZ."""
+    if not text:
+        return True
+    lower = text.lower()
+    for exc in EXCLUDED_KEYWORDS:
+        if exc in lower:
+            # If text explicitly mentions both excluded and allowed (e.g., "London, UK / New York, US"), allow it
+            if any(kw in lower for kw in ["uk", "canada", "australia", "germany", "netherlands", "europe", "turkey", "new zealand"]):
+                continue
+            return False
+    return any(kw in lower for kw in ALLOWED_KEYWORDS)
+
 
 # ------------------------------------------------------------------ #
 #  ATS URL patterns
 # ------------------------------------------------------------------ #
 ATS_PATTERNS = {
-    "greenhouse":      r"boards\.greenhouse\.io/([\w\-]+)/?",
-    "lever":           r"jobs\.lever\.co/([\w\-]+)/?",
-    "ashby":           r"ashbyhq\.com/([\w\-]+)/?",
-    "smartrecruiters": r"careers\.smartrecruiters\.com/([\w\-]+)/?",
-    "personio":        r"([\w\-]+)\.jobs\.personio\.de",
+    "greenhouse":      r"boards\.greenhouse\.io/([\w\-]+)",
+    "lever":           r"jobs\.lever\.co/([\w\-]+)",
+    "ashby":           r"(?:jobs\.)?ashbyhq\.com/([\w\-]+)",
+    "smartrecruiters": r"careers\.smartrecruiters\.com/([\w\-]+)",
+    "personio":        r"([\w\-]+)\.(?:jobs\.)?personio\.de",
+    "workable":        r"(?:apply\.)?workable\.com/([\w\-]+)|([\w\-]+)\.workable\.com",
     "workday":         r"mywd\.jobs|wd\d?\.myworkdaysite|workday\.com",
 }
 
+def classify_ats(url: str):
+    if not url:
+        return "unknown", None
+    for ats, pattern in ATS_PATTERNS.items():
+        m = re.search(pattern, url, re.IGNORECASE)
+        if m:
+            groups = [g for g in m.groups() if g]
+            slug = groups[0] if groups and ats != "workday" else None
+            return ats, slug
+    return "custom", None
+
+
 # ------------------------------------------------------------------ #
-#  CURATED: verified EU/Canada companies — (name, ats, slug, source)
-#  *** Europe and Canada ONLY ***
+#  CURATED: verified companies in allowed regions — (name, ats, slug, source)
 # ------------------------------------------------------------------ #
 CURATED = [
-
     # ================================================================
-    # GLOBAL TECH — strong EU/Canada presence, routinely sponsor visas
+    # GLOBAL TECH — strong EU/CA/AU/NZ presence & visa sponsorship
     # ================================================================
-    ("Stripe",           "greenhouse", "stripe",       "global_eu"),
-    ("Shopify",          "greenhouse", "shopify",      "global_eu"),
-    ("Spotify",          "greenhouse", "spotify",      "global_eu"),
-    ("Klarna",           "lever",      "klarna",       "global_eu"),
-    ("Zalando",          "greenhouse", "zalando",      "global_eu"),
-    ("Delivery Hero",    "greenhouse", "deliveryhero", "global_eu"),
-    ("Datadog",          "greenhouse", "datadog",      "global_eu"),
-    ("Revolut",          "lever",      "revolut",      "global_eu"),
-    ("Intercom",         "lever",      "intercom",     "global_eu"),
-    ("HelloFresh",       "greenhouse", "hellofresh",   "global_eu"),
-    ("Monzo",            "greenhouse", "monzo",        "global_eu"),
-    ("Deliveroo",        "greenhouse", "deliveroo",    "global_eu"),
-    ("GoCardless",       "greenhouse", "gocardless",   "global_eu"),
-    ("Adyen",            "greenhouse", "adyen",        "global_eu"),
-    ("Wise",             "greenhouse", "wise",         "global_eu"),
-    ("GitLab",           "greenhouse", "gitlab",       "global_eu"),
-    ("Cloudflare",       "greenhouse", "cloudflare",   "global_eu"),
-    ("Databricks",       "greenhouse", "databricks",   "global_eu"),
-    ("Elastic",          "greenhouse", "elastic",      "global_eu"),
-    ("Grafana Labs",     "greenhouse", "grafanalabs",  "global_eu"),
-    ("HashiCorp",        "greenhouse", "hashicorp",    "global_eu"),
-    ("Weights & Biases", "greenhouse", "wandb",        "global_eu"),
-    ("Hugging Face",     "greenhouse", "huggingface",  "global_eu"),
-    ("Mistral AI",       "greenhouse", "mistralai",    "global_eu"),
-    ("Snyk",             "lever",      "snyk",         "global_eu"),
-    ("PostHog",          "lever",      "posthog",      "global_eu"),
-    ("Celonis",          "greenhouse", "celonis",      "global_eu"),
-    ("SAP SE",           "greenhouse", "sap",          "global_eu"),
-    ("Backbase",         "greenhouse", "backbase",     "global_eu"),
-    ("ING",              "greenhouse", "ing",          "global_eu"),
-    ("MongoDB",          "greenhouse", "mongodb",      "global_eu"),
-    ("GitHub",           "greenhouse", "github",       "global_eu"),
-    ("Unity",            "greenhouse", "unity",        "global_eu"),
-    ("Automattic",       "greenhouse", "automattic",   "global_eu"),
-    ("Canonical",        "greenhouse", "canonical",    "global_eu"),
-    ("Fastly",           "greenhouse", "fastly",       "global_eu"),
-    ("Zendesk",          "greenhouse", "zendesk",      "global_eu"),
-    ("PagerDuty",        "greenhouse", "pagerduty",    "global_eu"),
+    ("Stripe",           "greenhouse", "stripe",       "global_tech"),
+    ("Shopify",          "greenhouse", "shopify",      "global_tech"),
+    ("Spotify",          "greenhouse", "spotify",      "global_tech"),
+    ("Klarna",           "lever",      "klarna",       "global_tech"),
+    ("Zalando",          "greenhouse", "zalando",      "global_tech"),
+    ("Delivery Hero",    "greenhouse", "deliveryhero", "global_tech"),
+    ("Datadog",          "greenhouse", "datadog",      "global_tech"),
+    ("Revolut",          "lever",      "revolut",      "global_tech"),
+    ("Intercom",         "lever",      "intercom",     "global_tech"),
+    ("HelloFresh",       "greenhouse", "hellofresh",   "global_tech"),
+    ("Monzo",            "greenhouse", "monzo",        "global_tech"),
+    ("Deliveroo",        "greenhouse", "deliveroo",    "global_tech"),
+    ("GoCardless",       "greenhouse", "gocardless",   "global_tech"),
+    ("Adyen",            "greenhouse", "adyen",        "global_tech"),
+    ("Wise",             "greenhouse", "wise",         "global_tech"),
+    ("GitLab",           "greenhouse", "gitlab",       "global_tech"),
+    ("Cloudflare",       "greenhouse", "cloudflare",   "global_tech"),
+    ("Databricks",       "greenhouse", "databricks",   "global_tech"),
+    ("Elastic",          "greenhouse", "elastic",      "global_tech"),
+    ("Grafana Labs",     "greenhouse", "grafanalabs",  "global_tech"),
+    ("HashiCorp",        "greenhouse", "hashicorp",    "global_tech"),
+    ("Weights & Biases", "greenhouse", "wandb",        "global_tech"),
+    ("Hugging Face",     "greenhouse", "huggingface",  "global_tech"),
+    ("Mistral AI",       "greenhouse", "mistralai",    "global_tech"),
+    ("Snyk",             "lever",      "snyk",         "global_tech"),
+    ("PostHog",          "lever",      "posthog",      "global_tech"),
+    ("Celonis",          "greenhouse", "celonis",      "global_tech"),
+    ("SAP SE",           "greenhouse", "sap",          "global_tech"),
+    ("Backbase",         "greenhouse", "backbase",     "global_tech"),
+    ("ING",              "greenhouse", "ing",          "global_tech"),
+    ("MongoDB",          "greenhouse", "mongodb",      "global_tech"),
+    ("GitHub",           "greenhouse", "github",       "global_tech"),
+    ("Unity",            "greenhouse", "unity",        "global_tech"),
+    ("Automattic",       "greenhouse", "automattic",   "global_tech"),
+    ("Canonical",        "greenhouse", "canonical",    "global_tech"),
+    ("Fastly",           "greenhouse", "fastly",       "global_tech"),
+    ("Zendesk",          "greenhouse", "zendesk",      "global_tech"),
+    ("PagerDuty",        "greenhouse", "pagerduty",    "global_tech"),
 
     # ================================================================
     # UNITED KINGDOM
@@ -157,19 +193,6 @@ CURATED = [
     ("Elvie",             "greenhouse", "elvie",           "europe_uk"),
     ("Dojo",              "greenhouse", "dojo",            "europe_uk"),
     ("Cazoo",             "greenhouse", "cazoo",           "europe_uk"),
-    ("Causal",            "lever",      "causal",          "europe_uk"),
-    ("Bloom & Wild",      "greenhouse", "bloomwild",       "europe_uk"),
-    ("Cuvva",             "lever",      "cuvva",           "europe_uk"),
-    ("MessageBird",       "greenhouse", "messagebird",     "europe_uk"),
-    ("Pendo",             "greenhouse", "pendoio",         "europe_uk"),
-    ("Amplience",         "greenhouse", "amplience",       "europe_uk"),
-    ("Wayflyer",          "greenhouse", "wayflyer",        "europe_uk"),
-    ("Pollen",            "greenhouse", "pollen",          "europe_uk"),
-    ("Samsara",           "greenhouse", "samsara",         "europe_uk"),
-    ("Babylon Health",    "greenhouse", "babylonhealth",   "europe_uk"),
-    ("Plaid",             "greenhouse", "plaid",           "europe_uk"),
-    ("Uncapped",          "lever",      "uncapped",        "europe_uk"),
-    ("Nested",            "lever",      "nested",          "europe_uk"),
 
     # ================================================================
     # GERMANY
@@ -202,13 +225,6 @@ CURATED = [
     ("Idealo",           "greenhouse", "idealointernet",  "europe_de"),
     ("Scout24",          "greenhouse", "scout24",         "europe_de"),
     ("Tourlane",         "lever",      "tourlane",        "europe_de"),
-    ("Infarm",           "greenhouse", "infarm",          "europe_de"),
-    ("Signavio",         "greenhouse", "signavio",        "europe_de"),
-    ("LIQID",            "lever",      "liqid",           "europe_de"),
-    ("Moonfare",         "lever",      "moonfare",        "europe_de"),
-    ("Thermondo",        "lever",      "thermondo",       "europe_de"),
-    ("Relayr",           "lever",      "relayr",          "europe_de"),
-    ("Studio71",         "lever",      "studio71",        "europe_de"),
 
     # ================================================================
     # NETHERLANDS
@@ -228,11 +244,6 @@ CURATED = [
     ("Paysend",             "greenhouse", "paysend",        "europe_nl"),
     ("Swapfiets",           "lever",      "swapfiets",      "europe_nl"),
     ("Lightyear",           "lever",      "lightyear",      "europe_nl"),
-    ("Fuse",                "greenhouse", "fuse",           "europe_nl"),
-    ("Seenit",              "lever",      "seenit",         "europe_nl"),
-    ("IMCD",                "greenhouse", "imcd",           "europe_nl"),
-    ("Vistaprint",          "greenhouse", "vistaprint",     "europe_nl"),
-    ("Takeaway.com",        "greenhouse", "takeawaycom",    "europe_nl"),
 
     # ================================================================
     # SWEDEN & NORDICS
@@ -245,121 +256,24 @@ CURATED = [
     ("Sinch",            "greenhouse", "sinch",           "europe_se"),
     ("Tink",             "greenhouse", "tink",            "europe_se"),
     ("DICE",             "greenhouse", "dice",            "europe_se"),
-    ("Bambora",          "lever",      "bambora",         "europe_se"),
-    ("Yepstr",           "greenhouse", "yepstr",          "europe_se"),
-    ("Zimpler",          "lever",      "zimpler",         "europe_se"),
-    # Finland / Denmark / Norway
     ("Wolt",             "greenhouse", "wolt",            "europe_nordics"),
     ("Aiven",            "greenhouse", "aiven",           "europe_nordics"),
     ("Supermetrics",     "greenhouse", "supermetrics",    "europe_nordics"),
     ("Smartly.io",       "greenhouse", "smartly",         "europe_nordics"),
     ("Visma",            "greenhouse", "visma",           "europe_nordics"),
-    ("Futurice",         "greenhouse", "futurice",        "europe_nordics"),
-    ("Reaktor",          "lever",      "reaktor",         "europe_nordics"),
 
     # ================================================================
-    # IRELAND (Dublin tech hub)
+    # TURKEY
     # ================================================================
-    ("HubSpot",    "greenhouse", "hubspot",    "europe_ie"),
-    ("Workday",    "greenhouse", "workday",    "europe_ie"),
-    ("Salesforce", "greenhouse", "salesforce", "europe_ie"),
-    ("Asana",      "greenhouse", "asana",      "europe_ie"),
-    ("Squarespace","greenhouse", "squarespace","europe_ie"),
-    ("Slack",      "greenhouse", "slack",      "europe_ie"),
-    ("Flipdish",   "greenhouse", "flipdish",   "europe_ie"),
-    ("Workhuman",  "greenhouse", "workhuman",  "europe_ie"),
-    ("Phorest",    "greenhouse", "phorest",    "europe_ie"),
-    ("Teamwork",   "lever",      "teamwork",   "europe_ie"),
-
-    # ================================================================
-    # FRANCE
-    # ================================================================
-    ("Ledger",            "lever",  "ledger",          "europe_fr"),
-    ("Doctolib",          "lever",  "doctolib",         "europe_fr"),
-    ("Contentsquare",     "lever",  "contentsquare",    "europe_fr"),
-    ("BlaBlaCar",         "lever",  "blablacar",        "europe_fr"),
-    ("Deezer",            "greenhouse", "deezer",        "europe_fr"),
-    ("Alan",              "lever",  "alan",             "europe_fr"),
-    ("Swile",             "lever",  "swile",            "europe_fr"),
-    ("Qonto",             "lever",  "qonto",            "europe_fr"),
-    ("Back Market",       "lever",  "backmarket",       "europe_fr"),
-    ("Luko",              "lever",  "luko",             "europe_fr"),
-    ("Dataiku",           "greenhouse", "dataiku",       "europe_fr"),
-    ("Exotec",            "greenhouse", "exotec",        "europe_fr"),
-    ("Inato",             "lever",  "inato",            "europe_fr"),
-    ("ManoMano",          "lever",  "manomano",         "europe_fr"),
-    ("Meero",             "lever",  "meero",            "europe_fr"),
-    ("Mirakl",            "lever",  "mirakl",           "europe_fr"),
-    ("Shift Technology",  "lever",  "shifttechnology",  "europe_fr"),
-    ("Spendesk",          "lever",  "spendesk",         "europe_fr"),
-
-    # ================================================================
-    # SPAIN
-    # ================================================================
-    ("Glovo",       "lever",      "glovoapp",  "europe_es"),
-    ("Cabify",      "greenhouse", "cabify",    "europe_es"),
-    ("Wallapop",    "greenhouse", "wallapop",  "europe_es"),
-    ("Typeform",    "greenhouse", "typeform",  "europe_es"),
-    ("Factorial",   "greenhouse", "factorial", "europe_es"),
-    ("Travelperk",  "greenhouse", "travelperk","europe_es"),
-    ("Lingokids",   "lever",      "lingokids", "europe_es"),
-    ("Packlink",    "lever",      "packlink",  "europe_es"),
-    ("Housfy",      "lever",      "housfy",    "europe_es"),
-    ("Signifyd",    "greenhouse", "signifyd",  "europe_es"),
-
-    # ================================================================
-    # BALTICS & EASTERN EUROPE
-    # ================================================================
-    # Estonia / Lithuania / Latvia
-    ("Bolt",                 "greenhouse", "bolt",           "europe_ee"),
-    ("Pipedrive",            "greenhouse", "pipedrive",      "europe_ee"),
-    ("Starship Technologies","lever",      "starship",       "europe_ee"),
-    ("Montonio",             "lever",      "montonio",       "europe_ee"),
-    ("Skeleton Technologies","lever",      "skeletontech",   "europe_ee"),
-    # Poland
-    ("Allegro",     "greenhouse", "allegro",    "europe_pl"),
-    ("Docplanner",  "greenhouse", "docplanner", "europe_pl"),
-    ("Brainly",     "greenhouse", "brainly",    "europe_pl"),
-    ("LiveChat",    "greenhouse", "livechat",   "europe_pl"),
-    ("Booksy",      "greenhouse", "booksy",     "europe_pl"),
-    ("Infermedica", "lever",      "infermedica","europe_pl"),
-    ("Nethone",     "lever",      "nethone",    "europe_pl"),
-    ("Netguru",     "greenhouse", "netguru",    "europe_pl"),
-    ("EPAM Systems","greenhouse", "epamsystems","europe_pl"),
-
-    # ================================================================
-    # SWITZERLAND & AUSTRIA
-    # ================================================================
-    ("Scandit",      "lever",      "scandit",      "europe_ch"),
-    ("Beekeeper",    "greenhouse", "beekeeper",    "europe_ch"),
-    ("Yokoy",        "lever",      "yokoy",         "europe_ch"),
-    ("Pricehubble",  "lever",      "pricehubble",  "europe_ch"),
-    ("Frontify",     "greenhouse", "frontify",     "europe_ch"),
-    ("GetSafe",      "lever",      "getsafe",      "europe_ch"),
-    ("Moneyfarm",    "greenhouse", "moneyfarm",    "europe_ch"),
-
-    # ================================================================
-    # PORTUGAL
-    # ================================================================
-    ("Sword Health", "greenhouse", "swordhealth",  "europe_pt"),
-    ("Feedzai",      "greenhouse", "feedzai",      "europe_pt"),
-    ("OutSystems",   "greenhouse", "outsystems",   "europe_pt"),
-    ("Unbabel",      "lever",      "unbabel",       "europe_pt"),
-    ("Farfetch",     "greenhouse", "farfetch",     "europe_pt"),
-    ("Rows",         "lever",      "rows",          "europe_pt"),
-    ("Jungle AI",    "lever",      "jungleai",     "europe_pt"),
-    ("Hostelworld",  "greenhouse", "hostelworld",  "europe_pt"),
-    ("Uniplaces",    "lever",      "uniplaces",    "europe_pt"),
-
-    # ================================================================
-    # ITALY
-    # ================================================================
-    ("Musixmatch",          "greenhouse", "musixmatch",          "europe_it"),
-    ("Prima Assicurazioni", "greenhouse", "primaassicurazioni",   "europe_it"),
-    ("Satispay",            "greenhouse", "satispay",            "europe_it"),
-    ("Scalapay",            "greenhouse", "scalapay",            "europe_it"),
-    ("Bending Spoons",      "greenhouse", "bendingspoons",       "europe_it"),
-    ("Soldo",               "greenhouse", "soldo",               "europe_it"),
+    ("Trendyol",         "greenhouse", "trendyol",        "turkey"),
+    ("Insider",          "greenhouse", "useinsider",      "turkey"),
+    ("Getir",            "greenhouse", "getir",           "turkey"),
+    ("Peak Games",       "greenhouse", "peakgames",       "turkey"),
+    ("Dream Games",      "greenhouse", "dreamgames",      "turkey"),
+    ("Papara",           "greenhouse", "papara",          "turkey"),
+    ("iyzico",           "greenhouse", "iyzico",          "turkey"),
+    ("Hepsiburada",      "greenhouse", "hepsiburada",     "turkey"),
+    ("Enuygun",          "greenhouse", "enuygun",         "turkey"),
 
     # ================================================================
     # CANADA
@@ -395,59 +309,47 @@ CURATED = [
     ("Jobber",          "greenhouse", "jobber",          "canada"),
     ("Klue",            "greenhouse", "klue",            "canada"),
     ("Procurify",       "greenhouse", "procurify",       "canada"),
-    ("Avidbots",        "lever",      "avidbots",        "canada"),
-    ("TouchBistro",     "greenhouse", "touchbistro",     "canada"),
-    ("Humi",            "greenhouse", "humi",            "canada"),
-    ("Carbon6",         "greenhouse", "carbon6",         "canada"),
-    ("HiMama",          "greenhouse", "himama",          "canada"),
-    ("AbCellera",       "greenhouse", "abcellera",       "canada"),
-    ("Clearco",         "greenhouse", "clearco",         "canada"),
-    ("BrainStation",    "greenhouse", "brainstation",    "canada"),
-    ("Fiix",            "greenhouse", "fiixsoftware",    "canada"),
-    ("Jane Software",   "greenhouse", "jane",            "canada"),
-    ("Coconut Software","greenhouse", "coconutsoftware", "canada"),
-    ("Tealbook",        "greenhouse", "tealbook",        "canada"),
-    ("GreenShield",     "greenhouse", "greenshield",     "canada"),
-    ("Mysa",            "lever",      "mysa",            "canada"),
-    ("BuildDirect",     "lever",      "builddirect",     "canada"),
-    ("Nicoya",          "lever",      "nicoya",          "canada"),
-    ("Intellicheck",    "lever",      "intellicheck",    "canada"),
-    ("Xanadu Quantum",  "lever",      "xanadu",          "canada"),
-    ("Hyper Hippo",     "greenhouse", "hyperhippo",      "canada"),
-    ("Pythian Group",   "lever",      "pythian",         "canada"),
+
+    # ================================================================
+    # AUSTRALIA & NEW ZEALAND
+    # ================================================================
+    ("Canva",           "greenhouse", "canva",           "australia"),
+    ("Atlassian",       "greenhouse", "atlassian",       "australia"),
+    ("AirTasker",       "greenhouse", "airtasker",       "australia"),
+    ("BigCommerce",     "greenhouse", "bigcommerce",     "australia"),
+    ("Brighte",         "lever",      "brighte",         "australia"),
+    ("ClipChamp",       "greenhouse", "clipchamp",       "australia"),
+    ("Deputy",          "greenhouse", "deputy",          "australia"),
+    ("Domain Group",    "greenhouse", "domaingroup",     "australia"),
+    ("Lendi",           "smartrecruiters", "LendiGroup1", "australia"),
+    ("SafetyCulture",   "lever",      "safetyculture",   "australia"),
+    ("Rokt",            "greenhouse", "rokt",            "australia"),
+    ("Optiver",         "greenhouse", "optiver",         "australia"),
+    ("Propeller",       "greenhouse", "propelleraero",   "australia"),
+    ("Harrison.Ai",     "lever",      "harrisonai",      "australia"),
+    ("HealthEngine",    "greenhouse", "healthengine",    "australia"),
+    ("Tyro",            "greenhouse", "tyro",            "australia"),
+    ("Expert360",       "greenhouse", "expert360",       "australia"),
+    ("Linktree",        "ashby",      "linktree",        "australia"),
+    ("SquareUp AU",     "greenhouse", "block",           "australia"),
+    ("Qwilr",           "lever",      "qwilr",           "australia"),
+    ("Finder",          "greenhouse", "finder",          "australia"),
+    ("REA Group",       "lever",      "reagroup",        "australia"),
+    ("Xero",            "greenhouse", "xero",            "new_zealand"),
+    ("Pushpay",         "greenhouse", "pushpay",         "new_zealand"),
+    ("Rocket Lab",      "lever",      "rocketlab",       "new_zealand"),
+    ("Trade Me",        "greenhouse", "trademe",         "new_zealand"),
 ]
 
 
 # ------------------------------------------------------------------ #
-#  Helpers
-# ------------------------------------------------------------------ #
-def classify_ats(url: str):
-    if not url:
-        return "unknown", None
-    for ats, pattern in ATS_PATTERNS.items():
-        m = re.search(pattern, url, re.IGNORECASE)
-        if m:
-            slug = m.group(1) if ats != "workday" else None
-            return ats, slug
-    return "custom", None
-
-
-def is_eu_canada(text: str) -> bool:
-    """Return True if the text contains a recognised EU/Canada country keyword."""
-    lower = text.lower()
-    return any(kw in lower for kw in EU_CANADA_COUNTRIES)
-
-
-# ------------------------------------------------------------------ #
-#  Parsers
+#  Parsers for Live GitHub Repos
 # ------------------------------------------------------------------ #
 def parse_shubheksha():
-    """Fetch and parse https://github.com/shubheksha/companies-sponsoring-visas.
-    Only keeps rows whose location column mentions an EU/Canada country.
-    """
     print("Fetching shubheksha repo...")
+    url = "https://raw.githubusercontent.com/shubheksha/companies-sponsoring-visas/master/README.md"
     try:
-        r = requests.get(REPOS["shubheksha"], timeout=30)
+        r = requests.get(url, timeout=15)
         r.raise_for_status()
     except Exception as e:
         print(f"  Error: {e}")
@@ -465,8 +367,7 @@ def parse_shubheksha():
         careers = parts[3].strip() if len(parts) > 3 else ""
         if not name or name.lower().startswith("name"):
             continue
-        # Filter: only EU/Canada locations
-        if not is_eu_canada(location):
+        if not is_allowed_region(location):
             continue
         m = re.search(r"\[.*?\]\((https?://[^)]+)\)", careers)
         if m:
@@ -481,94 +382,129 @@ def parse_shubheksha():
             "slug": slug,
             "source": "shubheksha",
         })
-    print(f"  Found {len(companies)} EU/Canada companies in shubheksha")
+    print(f"  Found {len(companies)} matching companies in shubheksha")
     return companies
 
 
-def parse_sponsorstats():
-    """Iterate all 100 pages of sponsorstats.com and return EU/Canada companies.
+def parse_geshan_au():
+    print("Fetching geshan AU repo...")
+    url = "https://raw.githubusercontent.com/geshan/au-companies-providing-work-visa-sponsorship/master/README.md"
+    try:
+        r = requests.get(url, timeout=15)
+        r.raise_for_status()
+    except Exception as e:
+        print(f"  Error: {e}")
+        return []
 
-    sponsorstats.com lists companies that filed for work visas. The page
-    structure uses JSON-LD or plain HTML cards. This parser handles both.
-
-    Note: The site was offline as of 2026-08. The function will gracefully
-    skip pages that time out or return errors, and log progress.
-    """
-    print(f"Scraping sponsorstats.com ({SPONSORSTATS_TOTAL_PAGES} pages) ...")
     companies = []
-    session = requests.Session()
-    session.headers.update({
-        "User-Agent": (
-            "Mozilla/5.0 (compatible; VisaJobBot/1.0; "
-            "+https://github.com/AlirezaNezami96/Visa-Sponsorship-Daily-Jobs)"
-        )
-    })
-
-    found_total = 0
-    consecutive_failures = 0
-    MAX_CONSECUTIVE_FAILURES = 3  # stop early if site is clearly down
-
-    for page in range(1, SPONSORSTATS_TOTAL_PAGES + 1):
-        url = SPONSORSTATS_BASE.format(page=page)
-        try:
-            resp = session.get(url, timeout=5)   # 5s — fail fast if site is down
-            consecutive_failures = 0             # reset on success
-            if resp.status_code == 404:
-                print(f"  Page {page}: 404 — stopping pagination")
-                break
-            if resp.status_code != 200:
-                print(f"  Page {page}: HTTP {resp.status_code} — skipping")
-                time.sleep(0.5)
-                continue
-        except Exception as e:
-            consecutive_failures += 1
-            if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
-                print(f"  sponsorstats unreachable after {consecutive_failures} "
-                      "consecutive failures — site may be down, skipping.")
-                break
-            print(f"  Page {page}: {e} — skipping")
-            time.sleep(1)
-            continue
-
-        html = resp.text
-
-        # Extract company cards via regex on the rendered HTML
-        # Pattern: company name in <h3> and country in a nearby element
-        card_pattern = re.compile(
-            r'<h3[^>]*>.*?<span[^>]*>(.*?)</span>.*?</h3>'
-            r'.*?(?:country|location)[^>]*>(.*?)<',
-            re.IGNORECASE | re.DOTALL,
-        )
-        found_on_page = 0
-        for m in card_pattern.finditer(html):
-            name_raw = re.sub(r"<[^>]+>", "", m.group(1)).strip()
-            country_raw = re.sub(r"<[^>]+>", "", m.group(2)).strip()
-            if not name_raw or not is_eu_canada(country_raw):
-                continue
-            # Try to find a careers link near this company
-            link_m = re.search(
-                r'href="(https?://(?:boards\.greenhouse\.io|jobs\.lever\.co|'
-                r'ashbyhq\.com|careers\.smartrecruiters\.com)[^"]+)"',
-                html[m.start():m.start() + 2000],
-            )
-            careers_url = link_m.group(1) if link_m else ""
-            ats, slug = classify_ats(careers_url)
+    for line in r.text.splitlines():
+        m = re.match(r"^\s*-\s*\[([^\]]+)\]\((https?://[^\)]+)\)", line)
+        if m:
+            name, url = m.group(1), m.group(2)
+            ats, slug = classify_ats(url)
             companies.append({
-                "name": name_raw,
-                "careers_url": careers_url,
+                "name": name,
+                "careers_url": url,
                 "ats": ats,
                 "slug": slug,
-                "source": "sponsorstats",
+                "source": "geshan_au",
             })
-            found_on_page += 1
+    print(f"  Found {len(companies)} companies in geshan_au")
+    return companies
 
-        found_total += found_on_page
-        if page % 10 == 0 or found_on_page > 0:
-            print(f"  Page {page}/{SPONSORSTATS_TOTAL_PAGES}: "
-                  f"+{found_on_page} EU/Canada companies (total so far: {found_total})")
-        time.sleep(0.4)   # polite crawl delay
 
-    print(f"  sponsorstats total EU/Canada: {len(companies)}")
+def parse_siaexplains():
+    print("Fetching SiaExplains repo countries...")
+    sia_countries = [
+        "Denmark.json", "austria.json", "belgium.json", "england.json", "finland.json",
+        "france.json", "germany.json", "ireland.json", "italy.json", "netherlands.json",
+        "new-zealand.json", "norway.json", "spain.json", "sweden.json", "turkey.json"
+    ]
+    sia_base = "https://raw.githubusercontent.com/SiaExplains/visa-sponsorship-companies/main/countries/"
+    companies = []
+    for c_file in sia_countries:
+        try:
+            r = requests.get(sia_base + c_file, timeout=10)
+            if r.status_code == 200:
+                for item in r.json():
+                    name = item.get("name")
+                    url = item.get("careers") or item.get("linkedin") or item.get("website") or ""
+                    loc = item.get("city", "") + " " + item.get("country", "")
+                    if name and is_allowed_region(loc):
+                        ats, slug = classify_ats(url)
+                        companies.append({
+                            "name": name,
+                            "careers_url": url,
+                            "ats": ats,
+                            "slug": slug,
+                            "source": "siaexplains",
+                        })
+        except Exception as e:
+            print(f"  Error fetching {c_file}: {e}")
+    print(f"  Found {len(companies)} companies in SiaExplains")
+    return companies
+
+
+def parse_komeilmehranfar():
+    print("Fetching komeilmehranfar repo (visa sponsors for Iranian candidates)...")
+    url = "https://raw.githubusercontent.com/komeilmehranfar/visa-sponsors-companies-for-iranians/main/data/companies.json"
+    try:
+        r = requests.get(url, timeout=15)
+        r.raise_for_status()
+        data = r.json().get("companies", {})
+    except Exception as e:
+        print(f"  Error: {e}")
+        return []
+
+    companies = []
+    for country, items in data.items():
+        if is_allowed_region(country):
+            for item in items:
+                name = item.get("name")
+                url = item.get("website") or item.get("linkedin") or ""
+                if name:
+                    ats, slug = classify_ats(url)
+                    companies.append({
+                        "name": name,
+                        "careers_url": url,
+                        "ats": ats,
+                        "slug": slug,
+                        "source": "komeilmehranfar",
+                    })
+    print(f"  Found {len(companies)} companies in komeilmehranfar")
+    return companies
+
+
+def parse_amol_can_eu():
+    print("Fetching amol-can EU repo...")
+    url = "https://raw.githubusercontent.com/amol-can/eu-visa-sponsoring-companies/main/README.md"
+    try:
+        r = requests.get(url, timeout=15)
+        r.raise_for_status()
+    except Exception as e:
+        print(f"  Error: {e}")
+        return []
+
+    companies = []
+    for line in r.text.splitlines():
+        if line.startswith("|") and not line.startswith("|---") and not "Careers page" in line:
+            parts = [p.strip() for p in line.strip("|").split("|")]
+            if len(parts) >= 5:
+                name = parts[0]
+                loc = parts[1]
+                url_cell = parts[4]
+                m = re.search(r"\[.*?\]\((https?://[^\)]+)\)", url_cell)
+                url = m.group(1) if m else url_cell
+                if name and name.lower() != "name" and is_allowed_region(loc):
+                    ats, slug = classify_ats(url)
+                    companies.append({
+                        "name": name,
+                        "careers_url": url,
+                        "ats": ats,
+                        "slug": slug,
+                        "source": "amol_can",
+                    })
+    print(f"  Found {len(companies)} companies in amol_can")
     return companies
 
 
@@ -582,27 +518,32 @@ def deduplicate(companies: list) -> list:
         "workday": 2, "custom": 1, "unknown": 0,
     }
     seen = {}
-    result = []
     for co in companies:
-        key = co["name"].lower().strip()
-        if key in seen:
-            existing = seen[key]
-            if priority.get(existing["ats"], 0) < priority.get(co["ats"], 0):
-                seen[key] = co
+        name_clean = co["name"].strip()
+        key = name_clean.lower()
+        if not key:
             continue
-        seen[key] = co
-        result.append(co)
-    return result
+        if key not in seen:
+            seen[key] = dict(co)
+            seen[key]["name"] = name_clean
+        else:
+            existing = seen[key]
+            if priority.get(existing.get("ats"), 0) < priority.get(co.get("ats"), 0):
+                seen[key] = dict(co)
+                seen[key]["name"] = name_clean
+            elif not existing.get("careers_url") and co.get("careers_url"):
+                existing["careers_url"] = co["careers_url"]
+    return list(seen.values())
 
 
 # ------------------------------------------------------------------ #
-#  Main
+#  Main Execution
 # ------------------------------------------------------------------ #
 def main():
     all_companies = []
 
-    # 1. Curated (highest priority — manually verified ATS slugs)
-    print("Adding curated EU/Canada companies...")
+    # 1. Curated List
+    print("Adding curated companies...")
     for name, ats, slug, source in CURATED:
         if ats == "greenhouse":
             url = f"https://boards.greenhouse.io/{slug}"
@@ -623,32 +564,36 @@ def main():
         })
     print(f"  Added {len(CURATED)} curated companies")
 
-    # 2. shubheksha — EU/Canada filtered
-    time.sleep(0.3)
+    # 2. Fetch live remote sources
+    time.sleep(0.2)
     all_companies.extend(parse_shubheksha())
+    time.sleep(0.2)
+    all_companies.extend(parse_geshan_au())
+    time.sleep(0.2)
+    all_companies.extend(parse_siaexplains())
+    time.sleep(0.2)
+    all_companies.extend(parse_komeilmehranfar())
+    time.sleep(0.2)
+    all_companies.extend(parse_amol_can_eu())
 
-    # 3. sponsorstats — iterate all 100 pages, EU/Canada filtered
-    time.sleep(0.3)
-    all_companies.extend(parse_sponsorstats())
-
-    # Deduplicate
+    # 3. Deduplicate
     all_companies = deduplicate(all_companies)
 
-    # 4. Split by ATS type
+    # 4. Split by scrapable API ATS vs Custom ATS
     API_ATS = {"greenhouse", "lever", "ashby", "smartrecruiters", "personio"}
-    scrapable = [c for c in all_companies if c["ats"] in API_ATS]
+    scrapable = [c for c in all_companies if c.get("ats") in API_ATS]
     custom = [
         c for c in all_companies
-        if c["ats"] not in API_ATS and c.get("careers_url")
+        if c.get("ats") not in API_ATS and c.get("careers_url")
     ]
     scrapable_names = {c["name"].lower() for c in scrapable}
     custom = [c for c in custom if c["name"].lower() not in scrapable_names]
 
-    # Stats
-    print(f"\n{'='*55}")
-    print(f"Total unique companies (EU/Canada): {len(all_companies)}")
+    print(f"\n{'='*60}")
+    print(f"Total unique companies (EU/CA/AU/NZ/TR): {len(all_companies)}")
     print(f"API-scrapable (Greenhouse/Lever/Ashby/etc): {len(scrapable)}")
-    print(f"Custom ATS (needs Playwright): {len(custom)}")
+    print(f"Custom ATS (needs Playwright / direct fetch): {len(custom)}")
+    
     ats_counts: dict[str, int] = {}
     for c in scrapable:
         ats_counts[c["ats"]] = ats_counts.get(c["ats"], 0) + 1
@@ -663,7 +608,7 @@ def main():
     }
     with open("companies.json", "w") as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
-    print(f"\nSaved companies.json  ✓")
+    print(f"\nSaved companies.json ✓")
 
 
 if __name__ == "__main__":
