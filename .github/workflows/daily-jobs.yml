@@ -6,7 +6,7 @@ name: Daily Job Scan
 
 on:
   schedule:
-    - cron: "0 8 * * *"
+    - cron: "30 4 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
