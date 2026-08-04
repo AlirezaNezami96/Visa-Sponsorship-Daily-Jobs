@@ -1,0 +1,90 @@
+# Daily Remote Job Scanner
+# Runs every day at 07:00 UTC — one hour BEFORE the visa-sponsorship scan (08:00 UTC)
+# Also supports manual trigger via workflow_dispatch
+
+name: Daily Remote Job Scan
+
+on:
+  schedule:
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (no email)"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+      rebuild:
+        description: "Rebuild remote_companies.json before scanning"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+permissions:
+  contents: write
+
+jobs:
+  scan-remote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.6.0
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libnss3 libatk-bridge2.0-0 libdrm2 libxkbcommon0 libgbm1 \
+            libasound2t64 libxshmfence1 libxrandr2 libxcursor1 libxi6 \
+            libxtst6 libxcomposite1 libxdamage1 libxfixes3
+        env:
+          DEBIAN_FRONTEND: noninteractive
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium --with-deps
+
+      - name: Rebuild remote_companies.json (if requested)
+        if: github.event.inputs.rebuild == 'true'
+        run: python build_remote_companies.py
+
+      - name: Run remote job scraper
+        env:
+          EMAIL_PROVIDER: ${{ secrets.EMAIL_PROVIDER || 'resend' }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM || 'onboarding@resend.dev' }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            python run_remote.py --dry-run
+          else
+            python run_remote.py
+          fi
+
+      - name: Commit seen_remote_jobs state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add seen_remote_jobs.json 2>/dev/null || true
+          git diff --cached --quiet || git commit -m "chore: update seen_remote_jobs state [skip ci]"
+          git push 2>/dev/null || echo "Push failed or no changes — this is fine for the first run"
