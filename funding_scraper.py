@@ -17,7 +17,7 @@ import logging
 import requests
 import feedparser
 from bs4 import BeautifulSoup
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from filter import KEYWORDS_INCLUDE
 
