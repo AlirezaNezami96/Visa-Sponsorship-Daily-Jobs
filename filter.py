@@ -6,18 +6,18 @@ import os
 import time
 
 # --- Configurable keywords ---
-# Edit these to match what you're looking for.
-# The scraper only alerts you for jobs whose title contains at least one keyword.
+# Only alert for Android, Flutter, and Kotlin Multiplatform (KMM) job titles.
 KEYWORDS_INCLUDE = [
-    "android", "mobile", "flutter", "react native",
-    "software engineer", "developer",
+    "android",
+    "flutter",
+    "kmm",
+    "kotlin multiplatform",
 ]
 
 # Titles containing these words are EXCLUDED even if they match a keyword above.
-# Prevents false positives like "Mobile Crisis Counselor".
+# Prevents non-IC or non-engineering roles like "Mobile Crisis Counselor" or management roles.
 KEYWORDS_EXCLUDE = [
-    "staff", "principal", "lead ", "director", "manager",
-    "vp ", "head ", "intern", "co-op",
+    "director", "manager", "vp ", "head ", "intern", "co-op",
 ]
 
 # Maximum age (in seconds) for entries in the seen store. Default: 30 days.
@@ -56,7 +56,7 @@ def matches(title: str) -> bool:
     """Check if a job title matches our keyword filters."""
     t = title.lower()
 
-    # Must contain at least one include keyword
+    # Must contain at least one include keyword (Android, Flutter, KMM)
     if not any(k in t for k in KEYWORDS_INCLUDE):
         return False
 
