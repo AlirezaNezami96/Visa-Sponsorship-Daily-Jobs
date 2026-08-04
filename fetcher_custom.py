@@ -6,6 +6,7 @@ import asyncio
 import re
 import json
 import logging
+import requests
 from typing import List, Dict, Optional
 
 logger = logging.getLogger(__name__)
@@ -40,7 +41,6 @@ def extract_jobs_from_html(html: str, base_url: str) -> List[Dict]:
         for match in matches:
             try:
                 data = json.loads(match)
-                # Navigate the JSON to find job listings
                 job_list = _find_jobs_in_json(data)
                 if job_list:
                     jobs.extend(job_list)
@@ -63,7 +63,6 @@ def extract_jobs_from_html(html: str, base_url: str) -> List[Dict]:
             else:
                 url = m[0]
                 title = ""
-            # Make absolute URL
             if url.startswith("/"):
                 from urllib.parse import urljoin
                 url = urljoin(base_url, url)
@@ -93,7 +92,6 @@ def _find_jobs_in_json(data, depth=0) -> Optional[List[Dict]]:
         return None
 
     if isinstance(data, list) and len(data) > 0:
-        # Check if this looks like a list of jobs
         if isinstance(data[0], dict):
             first = data[0]
             if any(k in first for k in ["title", "name", "text", "positionTitle"]):
@@ -127,33 +125,40 @@ def _find_jobs_in_json(data, depth=0) -> Optional[List[Dict]]:
 
 async def fetch_with_playwright(url: str) -> List[Dict]:
     """Use Playwright to render a page and extract jobs.
-    Falls back to HTML extraction first, then tries full rendering.
+    Tries fast HTTP request pre-check first, then falls back to fast Chromium rendering.
     """
+    # 1. Fast HTTP pre-check (0.5s - 2s) to avoid launching Playwright if static HTML has jobs
+    try:
+        r = requests.get(url, timeout=3, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+        if r.status_code == 200:
+            quick_jobs = extract_jobs_from_html(r.text, url)
+            if quick_jobs:
+                return quick_jobs
+    except Exception:
+        pass
+
+    # 2. Playwright rendering with optimized fast timeouts
     try:
         from playwright.async_api import async_playwright
     except ImportError:
-        logger.warning("Playwright not installed. Falling back to requests-only extraction.")
-        import requests
-        r = requests.get(url, timeout=20, headers={"User-Agent": "Mozilla/5.0"})
-        return extract_jobs_from_html(r.text, url)
+        logger.warning("Playwright not installed.")
+        return []
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(
             user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            viewport={"width": 1920, "height": 1080},
+            viewport={"width": 1280, "height": 800},
         )
         page = await context.new_page()
 
         jobs = []
         try:
-            # Navigate with a generous timeout
-            await page.goto(url, wait_until="networkidle", timeout=30000)
+            # Fast domcontentloaded navigation (8s timeout max)
+            await page.goto(url, wait_until="domcontentloaded", timeout=8000)
+            await page.wait_for_timeout(1000)
 
-            # Wait a bit for any JS rendering
-            await page.wait_for_timeout(3000)
-
-            # Try to find job listings via common selectors
+            # Job listing selectors
             job_selectors = [
                 "a[href*='/jobs/']",
                 "a[href*='/job/']",
@@ -171,7 +176,7 @@ async def fetch_with_playwright(url: str) -> List[Dict]:
                     found = await page.query_selector_all(selector)
                     if found:
                         elements.extend(found)
-                        break  # Use the first selector that matches
+                        break
                 except Exception:
                     continue
 
@@ -184,16 +189,13 @@ async def fetch_with_playwright(url: str) -> List[Dict]:
                     if not href or not text:
                         continue
 
-                    # Make absolute URL
                     if href.startswith("/"):
                         from urllib.parse import urljoin
                         href = urljoin(url, href)
 
-                    # Filter: URL should look like a job posting
                     if not any(x in href.lower() for x in ["/job", "/position", "/opening", "/careers"]):
                         continue
 
-                    # Skip navigation links
                     if any(x in href.lower() for x in ["/jobs$", "/careers$", "?page="]):
                         continue
 
@@ -208,14 +210,12 @@ async def fetch_with_playwright(url: str) -> List[Dict]:
                 except Exception:
                     continue
 
-            # If no elements found via selectors, try extracting from page content
             if not jobs:
                 html = await page.content()
                 jobs = extract_jobs_from_html(html, url)
 
         except Exception as e:
             logger.warning(f"Playwright error for {url}: {e}")
-            # Last resort: get the HTML and parse it
             try:
                 html = await page.content()
                 jobs = extract_jobs_from_html(html, url)
@@ -232,7 +232,6 @@ def fetch_custom_sync(url: str) -> List[Dict]:
     try:
         loop = asyncio.get_event_loop()
         if loop.is_running():
-            # We're inside an existing event loop (e.g. Jupyter)
             import nest_asyncio
             nest_asyncio.apply()
         return loop.run_until_complete(fetch_with_playwright(url))

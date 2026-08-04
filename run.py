@@ -28,7 +28,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 COMPANIES_FILE = "companies.json"
-REQUEST_DELAY = 0.5  # seconds between API calls (be polite)
+REQUEST_DELAY = 0.05  # seconds between calls
 
 
 def load_companies() -> list:

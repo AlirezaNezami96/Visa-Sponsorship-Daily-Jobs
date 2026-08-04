@@ -45,7 +45,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 REMOTE_COMPANIES_FILE = "remote_companies.json"
-REQUEST_DELAY = 0.5  # seconds between API calls
+REQUEST_DELAY = 0.05  # seconds between calls
 
 
 # ------------------------------------------------------------------ #
