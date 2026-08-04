@@ -1,2 +1,4 @@
 requests>=2.31,<3.0
 playwright>=1.40,<2.0
+feedparser>=6.0,<7.0
+beautifulsoup4>=4.12,<5.0

@@ -1,0 +1,67 @@
+# Daily Newly Fund-Raised Companies Scanner (Non-US, Non-India)
+# Runs every day at 05:30 UTC — exactly ONE HOUR AFTER the visa-sponsorship scan (04:30 UTC)
+# Also supports manual trigger via workflow_dispatch
+
+name: Daily Funding Scan
+
+on:
+  schedule:
+    - cron: "30 5 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (no email)"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+permissions:
+  contents: write
+
+jobs:
+  scan-funding:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.6.0
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run funding scraper
+        env:
+          EMAIL_PROVIDER: ${{ secrets.EMAIL_PROVIDER || 'resend' }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM || 'onboarding@resend.dev' }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            python run_funding.py --dry-run
+          else
+            python run_funding.py
+          fi
+
+      - name: Commit seen_funding state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add seen_funding.json 2>/dev/null || true
+          git diff --cached --quiet || git commit -m "chore: update seen_funding state [skip ci]"
+          git push 2>/dev/null || echo "Push failed or no changes — this is fine for the first run"
