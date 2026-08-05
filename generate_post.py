@@ -4,10 +4,11 @@ import json
 import html
 import requests
 from datetime import datetime, timezone
-from image_utils import generate_ai_image
+from image_utils import create_professional_cover_image
 
 STATE_DIR = "state"
 PENDING_FILE = os.path.join(STATE_DIR, "pending_post.json")
+COVER_FILE = os.path.join(STATE_DIR, "cover_image.jpg")
 
 def send_telegram_alert(bot_token: str, chat_id: str, text: str) -> None:
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
@@ -22,8 +23,8 @@ def send_telegram_alert(bot_token: str, chat_id: str, text: str) -> None:
     except Exception as e:
         print(f"[ERROR] Failed to send Telegram alert: {e}")
 
-def call_zai_api(api_key: str) -> tuple[str, str]:
-    """Generates (post_text, image_prompt) from Z.ai API."""
+def call_zai_api(api_key: str) -> tuple[str, str, str, str]:
+    """Generates (post_text, image_title, category, bg_prompt) from Z.ai API."""
     endpoints = [
         "https://api.z.ai/api/paas/v4/chat/completions",
         "https://open.bigmodel.cn/api/paas/v4/chat/completions"
@@ -36,28 +37,25 @@ TOPIC SCOPE
 Write about one specific, recent, concrete thing: a new AI feature Google or Apple shipped, an AI-powered SDK/API update for Android or iOS, an industry trend (on-device AI, AI-assisted development tools, AI in app stores), or a notable announcement. Pick ONE angle per post — don't try to cover everything.
 
 HARD RULES
-- No code. No code blocks, no function names, no syntax, no "here's how to implement it." This is a news/trends post, not a tutorial.
+- No code. No code blocks, no function names, no syntax.
 - No mention of image or video attachments — text only.
-- Never invent facts, statistics, or company statements. If you're not certain something is real and recent, write about the trend/theme in general terms instead of citing a specific fake event.
-- Maximum 2,200 characters (LinkedIn's hard cap is 3,000 — stay well under it).
-
-STRUCTURE
-1. Hook — first line must work standalone.
-2. Body — 3-6 short paragraphs or a scannable list, generous line breaks.
-3. Close with one question or opinion prompt to invite comments.
-4. End with 3-5 relevant, specific hashtags.
+- Never invent facts, statistics, or company statements.
+- Maximum 2,200 characters.
 
 OUTPUT FORMAT:
-Return your response in exact JSON format with two fields:
+Return your response in exact JSON format with four fields:
 {
   "post_text": "...",
-  "image_prompt": "A modern 3D digital art tech illustration describing the topic for an engaging cover image, clean minimal futuristic aesthetic, 8k"
+  "image_title": "SHORT BOLD HEADLINE (3 TO 6 WORDS)",
+  "category": "MOBILE AI NEWS",
+  "bg_prompt": "simple modern smartphone on clean desk"
 }"""
 
     user_prompt = (
         "Write a fresh, engaging, and high-impact LinkedIn post about a recent AI feature, capability, SDK update, "
         "or industry trend in Android or iOS mobile development following all instructions in your system prompt. "
-        "Also craft a matching image_prompt for the AI cover image. Return ONLY valid JSON with keys 'post_text' and 'image_prompt'."
+        "Also craft an eye-catching 3-6 word image_title for the cover card, a short category name, and a simple minimal bg_prompt. "
+        "Return ONLY valid JSON."
     )
 
     last_error = None
@@ -88,14 +86,15 @@ Return your response in exact JSON format with two fields:
                             raw_content = raw_content.split("```json", 1)[1].rsplit("```", 1)[0].strip()
                         elif raw_content.startswith("```"):
                             raw_content = raw_content.split("```", 1)[1].rsplit("```", 1)[0].strip()
-                        
+
                         parsed = json.loads(raw_content)
                         p_text = parsed.get("post_text", "").strip()
-                        img_prompt = parsed.get("image_prompt", "").strip()
+                        img_title = parsed.get("image_title", "MOBILE AI UPDATE").strip()
+                        cat = parsed.get("category", "MOBILE AI TRENDS").strip()
+                        bg_p = parsed.get("bg_prompt", "modern mobile technology").strip()
+
                         if p_text:
-                            if not img_prompt:
-                                img_prompt = "Modern 3D digital art vector illustration of artificial intelligence in mobile apps, futuristic clean dark aesthetic, 8k"
-                            return p_text, img_prompt
+                            return p_text, img_title, cat, bg_p
                 else:
                     last_error = f"HTTP {resp.status_code}: {resp.text}"
                     print(f"[WARN] Model {model} on {endpoint} returned {last_error}")
@@ -105,18 +104,18 @@ Return your response in exact JSON format with two fields:
 
     raise RuntimeError(f"All Z.ai API call attempts failed. Last error: {last_error}")
 
-def send_telegram_draft(bot_token: str, chat_id: str, post_text: str, image_url: str) -> tuple[int, int]:
+def send_telegram_draft(bot_token: str, chat_id: str, post_text: str, cover_bytes: bytes) -> tuple[int, int]:
     # 1. Send Photo preview
     photo_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
-    photo_payload = {
-        "chat_id": chat_id,
-        "photo": image_url,
-        "caption": "🖼️ <b>AI Generated Cover Image Preview</b>",
-        "parse_mode": "HTML"
-    }
     photo_msg_id = None
     try:
-        p_res = requests.post(photo_url, json=photo_payload, timeout=25)
+        files = {"photo": ("cover.jpg", cover_bytes, "image/jpeg")}
+        data = {
+            "chat_id": chat_id,
+            "caption": "🖼️ <b>AI Generated Cover Image (Headline Overlay)</b>",
+            "parse_mode": "HTML"
+        }
+        p_res = requests.post(photo_url, data=data, files=files, timeout=25)
         if p_res.status_code == 200:
             photo_msg_id = p_res.json().get("result", {}).get("message_id")
     except Exception as e:
@@ -181,8 +180,8 @@ def main():
         sys.exit(0)
 
     try:
-        print("[INFO] Generating post text and image prompt via Z.ai...")
-        post_text, image_prompt = call_zai_api(zai_api_key)
+        print("[INFO] Generating post text and cover headlines via Z.ai...")
+        post_text, image_title, category, bg_prompt = call_zai_api(zai_api_key)
 
         if not post_text:
             raise ValueError("LLM returned empty post content.")
@@ -191,20 +190,25 @@ def main():
             print(f"[WARN] Post text length ({len(post_text)}) exceeds 3000 chars limit. Truncating...")
             post_text = post_text[:2990] + "..."
 
-        print(f"[INFO] Generating AI image for prompt: '{image_prompt}'...")
-        image_url, _ = generate_ai_image(image_prompt, zai_api_key)
+        print(f"[INFO] Rendering professional cover image title='{image_title}' category='{category}'...")
+        cover_bytes = create_professional_cover_image(image_title, category, bg_prompt)
+
+        with open(COVER_FILE, "wb") as f:
+            f.write(cover_bytes)
 
         now_iso = datetime.now(timezone.utc).isoformat()
         pending_data = {
             "text": post_text,
-            "image_url": image_url,
-            "image_prompt": image_prompt,
+            "image_title": image_title,
+            "category": category,
+            "bg_prompt": bg_prompt,
+            "cover_file": COVER_FILE,
             "generated_at": now_iso
         }
         with open(PENDING_FILE, "w", encoding="utf-8") as f:
             json.dump(pending_data, f, indent=2, ensure_ascii=False)
 
-        photo_msg_id, text_msg_id = send_telegram_draft(bot_token, chat_id, post_text, image_url)
+        photo_msg_id, text_msg_id = send_telegram_draft(bot_token, chat_id, post_text, cover_bytes)
         pending_data["photo_message_id"] = photo_msg_id
         pending_data["message_id"] = text_msg_id
 
