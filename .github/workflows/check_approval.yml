@@ -1,12 +1,13 @@
 # LinkedIn Content Approval & Publishing Workflow
-# Scheduled every 15 minutes during the daily window (15:00 - 23:59 UTC)
+# Scheduled every 15 minutes during the daily window (15:00 - 20:30 UTC)
 # Also supports manual trigger via workflow_dispatch
 
 name: Check LinkedIn Approval & Publish
 
 on:
   schedule:
-    - cron: "*/15 15-23 * * *"
+    - cron: "*/15 15-19 * * *"
+    - cron: "0,15,30 20 * * *"
   workflow_dispatch:
 
 concurrency:
