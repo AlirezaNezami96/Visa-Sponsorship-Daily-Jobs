@@ -19,81 +19,89 @@ def ensure_font_downloaded() -> str:
             print(f"[WARN] Could not download {FONT_FILE}: {e}")
     return FONT_FILE if os.path.exists(FONT_FILE) else ""
 
-def fetch_background_image(bg_prompt: str) -> Image.Image:
+def fetch_background_image(post_topic: str) -> Image.Image:
     width, height = 1200, 630
-    if bg_prompt:
-        clean_prompt = f"Simple minimal professional photography of {bg_prompt}, soft natural lighting, neutral colors, clean background, 8k"
-        encoded = urllib.parse.quote(clean_prompt)
-        poll_url = f"https://image.pollinations.ai/prompt/{encoded}?width=1200&height=630&model=flux&nologo=true"
-        try:
-            print(f"[INFO] Fetching minimal background image from Pollinations...")
-            res = requests.get(poll_url, timeout=25)
-            if res.status_code == 200 and len(res.content) > 2000:
-                img = Image.open(io.BytesIO(res.content)).convert("RGBA")
-                return img.resize((width, height), Image.Resampling.LANCZOS)
-        except Exception as e:
-            print(f"[WARN] Failed to fetch AI background image: {e}")
+    prompt = (
+        "Create a modern professional LinkedIn post illustration for a software engineering and technology article. "
+        "Clean minimal premium style, visually representing innovation, software development, AI, mobile apps, or cloud technology. "
+        "Style: futuristic but professional, suitable for a senior developer LinkedIn profile. "
+        "Dark background with elegant blue and purple gradients, subtle glowing elements, abstract UI interfaces, code elements, digital networks. "
+        "Avoid cartoon characters, mascots, exaggerated 3D illustrations, and overly busy designs. "
+        "Looks like it was created by a technology company for a LinkedIn announcement. 16:9 aspect ratio, high quality. "
+        f"Post topic: {post_topic}"
+    )
+    encoded = urllib.parse.quote(prompt)
+    poll_url = f"https://image.pollinations.ai/prompt/{encoded}?width=1200&height=630&model=flux&nologo=true"
+    try:
+        print(f"[INFO] Fetching background illustration from Pollinations (FLUX)...")
+        res = requests.get(poll_url, timeout=30)
+        if res.status_code == 200 and len(res.content) > 2000:
+            img = Image.open(io.BytesIO(res.content)).convert("RGBA")
+            return img.resize((width, height), Image.Resampling.LANCZOS)
+    except Exception as e:
+        print(f"[WARN] Failed to fetch AI background image: {e}")
 
-    # Fallback to sleek slate-navy gradient
+    # Fallback to elegant dark blue & purple gradient background
     base = Image.new("RGBA", (width, height), (15, 23, 42, 255))
     draw_bg = ImageDraw.Draw(base)
     for y in range(height):
-        r = int(15 + (y / height) * 20)
-        g = int(23 + (y / height) * 25)
-        b = int(42 + (y / height) * 45)
+        r = int(15 + (y / height) * 30)
+        g = int(20 + (y / height) * 20)
+        b = int(50 + (y / height) * 60)
         draw_bg.line([(0, y), (width, y)], fill=(r, g, b, 255))
     return base
 
 def create_professional_cover_image(
     title: str,
-    category: str = "MOBILE AI NEWS",
-    bg_prompt: str = ""
+    category: str = "SOFTWARE ENGINEERING",
+    post_topic: str = ""
 ) -> bytes:
-    """Creates a professional 1200x630 cover image with a simple background and bold headline text.
+    """Creates a professional 1200x630 LinkedIn cover illustration with centered headline text (2-5 words max).
     Returns JPEG bytes.
     """
     width, height = 1200, 630
-    base_img = fetch_background_image(bg_prompt)
+    base_img = fetch_background_image(post_topic or title)
 
     overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
 
-    # Dark semi-transparent card overlay
-    card_margin_x = 70
-    card_margin_y = 110
-    card_w = width - (card_margin_x * 2)
-    card_h = height - (card_margin_y * 2)
+    # Centered dark semi-transparent card overlay with indigo border
+    card_w = 920
+    card_h = 240
+    card_x = (width - card_w) // 2
+    card_y = (height - card_h) // 2
 
     draw.rounded_rectangle(
-        [(card_margin_x, card_margin_y), (card_margin_x + card_w, card_margin_y + card_h)],
-        radius=20,
-        fill=(10, 15, 30, 215),
-        outline=(59, 130, 246, 255),
-        width=3
+        [(card_x, card_y), (card_x + card_w, card_y + card_h)],
+        radius=18,
+        fill=(11, 19, 43, 220),
+        outline=(99, 102, 241, 255),
+        width=2
     )
 
-    # Font setup
     font_path = ensure_font_downloaded()
     if font_path and os.path.exists(font_path):
-        font_main = ImageFont.truetype(font_path, 44)
-        font_sub = ImageFont.truetype(font_path, 22)
+        font_main = ImageFont.truetype(font_path, 48)
+        font_sub = ImageFont.truetype(font_path, 20)
     else:
         font_main = ImageFont.load_default()
         font_sub = ImageFont.load_default()
 
-    # Category tag
-    category_text = category.strip().upper() if category else "MOBILE AI NEWS"
-    draw.text((card_margin_x + 40, card_margin_y + 35), category_text, fill=(96, 165, 250, 255), font=font_sub)
+    # Centered category badge
+    cat_text = category.strip().upper() if category else "SOFTWARE ENGINEERING"
+    cat_bbox = font_sub.getbbox(cat_text)
+    cat_w = cat_bbox[2] - cat_bbox[0]
+    draw.text(((width - cat_w) // 2, card_y + 30), cat_text, fill=(147, 197, 253, 255), font=font_sub)
 
-    # Multi-line title wrap
+    # Centered multi-line bold title (2-5 words max)
     clean_title = title.strip().upper()
-    words = clean_title.split()
+    words = clean_title.split()[:6]
     lines = []
     curr = ""
     for w in words:
         test = f"{curr} {w}".strip()
         bbox = font_main.getbbox(test)
-        if (bbox[2] - bbox[0]) > (card_w - 80):
+        if (bbox[2] - bbox[0]) > (card_w - 60):
             lines.append(curr)
             curr = w
         else:
@@ -101,10 +109,14 @@ def create_professional_cover_image(
     if curr:
         lines.append(curr)
 
-    line_y = card_margin_y + 80
-    for line in lines[:3]:
-        draw.text((card_margin_x + 40, line_y), line, fill=(255, 255, 255, 255), font=font_main)
-        line_y += 58
+    total_title_h = len(lines) * 56
+    start_y = card_y + 80 + ((card_h - 110 - total_title_h) // 2)
+
+    for line in lines[:2]:
+        bbox = font_main.getbbox(line)
+        line_w = bbox[2] - bbox[0]
+        draw.text(((width - line_w) // 2, start_y), line, fill=(255, 255, 255, 255), font=font_main)
+        start_y += 56
 
     final = Image.alpha_composite(base_img, overlay).convert("RGB")
     out = io.BytesIO()

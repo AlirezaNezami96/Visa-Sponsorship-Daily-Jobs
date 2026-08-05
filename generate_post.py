@@ -46,15 +46,15 @@ OUTPUT FORMAT:
 Return your response in exact JSON format with four fields:
 {
   "post_text": "...",
-  "image_title": "SHORT BOLD HEADLINE (3 TO 6 WORDS)",
-  "category": "MOBILE AI NEWS",
-  "bg_prompt": "simple modern smartphone on clean desk"
+  "image_title": "SHORT BOLD TITLE (2-5 WORDS MAXIMUM)",
+  "category": "SOFTWARE ENGINEERING",
+  "bg_prompt": "Main post topic sentence describing the core concept"
 }"""
 
     user_prompt = (
         "Write a fresh, engaging, and high-impact LinkedIn post about a recent AI feature, capability, SDK update, "
         "or industry trend in Android or iOS mobile development following all instructions in your system prompt. "
-        "Also craft an eye-catching 3-6 word image_title for the cover card, a short category name, and a simple minimal bg_prompt. "
+        "Also craft a short bold image_title (2 to 5 words MAXIMUM), a category name, and a one-sentence bg_prompt describing the post topic concept. "
         "Return ONLY valid JSON."
     )
 
