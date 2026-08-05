@@ -29,16 +29,24 @@ def call_zai_api(api_key: str) -> str:
     models = ["glm-4-flash", "glm-4.7-flash", "glm-4"]
 
     system_prompt = (
-        "You are an expert mobile developer and technical influencer specializing in Android (Kotlin, Jetpack Compose), "
-        "Flutter, and AI integrations in mobile apps. Craft highly engaging, insightful, and viral LinkedIn posts "
-        "that deliver real engineering value. Use strong hooks, bullet points, line breaks, practical takeaways, and "
-        "relevant hashtags. Keep the total post length under 2800 characters."
+        "You are a Staff Mobile AI Systems Architect and Principal Android Engineer. You specialize in cutting-edge on-device AI, "
+        "Small Language Models (SLMs), Gemini Nano / AICore, LiteRT (TFLite), ExecuTorch, local vector databases, "
+        "and low-latency streaming mobile architectures (Kotlin Flows, Jetpack Compose, C++ NPU bindings). "
+        "Your audience consists of Senior Engineers, Tech Leads, and Mobile Architects. "
+        "Craft deep, highly technical, and actionable LinkedIn posts that cover advanced architecture, thermal/memory budget management, "
+        "on-device RAG, agentic mobile workflows, and hardware acceleration (NPU/GPU). "
+        "Avoid generic or beginner topics (e.g. basic Compose tutorials or REST APIs). "
+        "Use an engaging, authoritative voice with a strong hook, technical breakdown, practical code/architecture snippets or flow diagrams, "
+        "and impactful engineering conclusions. Keep the total character count strictly under 2800 characters."
     )
     user_prompt = (
-        "Write a fresh, compelling, and viral LinkedIn post about a modern best practice, architectural pattern, "
-        "performance tip, or AI application in Android or Flutter development. "
-        "Output ONLY the final raw LinkedIn post content ready for publication. Do NOT include markdown code block syntax "
-        "(```) or conversational preambles/outros."
+        "Write a deep, advanced, and highly professional LinkedIn post focusing on one of the following cutting-edge areas:\n"
+        "1. On-device SLM execution (Gemini Nano AICore, LiteRT, ExecuTorch, MediaPipe LLM Inference) & NPU optimization on Android.\n"
+        "2. Building zero-latency, local mobile RAG architectures using local vector stores (e.g., ObjectBox Vector DB) and edge embeddings on Android/Flutter.\n"
+        "3. Local Agentic Mobile Workflows: Connecting on-device LLMs to native Android System APIs, Function Calling, and IPC safely.\n"
+        "4. Handling streaming LLM response tokens efficiently in Kotlin Flow / Jetpack Compose with zero UI thread jank or recomposition lag.\n"
+        "5. Quantization (4-bit INT4/AWQ), KV-cache allocation, and thermal/memory management for local LLMs running on mobile hardware.\n\n"
+        "Output ONLY the final raw LinkedIn post content ready for publication. Do NOT wrap in markdown code fences (```) or include chat meta-text."
     )
 
     last_error = None
