@@ -10,6 +10,33 @@ STATE_DIR = "state"
 PENDING_FILE = os.path.join(STATE_DIR, "pending_post.json")
 LAST_UPDATE_FILE = os.path.join(STATE_DIR, "last_update_id.txt")
 
+def trigger_generate_workflow() -> bool:
+    """Triggers the 'Generate LinkedIn Post' workflow via GitHub Actions API."""
+    repo = os.environ.get("GITHUB_REPOSITORY")
+    token = os.environ.get("GH_PAT") or os.environ.get("GITHUB_TOKEN")
+    if not repo or not token:
+        print("[WARN] GITHUB_REPOSITORY or GITHUB_TOKEN not set. Cannot auto-trigger generate.yml workflow.")
+        return False
+
+    url = f"https://api.github.com/repos/{repo}/actions/workflows/generate.yml/dispatches"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28"
+    }
+    payload = {"ref": "main"}
+    try:
+        res = requests.post(url, headers=headers, json=payload, timeout=15)
+        if res.status_code in (204, 201, 200):
+            print(f"[INFO] Successfully triggered 'Generate LinkedIn Post' workflow on repo {repo}.")
+            return True
+        else:
+            print(f"[WARN] Failed to trigger generate.yml (HTTP {res.status_code}): {res.text}")
+            return False
+    except Exception as e:
+        print(f"[WARN] Exception while triggering generate.yml: {e}")
+        return False
+
 def answer_callback_query(bot_token: str, callback_query_id: str, text: str = "") -> None:
     url = f"https://api.telegram.org/bot{bot_token}/answerCallbackQuery"
     payload = {
@@ -83,7 +110,6 @@ def edit_telegram_photo(bot_token: str, chat_id: str, photo_message_id: int, ima
         print(f"[WARN] Failed to edit Telegram photo message_id={photo_message_id}: {e}")
 
 def upload_image_to_linkedin(access_token: str, person_urn: str, image_bytes: bytes) -> str:
-    """Uploads binary image to LinkedIn and returns image asset URN."""
     init_url = "https://api.linkedin.com/rest/images?action=initializeUpload"
     linkedin_version = os.environ.get("LINKEDIN_API_VERSION", "202501")
     headers = {
@@ -111,7 +137,6 @@ def upload_image_to_linkedin(access_token: str, person_urn: str, image_bytes: by
             print(f"[WARN] Missing uploadUrl or image URN in response: {init_res.json()}")
             return ""
 
-        # Binary upload
         put_headers = {
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "image/jpeg"
@@ -127,9 +152,8 @@ def upload_image_to_linkedin(access_token: str, person_urn: str, image_bytes: by
         print(f"[WARN] Exception during LinkedIn image upload: {e}")
         return ""
 
-def publish_to_linkedin(access_token: str, person_urn: str, text: str, image_url: str = None, zai_api_key: str = None) -> tuple[bool, int, str, str]:
+def publish_to_linkedin(access_token: str, person_urn: str, text: str, image_url: str = None) -> tuple[bool, int, str, str]:
     url = "https://api.linkedin.com/rest/posts"
-    # Use fixed valid version format YYYYMM (e.g. 202501)
     linkedin_version = os.environ.get("LINKEDIN_API_VERSION", "202501")
 
     if not person_urn.startswith("urn:li:person:"):
@@ -153,7 +177,6 @@ def publish_to_linkedin(access_token: str, person_urn: str, text: str, image_url
         "isReshareDisabledByAuthor": False
     }
 
-    # Upload image if available
     if image_url:
         print(f"[INFO] Attempting to attach image from {image_url}...")
         try:
@@ -168,7 +191,7 @@ def publish_to_linkedin(access_token: str, person_urn: str, text: str, image_url
                         }
                     }
         except Exception as exc:
-            print(f"[WARN] Could not fetch image for LinkedIn upload, falling back to text-only: {exc}")
+            print(f"[WARN] Could not fetch image for LinkedIn upload: {exc}")
 
     try:
         resp = requests.post(url, headers=headers, json=body, timeout=30)
@@ -181,12 +204,6 @@ def publish_to_linkedin(access_token: str, person_urn: str, text: str, image_url
             return False, status_code, "", res_text
     except Exception as err:
         return False, 0, "", str(err)
-
-def regenerate_text_content(zai_api_key: str) -> str:
-    """Generates new post text using Z.ai API."""
-    from generate_post import call_zai_api
-    new_text, _ = call_zai_api(zai_api_key)
-    return new_text
 
 def main():
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -281,7 +298,7 @@ def main():
 
         post_text = pending_data.get("text", "")
         image_url = pending_data.get("image_url")
-        image_prompt = pending_data.get("image_prompt", "Modern mobile AI tech vector artwork 8k")
+        image_prompt = pending_data.get("image_prompt", "Mobile AI development artwork 8k")
         photo_msg_id = pending_data.get("photo_message_id")
 
         # 1. Accept Both
@@ -290,7 +307,7 @@ def main():
                 answer_callback_query(bot_token, callback_id, "Publishing to LinkedIn...")
             print("[INFO] Approve All received. Publishing text and image to LinkedIn...")
             success, status_code, post_urn, res_text = publish_to_linkedin(
-                linkedin_access_token, linkedin_person_urn, post_text, image_url, zai_api_key
+                linkedin_access_token, linkedin_person_urn, post_text, image_url
             )
 
             if success:
@@ -302,7 +319,7 @@ def main():
                 if msg_id:
                     edit_telegram_message(
                         bot_token, chat_id, msg_id,
-                        f"✅ <b>Posted to LinkedIn (Text + AI Cover Image)</b>\n\n{html.escape(post_text)}"
+                        f"✅ <b>Posted to LinkedIn</b>\n\n{html.escape(post_text)}"
                     )
 
                 post_url = f"https://www.linkedin.com/feed/update/{post_urn}/" if post_urn else ""
@@ -312,25 +329,32 @@ def main():
                 send_telegram_message(bot_token, chat_id, followup_text)
             else:
                 print(f"[ERROR] LinkedIn publication failed with status {status_code}: {res_text}")
-                if status_code == 401:
-                    alert_text = (
-                        "🚨 <b>LinkedIn Posting Failed (401 Unauthorized)</b>\n\n"
-                        "Your <code>LINKEDIN_ACCESS_TOKEN</code> has expired or is invalid. "
-                        "Tokens expire every 60 days. Please re-authenticate and update repository secrets.\n\n"
-                        f"<b>Response:</b> <code>{html.escape(res_text)}</code>"
+                # Requirement 1: Discard draft on failure & trigger new post generation!
+                if os.path.exists(PENDING_FILE):
+                    os.remove(PENDING_FILE)
+                state_modified = True
+
+                if msg_id:
+                    edit_telegram_message(
+                        bot_token, chat_id, msg_id,
+                        f"⚠️ <b>LinkedIn Publication Failed (HTTP {status_code})</b>\n\nDraft discarded. Re-triggering new post generation..."
                     )
-                else:
-                    alert_text = (
-                        f"⚠️ <b>LinkedIn Posting Failed (HTTP {status_code})</b>\n\n"
-                        f"<b>Response:</b> <code>{html.escape(res_text)}</code>"
-                    )
+
+                alert_text = (
+                    f"⚠️ <b>LinkedIn Posting Failed (HTTP {status_code})</b>\n\n"
+                    f"<b>Response:</b> <code>{html.escape(res_text)}</code>\n\n"
+                    f"<i>The failed draft has been discarded and a new post generation workflow has been triggered automatically.</i>"
+                )
                 send_telegram_message(bot_token, chat_id, alert_text)
 
-        # 2. Reject Both
+                # Trigger new post generation workflow automatically
+                trigger_generate_workflow()
+
+        # 2. Reject Both (or Rejection)
         elif action in ("reject_all", "reject"):
             if callback_id:
-                answer_callback_query(bot_token, callback_id, "Discarded draft.")
-            print("[INFO] Reject All received. Discarding draft...")
+                answer_callback_query(bot_token, callback_id, "Draft rejected. Generating new draft...")
+            print("[INFO] Reject received. Discarding draft and triggering new generation...")
             if os.path.exists(PENDING_FILE):
                 os.remove(PENDING_FILE)
             state_modified = True
@@ -342,8 +366,11 @@ def main():
                 )
             send_telegram_message(
                 bot_token, chat_id,
-                "🗑️ <b>Draft Rejected & Discarded.</b> A new post will be generated on the next schedule."
+                "🗑️ <b>Draft Rejected & Discarded.</b> Generating a brand new post draft now..."
             )
+
+            # Trigger Generate LinkedIn Post workflow automatically!
+            trigger_generate_workflow()
 
         # 3. Accept Text & Regenerate Image
         elif action == "regen_image":
@@ -360,7 +387,7 @@ def main():
             if photo_msg_id:
                 edit_telegram_photo(bot_token, chat_id, photo_msg_id, new_img_url)
 
-            send_telegram_message(bot_token, chat_id, "🎨 <b>New AI Cover Image generated!</b> Check the image preview above.")
+            send_telegram_message(bot_token, chat_id, "🎨 <b>New AI Cover Image generated!</b> Check the updated photo preview above.")
 
         # 4. Accept Image & Regenerate Text
         elif action == "regen_text":
@@ -368,9 +395,12 @@ def main():
                 answer_callback_query(bot_token, callback_id, "Regenerating post text...")
             print("[INFO] Regenerating post text via Z.ai...")
             try:
-                new_text = regenerate_text_content(zai_api_key)
+                from generate_post import call_zai_api
+                new_text, new_prompt = call_zai_api(zai_api_key)
                 if new_text:
                     pending_data["text"] = new_text
+                    if new_prompt:
+                        pending_data["image_prompt"] = new_prompt
                     with open(PENDING_FILE, "w", encoding="utf-8") as f:
                         json.dump(pending_data, f, indent=2, ensure_ascii=False)
                     state_modified = True
