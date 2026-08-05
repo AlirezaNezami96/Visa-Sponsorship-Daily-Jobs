@@ -1,5 +1,5 @@
 # Daily Visa Job Scanner
-# Runs every day at 08:00 UTC (adjust cron to your timezone)
+# Scheduled for 04:30 UTC (08:00 AM Iran Time)
 # Also supports manual trigger via workflow_dispatch
 
 name: Daily Job Scan

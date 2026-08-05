@@ -1,5 +1,5 @@
 # Daily Remote Job Scanner
-# Runs every day at 07:00 UTC — one hour BEFORE the visa-sponsorship scan (08:00 UTC)
+# Scheduled for 03:30 UTC (07:00 AM Iran Time)
 # Also supports manual trigger via workflow_dispatch
 
 name: Daily Remote Job Scan

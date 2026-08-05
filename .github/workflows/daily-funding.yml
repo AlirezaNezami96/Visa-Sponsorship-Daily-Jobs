@@ -1,5 +1,5 @@
 # Daily Newly Fund-Raised Companies Scanner (Non-US, Non-India)
-# Runs every day at 05:30 UTC — exactly ONE HOUR AFTER the visa-sponsorship scan (04:30 UTC)
+# Scheduled for 05:30 UTC (09:00 AM Iran Time)
 # Also supports manual trigger via workflow_dispatch
 
 name: Daily Funding Scan
