@@ -1,0 +1,53 @@
+# Daily LinkedIn Post Generator Workflow
+# Runs daily at 15:30 UTC
+# Generates draft via Z.ai LLM and sends Telegram approval request
+
+name: Generate LinkedIn Post
+
+on:
+  schedule:
+    - cron: "30 15 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: content-pipeline
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.6.0
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Generate post & request Telegram approval
+        env:
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python generate_post.py
+
+      - name: Commit state changes
+        run: |
+          git config user.name "content-bot"
+          git config user.email "content-bot@users.noreply.github.com"
+          git add state/pending_post.json 2>/dev/null || true
+          git diff --cached --quiet || (git commit -m "chore: add pending linkedin post draft [skip ci]" && git push)

@@ -1,0 +1,54 @@
+# LinkedIn Content Approval & Publishing Workflow
+# Runs every 15 minutes to poll Telegram for approval/rejection decisions
+
+name: Check LinkedIn Approval & Publish
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: content-pipeline
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  check-approval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.6.0
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Poll Telegram approval & publish if approved
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_AUTHORIZED_USER_ID: ${{ secrets.TELEGRAM_AUTHORIZED_USER_ID }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_PERSON_URN: ${{ secrets.LINKEDIN_PERSON_URN }}
+        run: |
+          python check_and_publish.py
+
+      - name: Commit pipeline state changes
+        run: |
+          git config user.name "content-bot"
+          git config user.email "content-bot@users.noreply.github.com"
+          git add state/ 2>/dev/null || true
+          git diff --cached --quiet || (git commit -m "chore: update linkedin content pipeline state [skip ci]" && git push)
