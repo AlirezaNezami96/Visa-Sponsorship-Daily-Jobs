@@ -4,6 +4,7 @@ import json
 import html
 import requests
 from datetime import datetime, timezone
+from image_utils import generate_ai_image
 
 STATE_DIR = "state"
 PENDING_FILE = os.path.join(STATE_DIR, "pending_post.json")
@@ -21,7 +22,8 @@ def send_telegram_alert(bot_token: str, chat_id: str, text: str) -> None:
     except Exception as e:
         print(f"[ERROR] Failed to send Telegram alert: {e}")
 
-def call_zai_api(api_key: str) -> str:
+def call_zai_api(api_key: str) -> tuple[str, str]:
+    """Generates (post_text, image_prompt) from Z.ai API."""
     endpoints = [
         "https://api.z.ai/api/paas/v4/chat/completions",
         "https://open.bigmodel.cn/api/paas/v4/chat/completions"
@@ -37,25 +39,25 @@ HARD RULES
 - No code. No code blocks, no function names, no syntax, no "here's how to implement it." This is a news/trends post, not a tutorial.
 - No mention of image or video attachments — text only.
 - Never invent facts, statistics, or company statements. If you're not certain something is real and recent, write about the trend/theme in general terms instead of citing a specific fake event.
-- Output ONLY the post text, ready to publish. No preamble, no "Here's your post:", no explanation.
 - Maximum 2,200 characters (LinkedIn's hard cap is 3,000 — stay well under it).
 
 STRUCTURE
-1. Hook — first line must work standalone, since LinkedIn truncates to ~210 characters before "see more." Lead with a bold claim, a surprising number, or a direct question. No throat-clearing.
-2. Body — 3-6 short paragraphs or a scannable list, one idea per line, generous line breaks (LinkedIn has no real formatting, so whitespace does the work). Write like you're texting a smart colleague, not writing a press release.
-3. Close with one question or opinion prompt to invite comments — engagement bait that's actually relevant, not generic ("Thoughts?" alone is weak — ask something specific).
-4. End with 3-5 relevant, specific hashtags (e.g. #AndroidDev #AI #MobileAI #iOSDev — not generic ones like #tech #innovation).
+1. Hook — first line must work standalone.
+2. Body — 3-6 short paragraphs or a scannable list, generous line breaks.
+3. Close with one question or opinion prompt to invite comments.
+4. End with 3-5 relevant, specific hashtags.
 
-STYLE
-- Emojis: use them purposefully as visual anchors (start of key lines, section breaks) — not one per sentence. 5-10 total is plenty. Never use emojis to replace words.
-- Confident, opinionated, slightly informal — this is a person's voice, not corporate marketing copy.
-- Short sentences. Fragments are fine. Avoid jargon walls — assume a smart but time-pressed reader.
-- No hashtag stuffing, no "like and share," no engagement-pod language."""
+OUTPUT FORMAT:
+Return your response in exact JSON format with two fields:
+{
+  "post_text": "...",
+  "image_prompt": "A modern 3D digital art tech illustration describing the topic for an engaging cover image, clean minimal futuristic aesthetic, 8k"
+}"""
 
     user_prompt = (
         "Write a fresh, engaging, and high-impact LinkedIn post about a recent AI feature, capability, SDK update, "
         "or industry trend in Android or iOS mobile development following all instructions in your system prompt. "
-        "Output ONLY the final raw LinkedIn post text ready to publish."
+        "Also craft a matching image_prompt for the AI cover image. Return ONLY valid JSON with keys 'post_text' and 'image_prompt'."
     )
 
     last_error = None
@@ -81,9 +83,19 @@ STYLE
                     data = resp.json()
                     choices = data.get("choices", [])
                     if choices:
-                        content = choices[0].get("message", {}).get("content", "").strip()
-                        if content:
-                            return content
+                        raw_content = choices[0].get("message", {}).get("content", "").strip()
+                        if raw_content.startswith("```json"):
+                            raw_content = raw_content.split("```json", 1)[1].rsplit("```", 1)[0].strip()
+                        elif raw_content.startswith("```"):
+                            raw_content = raw_content.split("```", 1)[1].rsplit("```", 1)[0].strip()
+                        
+                        parsed = json.loads(raw_content)
+                        p_text = parsed.get("post_text", "").strip()
+                        img_prompt = parsed.get("image_prompt", "").strip()
+                        if p_text:
+                            if not img_prompt:
+                                img_prompt = "Modern 3D digital art vector illustration of artificial intelligence in mobile apps, futuristic clean dark aesthetic, 8k"
+                            return p_text, img_prompt
                 else:
                     last_error = f"HTTP {resp.status_code}: {resp.text}"
                     print(f"[WARN] Model {model} on {endpoint} returned {last_error}")
@@ -93,29 +105,52 @@ STYLE
 
     raise RuntimeError(f"All Z.ai API call attempts failed. Last error: {last_error}")
 
-def send_telegram_approval_prompt(bot_token: str, chat_id: str, post_text: str) -> int:
-    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    formatted_text = f"📝 <b>New LinkedIn Post Draft Pending Approval:</b>\n\n{html.escape(post_text)}\n\n<i>Please approve or reject below:</i>"
-    payload = {
+def send_telegram_draft(bot_token: str, chat_id: str, post_text: str, image_url: str) -> tuple[int, int]:
+    # 1. Send Photo preview
+    photo_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
+    photo_payload = {
+        "chat_id": chat_id,
+        "photo": image_url,
+        "caption": "🖼️ <b>AI Generated Cover Image Preview</b>",
+        "parse_mode": "HTML"
+    }
+    photo_msg_id = None
+    try:
+        p_res = requests.post(photo_url, json=photo_payload, timeout=25)
+        if p_res.status_code == 200:
+            photo_msg_id = p_res.json().get("result", {}).get("message_id")
+    except Exception as e:
+        print(f"[WARN] Failed to send Telegram photo preview: {e}")
+
+    # 2. Send Text message with 4 buttons
+    msg_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    formatted_text = (
+        f"📝 <b>New LinkedIn Post Draft Pending Approval:</b>\n\n"
+        f"{html.escape(post_text)}\n\n"
+        f"<i>Please choose an action below:</i>"
+    )
+    msg_payload = {
         "chat_id": chat_id,
         "text": formatted_text,
         "parse_mode": "HTML",
         "reply_markup": {
             "inline_keyboard": [
                 [
-                    {"text": "Approve & Post", "callback_data": "approve"},
-                    {"text": "Reject", "callback_data": "reject"}
+                    {"text": "✅ Accept Both", "callback_data": "approve_all"},
+                    {"text": "❌ Reject Both", "callback_data": "reject_all"}
+                ],
+                [
+                    {"text": "📝 Accept Text & New Image", "callback_data": "regen_image"},
+                    {"text": "🖼️ Accept Image & New Text", "callback_data": "regen_text"}
                 ]
             ]
         }
     }
-    resp = requests.post(url, json=payload, timeout=20)
-    resp.raise_for_status()
-    res_data = resp.json()
-    msg_id = res_data.get("result", {}).get("message_id")
-    if not msg_id:
-        raise ValueError(f"No message_id in Telegram response: {res_data}")
-    return msg_id
+    m_res = requests.post(msg_url, json=msg_payload, timeout=20)
+    m_res.raise_for_status()
+    text_msg_id = m_res.json().get("result", {}).get("message_id")
+
+    return photo_msg_id, text_msg_id
 
 def main():
     zai_api_key = os.environ.get("ZAI_API_KEY")
@@ -136,21 +171,19 @@ def main():
 
     os.makedirs(STATE_DIR, exist_ok=True)
 
-    # 1. Check if pending post already exists
     if os.path.exists(PENDING_FILE):
         print(f"[INFO] {PENDING_FILE} exists. Previous draft is still awaiting decision.")
         send_telegram_alert(
             bot_token,
             chat_id,
-            "⚠️ <b>LinkedIn Post Generation Skipped</b>\n\nA previous post draft is still awaiting your approval in Telegram! Please approve or reject it before generating a new post."
+            "⚠️ <b>LinkedIn Post Generation Skipped</b>\n\nA previous post draft is still awaiting your decision in Telegram!"
         )
         sys.exit(0)
 
     try:
-        # 2. Call Z.ai chat completions API
-        post_text = call_zai_api(zai_api_key)
+        print("[INFO] Generating post text and image prompt via Z.ai...")
+        post_text, image_prompt = call_zai_api(zai_api_key)
 
-        # 3. Validate result (non-empty & <= 3000 chars)
         if not post_text:
             raise ValueError("LLM returned empty post content.")
 
@@ -158,24 +191,27 @@ def main():
             print(f"[WARN] Post text length ({len(post_text)}) exceeds 3000 chars limit. Truncating...")
             post_text = post_text[:2990] + "..."
 
-        # 4. Write initial state/pending_post.json
+        print(f"[INFO] Generating AI image for prompt: '{image_prompt}'...")
+        image_url, _ = generate_ai_image(image_prompt, zai_api_key)
+
         now_iso = datetime.now(timezone.utc).isoformat()
         pending_data = {
             "text": post_text,
+            "image_url": image_url,
+            "image_prompt": image_prompt,
             "generated_at": now_iso
         }
         with open(PENDING_FILE, "w", encoding="utf-8") as f:
             json.dump(pending_data, f, indent=2, ensure_ascii=False)
 
-        # 5 & 6. Send to Telegram & obtain message_id
-        msg_id = send_telegram_approval_prompt(bot_token, chat_id, post_text)
-        pending_data["message_id"] = msg_id
+        photo_msg_id, text_msg_id = send_telegram_draft(bot_token, chat_id, post_text, image_url)
+        pending_data["photo_message_id"] = photo_msg_id
+        pending_data["message_id"] = text_msg_id
 
-        # Update state/pending_post.json with message_id
         with open(PENDING_FILE, "w", encoding="utf-8") as f:
             json.dump(pending_data, f, indent=2, ensure_ascii=False)
 
-        print(f"[SUCCESS] Draft post saved to {PENDING_FILE} and Telegram message_id={msg_id} sent.")
+        print(f"[SUCCESS] Draft saved to {PENDING_FILE}. Telegram photo_msg_id={photo_msg_id}, text_msg_id={text_msg_id}.")
 
     except Exception as err:
         error_msg = f"❌ <b>LinkedIn Post Generation Failed:</b>\n<code>{html.escape(str(err))}</code>"
