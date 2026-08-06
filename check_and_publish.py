@@ -345,10 +345,11 @@ def main():
         send_telegram_message(bot_token, chat_id, "🎨 <b>New Cover Image Card generated!</b> Check the photo preview above.")
 
     elif action == "regen_text":
-        print("[INFO] Regenerating post text via Z.ai...")
+        print("[INFO] Regenerating post text via Gemini API...")
         try:
-            from generate_post import call_zai_api
-            new_text, new_title, new_cat, new_bg = call_zai_api(zai_api_key)
+            from generate_post import call_gemini_text_api
+            gemini_key = os.environ.get("GEMINI_API_KEY")
+            new_text, new_title, new_cat, new_bg = call_gemini_text_api(gemini_key)
             if new_text:
                 pending_data["text"] = new_text
                 pending_data["image_title"] = new_title

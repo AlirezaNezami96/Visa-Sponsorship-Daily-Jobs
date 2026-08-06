@@ -23,13 +23,9 @@ def send_telegram_alert(bot_token: str, chat_id: str, text: str) -> None:
     except Exception as e:
         print(f"[ERROR] Failed to send Telegram alert: {e}")
 
-def call_zai_api(api_key: str) -> tuple[str, str, str, str]:
-    """Generates (post_text, image_title, category, bg_prompt) from Z.ai API."""
-    endpoints = [
-        "https://api.z.ai/api/paas/v4/chat/completions",
-        "https://open.bigmodel.cn/api/paas/v4/chat/completions"
-    ]
-    models = ["glm-4-flash", "glm-4.7-flash", "glm-4"]
+def call_gemini_text_api(api_key: str) -> tuple[str, str, str, str]:
+    """Generates (post_text, image_title, category, bg_prompt) using Gemini API."""
+    models = ["gemini-flash-latest", "gemini-2.0-flash-lite", "gemini-2.5-flash-lite", "gemini-pro-latest", "gemini-2.0-flash"]
 
     system_prompt = """You are a LinkedIn content strategist who covers AI in mobile development — specifically new AI capabilities, features, and industry news in Android and iOS. You write for developers and tech professionals who scroll LinkedIn during work hours.
 
@@ -59,50 +55,47 @@ Return your response in exact JSON format with four fields:
     )
 
     last_error = None
-
-    for endpoint in endpoints:
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "systemInstruction": {"parts": [{"text": system_prompt}]},
+        "contents": [{"parts": [{"text": user_prompt}]}],
+        "generationConfig": {
+            "responseMimeType": "application/json",
+            "temperature": 0.7
         }
-        for model in models:
-            payload = {
-                "model": model,
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                "temperature": 0.7
-            }
-            try:
-                print(f"[INFO] Calling Z.ai API endpoint={endpoint} model={model}...")
-                resp = requests.post(endpoint, headers=headers, json=payload, timeout=45)
-                if resp.status_code == 200:
-                    data = resp.json()
-                    choices = data.get("choices", [])
-                    if choices:
-                        raw_content = choices[0].get("message", {}).get("content", "").strip()
-                        if raw_content.startswith("```json"):
-                            raw_content = raw_content.split("```json", 1)[1].rsplit("```", 1)[0].strip()
-                        elif raw_content.startswith("```"):
-                            raw_content = raw_content.split("```", 1)[1].rsplit("```", 1)[0].strip()
+    }
 
-                        parsed = json.loads(raw_content)
-                        p_text = parsed.get("post_text", "").strip()
-                        img_title = parsed.get("image_title", "MOBILE AI UPDATE").strip()
-                        cat = parsed.get("category", "MOBILE AI TRENDS").strip()
-                        bg_p = parsed.get("bg_prompt", "modern mobile technology").strip()
+    for model in models:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        try:
+            print(f"[INFO] Calling Gemini Text API model={model}...")
+            resp = requests.post(url, headers=headers, json=payload, timeout=30)
+            if resp.status_code == 200:
+                data = resp.json()
+                candidates = data.get("candidates", [])
+                if candidates:
+                    raw_content = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip()
+                    if raw_content.startswith("```json"):
+                        raw_content = raw_content.split("```json", 1)[1].rsplit("```", 1)[0].strip()
+                    elif raw_content.startswith("```"):
+                        raw_content = raw_content.split("```", 1)[1].rsplit("```", 1)[0].strip()
 
-                        if p_text:
-                            return p_text, img_title, cat, bg_p
-                else:
-                    last_error = f"HTTP {resp.status_code}: {resp.text}"
-                    print(f"[WARN] Model {model} on {endpoint} returned {last_error}")
-            except Exception as exc:
-                last_error = str(exc)
-                print(f"[WARN] Error calling {model} on {endpoint}: {exc}")
+                    parsed = json.loads(raw_content)
+                    p_text = parsed.get("post_text", "").strip()
+                    img_title = parsed.get("image_title", "MOBILE AI UPDATE").strip()
+                    cat = parsed.get("category", "SOFTWARE ENGINEERING").strip()
+                    bg_p = parsed.get("bg_prompt", "modern mobile technology").strip()
 
-    raise RuntimeError(f"All Z.ai API call attempts failed. Last error: {last_error}")
+                    if p_text:
+                        return p_text, img_title, cat, bg_p
+            else:
+                last_error = f"HTTP {resp.status_code}: {resp.text[:200]}"
+                print(f"[WARN] Model {model} returned {last_error}")
+        except Exception as exc:
+            last_error = str(exc)
+            print(f"[WARN] Error calling {model}: {exc}")
+
+    raise RuntimeError(f"All Gemini API text call attempts failed. Last error: {last_error}")
 
 def send_telegram_draft(bot_token: str, chat_id: str, post_text: str, cover_bytes: bytes) -> tuple[int, int]:
     # 1. Send Photo preview
@@ -152,13 +145,13 @@ def send_telegram_draft(bot_token: str, chat_id: str, post_text: str, cover_byte
     return photo_msg_id, text_msg_id
 
 def main():
-    zai_api_key = os.environ.get("ZAI_API_KEY")
+    gemini_api_key = os.environ.get("GEMINI_API_KEY")
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
 
     missing = []
-    if not zai_api_key:
-        missing.append("ZAI_API_KEY")
+    if not gemini_api_key:
+        missing.append("GEMINI_API_KEY")
     if not bot_token:
         missing.append("TELEGRAM_BOT_TOKEN")
     if not chat_id:
@@ -180,11 +173,11 @@ def main():
         sys.exit(0)
 
     try:
-        print("[INFO] Generating post text and cover headlines via Z.ai...")
-        post_text, image_title, category, bg_prompt = call_zai_api(zai_api_key)
+        print("[INFO] Generating post text and cover headlines via Gemini API...")
+        post_text, image_title, category, bg_prompt = call_gemini_text_api(gemini_api_key)
 
         if not post_text:
-            raise ValueError("LLM returned empty post content.")
+            raise ValueError("Gemini returned empty post content.")
 
         if len(post_text) > 3000:
             print(f"[WARN] Post text length ({len(post_text)}) exceeds 3000 chars limit. Truncating...")
