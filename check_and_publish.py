@@ -131,11 +131,11 @@ def send_telegram_draft(bot_token: str, chat_id: str, post_text: str, cover_byte
     return photo_msg_id, text_msg_id
 
 def get_linkedin_api_version() -> str:
-    """Returns valid 6-digit YYYYMM LinkedIn API version string (e.g. '202501')."""
-    raw = os.environ.get("LINKEDIN_API_VERSION", "202501").strip()
+    """Returns valid 6-digit YYYYMM LinkedIn API version string (e.g. '202604')."""
+    raw = os.environ.get("LINKEDIN_API_VERSION", "202604").strip()
     if len(raw) == 8 and raw.isdigit():
         return raw[:6]
-    return raw if raw else "202501"
+    return raw if raw else "202604"
 
 def upload_image_to_linkedin(access_token: str, person_urn: str, image_bytes: bytes) -> str:
     init_url = "https://api.linkedin.com/rest/images?action=initializeUpload"
