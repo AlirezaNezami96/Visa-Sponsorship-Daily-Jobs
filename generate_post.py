@@ -33,6 +33,7 @@ TOPIC SCOPE
 Write about one specific, recent, concrete thing: a new AI feature Google or Apple shipped, an AI-powered SDK/API update for Android or iOS, an industry trend (on-device AI, AI-assisted development tools, AI in app stores), or a notable announcement. Pick ONE angle per post — don't try to cover everything.
 
 HARD RULES
+- EMOJIS: Make the post text highly emojified, lively, and visually rich! Use expressive, relevant tech emojis (e.g. 🚀, 🤖, 📱, ⚡, 💡, 🧠, 🛠️, 🔥, 📊) purposefully to anchor key lines, section headers, bullet points, and the hook (10-18 emojis total).
 - No code. No code blocks, no function names, no syntax.
 - No mention of image or video attachments — text only.
 - Never invent facts, statistics, or company statements.
@@ -48,7 +49,7 @@ Return your response in exact JSON format with four fields:
 }"""
 
     user_prompt = (
-        "Write a fresh, engaging, and high-impact LinkedIn post about a recent AI feature, capability, SDK update, "
+        "Write a fresh, highly emojified, engaging, and high-impact LinkedIn post about a recent AI feature, capability, SDK update, "
         "or industry trend in Android or iOS mobile development following all instructions in your system prompt. "
         "Also craft a short bold image_title (2 to 5 words MAXIMUM), a category name, and a one-sentence bg_prompt describing the post topic concept. "
         "Return ONLY valid JSON."
