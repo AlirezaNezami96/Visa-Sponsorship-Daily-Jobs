@@ -76,36 +76,46 @@ def fetch_pollinations_background_image(post_topic: str) -> Image.Image | None:
     """Active Image Provider: Fetches a 1200x675 (16:9) technology illustration from Pollinations.ai API."""
     api_key = os.environ.get("POLLINATIONS_API_KEY")
 
-    default_style_prompt = (
-        "Create a premium LinkedIn technology illustration.\n"
-        "Dark navy background with blue and purple gradients.\n"
-        "Modern software engineering aesthetic.\n"
-        "Abstract UI elements, AI visualization, digital innovation.\n"
-        "Minimal, clean, professional corporate design.\n"
-        "No cartoon style, no watermark, no logos.\n"
-        "Suitable for a senior software developer personal brand.\n"
-        "16:9 format."
+    topic_str = post_topic.strip() if post_topic else "Mobile AI & Software Engineering"
+
+    full_prompt = (
+        "Create a modern professional LinkedIn post illustration for a software engineering / technology article.\n\n"
+        "The image should visually represent the main idea of the post using a clean, minimal, premium style. "
+        "Focus on concepts like innovation, software development, artificial intelligence, mobile apps, cloud technology, "
+        "automation, or digital transformation depending on the topic.\n\n"
+        "Style: futuristic but professional, suitable for a senior developer's LinkedIn profile. Use a dark background "
+        "with elegant blue and purple gradients, subtle glowing elements, abstract UI interfaces, code elements, digital networks, "
+        "and modern technology aesthetics.\n\n"
+        "Include a short, bold title text in the center representing the main topic of the post (2-5 words maximum). "
+        "Make the typography clean, modern, and highly readable.\n\n"
+        "Avoid cartoon characters, mascots, exaggerated 3D illustrations, and overly busy designs. "
+        "The image should look like it was created by a technology company for a LinkedIn announcement.\n\n"
+        "Aspect ratio: 16:9.\n"
+        "High quality, professional, minimal, visually striking.\n"
+        f"Post topic: {topic_str}"
     )
 
-    if post_topic and post_topic.strip():
-        full_prompt = f"{default_style_prompt}\nTopic: {post_topic.strip()[:100]}"
-    else:
-        full_prompt = default_style_prompt
-
     seed = random.randint(100, 999999)
-    encoded_prompt = urllib.parse.quote(full_prompt)
-    url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1200&height=675&nologo=true&seed={seed}"
+    url = "https://image.pollinations.ai/prompt"
     if api_key:
-        url += f"&api_key={api_key}"
+        url += f"?api_key={api_key}"
 
-    headers = {}
+    headers = {"Content-Type": "application/json"}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
 
+    payload = {
+        "prompt": full_prompt,
+        "width": 1200,
+        "height": 675,
+        "nologo": True,
+        "seed": seed
+    }
+
     try:
-        print(f"[INFO] Requesting 16:9 cover background from Pollinations.ai API (seed={seed})...")
+        print(f"[INFO] Requesting 16:9 cover background from Pollinations.ai API (POST, seed={seed})...")
         print(f"[INFO] Image Generation Prompt:\n>>>\n{full_prompt}\n<<<")
-        r = requests.get(url, headers=headers, timeout=40)
+        r = requests.post(url, headers=headers, json=payload, timeout=45)
         if r.status_code == 200 and len(r.content) > 3000:
             img = Image.open(io.BytesIO(r.content)).convert("RGBA")
             print("[INFO] Pollinations.ai background generated successfully.")
