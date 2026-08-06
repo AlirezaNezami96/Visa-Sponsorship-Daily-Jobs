@@ -73,7 +73,7 @@ def fetch_gemini_background_image(post_topic: str) -> Image.Image | None:
     return None
 
 def fetch_pollinations_background_image(post_topic: str) -> Image.Image | None:
-    """Active Image Provider: Fetches a 1200x675 (16:9) FLUX technology illustration from Pollinations.ai."""
+    """Active Image Provider: Fetches a 1200x675 (16:9) technology illustration from Pollinations.ai API."""
     api_key = os.environ.get("POLLINATIONS_API_KEY")
 
     default_style_prompt = (
@@ -94,7 +94,7 @@ def fetch_pollinations_background_image(post_topic: str) -> Image.Image | None:
 
     seed = random.randint(100, 999999)
     encoded_prompt = urllib.parse.quote(full_prompt)
-    url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1200&height=675&model=flux&nologo=true&seed={seed}"
+    url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1200&height=675&nologo=true&seed={seed}"
     if api_key:
         url += f"&api_key={api_key}"
 
@@ -103,11 +103,11 @@ def fetch_pollinations_background_image(post_topic: str) -> Image.Image | None:
         headers["Authorization"] = f"Bearer {api_key}"
 
     try:
-        print(f"[INFO] Requesting 16:9 cover background from Pollinations.ai (FLUX engine, seed={seed})...")
+        print(f"[INFO] Requesting 16:9 cover background from Pollinations.ai API (seed={seed})...")
         r = requests.get(url, headers=headers, timeout=40)
         if r.status_code == 200 and len(r.content) > 3000:
             img = Image.open(io.BytesIO(r.content)).convert("RGBA")
-            print("[INFO] Pollinations.ai FLUX background generated successfully.")
+            print("[INFO] Pollinations.ai background generated successfully.")
             return img.resize((1200, 675), Image.Resampling.LANCZOS)
         else:
             print(f"[ERROR] Pollinations.ai API call failed (HTTP {r.status_code}): {r.text[:200]}")
@@ -129,17 +129,17 @@ def draw_pil_gradient_background(width: int = 1200, height: int = 675) -> Image.
 
 def generate_tech_illustration(title: str, post_topic: str) -> tuple[bytes, str]:
     """Service Layer Entrypoint: Generates a 16:9 LinkedIn cover illustration (1200x675).
-    Returns (JPEG_bytes, image_source) where image_source is 'pollinations_flux', 'gemini', or 'pil_fallback'.
+    Returns (JPEG_bytes, image_source) where image_source is 'pollinations', 'gemini', or 'pil_fallback'.
     """
     width, height = 1200, 675
     base_img = None
     source = "pil_fallback"
 
     if ACTIVE_IMAGE_PROVIDER == "pollinations":
-        print("[INFO] Active Image Provider: Pollinations.ai (FLUX)")
+        print("[INFO] Active Image Provider: Pollinations.ai")
         base_img = fetch_pollinations_background_image(post_topic or title)
         if base_img:
-            source = "pollinations_flux"
+            source = "pollinations"
         else:
             print("[WARN] Pollinations.ai generation failed. Falling back to PIL dark gradient background.")
             base_img = draw_pil_gradient_background(width, height)

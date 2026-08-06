@@ -104,8 +104,8 @@ def send_telegram_draft(bot_token: str, chat_id: str, post_text: str, cover_byte
     photo_msg_id = None
     if img_source == "gemini":
         caption = "🖼️ <b>AI Generated LinkedIn Cover Illustration (Gemini 2.5)</b>"
-    elif img_source == "pollinations_flux":
-        caption = "🖼️ <b>AI Generated LinkedIn Cover Illustration (FLUX Engine)</b>"
+    elif img_source in ("pollinations", "pollinations_flux"):
+        caption = "🖼️ <b>AI Generated LinkedIn Cover Illustration (Pollinations.ai)</b>"
     else:
         caption = "⚠️ <b>AI image generation failed — showing fallback design</b>"
     try:
