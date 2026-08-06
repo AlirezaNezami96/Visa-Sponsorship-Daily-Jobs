@@ -98,15 +98,20 @@ Return your response in exact JSON format with four fields:
 
     raise RuntimeError(f"All Gemini API text call attempts failed. Last error: {last_error}")
 
-def send_telegram_draft(bot_token: str, chat_id: str, post_text: str, cover_bytes: bytes) -> tuple[int, int]:
+def send_telegram_draft(bot_token: str, chat_id: str, post_text: str, cover_bytes: bytes, is_fallback: bool = False) -> tuple[int, int]:
     # 1. Send Photo preview
     photo_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
     photo_msg_id = None
+    caption = (
+        "⚠️ <b>AI image generation failed — showing fallback design</b>"
+        if is_fallback else
+        "🖼️ <b>AI Generated LinkedIn Cover Illustration (16:9)</b>"
+    )
     try:
         files = {"photo": ("cover.jpg", cover_bytes, "image/jpeg")}
         data = {
             "chat_id": chat_id,
-            "caption": "🖼️ <b>AI Generated Cover Image (Headline Overlay)</b>",
+            "caption": caption,
             "parse_mode": "HTML"
         }
         p_res = requests.post(photo_url, data=data, files=files, timeout=25)
@@ -185,7 +190,7 @@ def main():
             post_text = post_text[:2990] + "..."
 
         print(f"[INFO] Rendering professional cover image title='{image_title}' category='{category}'...")
-        cover_bytes = create_professional_cover_image(image_title, category, bg_prompt)
+        cover_bytes, is_fallback = create_professional_cover_image(image_title, category, bg_prompt)
 
         with open(COVER_FILE, "wb") as f:
             f.write(cover_bytes)
@@ -197,12 +202,13 @@ def main():
             "category": category,
             "bg_prompt": bg_prompt,
             "cover_file": COVER_FILE,
+            "is_fallback_image": is_fallback,
             "generated_at": now_iso
         }
         with open(PENDING_FILE, "w", encoding="utf-8") as f:
             json.dump(pending_data, f, indent=2, ensure_ascii=False)
 
-        photo_msg_id, text_msg_id = send_telegram_draft(bot_token, chat_id, post_text, cover_bytes)
+        photo_msg_id, text_msg_id = send_telegram_draft(bot_token, chat_id, post_text, cover_bytes, is_fallback=is_fallback)
         pending_data["photo_message_id"] = photo_msg_id
         pending_data["message_id"] = text_msg_id
 

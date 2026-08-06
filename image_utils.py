@@ -1,6 +1,8 @@
 import os
 import io
+import json
 import base64
+import hashlib
 import requests
 from PIL import Image, ImageDraw, ImageFont
 
@@ -20,12 +22,13 @@ def ensure_font_downloaded() -> str:
             print(f"[WARN] Could not download {FONT_FILE}: {e}")
     return FONT_FILE if os.path.exists(FONT_FILE) else ""
 
-def fetch_gemini_background_image(post_topic: str) -> Image.Image | None:
-    """Calls Gemini API (gemini-2.5-flash-image) to generate a background illustration without text."""
+def fetch_gemini_background_image(post_topic: str) -> Image.Image:
+    """Calls Gemini API (gemini-2.5-flash-image) with responseModalities: ['IMAGE'].
+    Raises an exception if the API returns an error or no image part is found.
+    """
     gemini_key = os.environ.get("GEMINI_API_KEY")
     if not gemini_key:
-        print("[WARN] GEMINI_API_KEY not set. Skipping Gemini image generation.")
-        return None
+        raise ValueError("GEMINI_API_KEY is not set in environment.")
 
     topic_clean = post_topic.strip()[:150] if post_topic else "software engineering and mobile development"
     prompt = (
@@ -45,32 +48,48 @@ def fetch_gemini_background_image(post_topic: str) -> Image.Image | None:
                     }
                 ]
             }
-        ]
+        ],
+        "generationConfig": {
+            "responseModalities": ["IMAGE"],
+            "imageConfig": {
+                "aspectRatio": "16:9"
+            }
+        }
     }
 
-    try:
-        print(f"[INFO] Requesting background illustration from Gemini API (gemini-2.5-flash-image)...")
-        res = requests.post(url, headers=headers, json=payload, timeout=30)
-        if res.status_code == 200:
-            data = res.json()
-            candidates = data.get("candidates", [])
-            if candidates:
-                parts = candidates[0].get("content", {}).get("parts", [])
-                for p in parts:
-                    inline = p.get("inlineData") or p.get("inline_data")
-                    if inline:
-                        b64_data = inline.get("data")
-                        if b64_data:
-                            img_bytes = base64.b64decode(b64_data)
-                            img = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
-                            print("[INFO] Successfully generated background image via Gemini API.")
-                            return img.resize((1200, 675), Image.Resampling.LANCZOS)
-        else:
-            print(f"[WARN] Gemini Image API returned HTTP {res.status_code}: {res.text[:200]}")
-    except Exception as e:
-        print(f"[WARN] Failed to generate background image via Gemini API: {e}")
+    print(f"[INFO] Requesting background illustration from Gemini API (gemini-2.5-flash-image)...")
+    res = requests.post(url, headers=headers, json=payload, timeout=60)
+    res.raise_for_status()
 
-    return None
+    data = res.json()
+    candidates = data.get("candidates", [])
+    if not candidates:
+        raise RuntimeError(f"Gemini image call returned no candidates: {json.dumps(data)[:500]}")
+
+    candidate = candidates[0]
+    finish_reason = candidate.get("finishReason")
+
+    image_bytes = None
+    for part in candidate.get("content", {}).get("parts", []):
+        if "inlineData" in part:
+            b64_data = part["inlineData"].get("data")
+            if b64_data:
+                image_bytes = base64.b64decode(b64_data)
+                break
+        elif "inline_data" in part:
+            b64_data = part["inline_data"].get("data")
+            if b64_data:
+                image_bytes = base64.b64decode(b64_data)
+                break
+
+    if image_bytes is None:
+        raise RuntimeError(
+            f"Gemini image call returned no inlineData. finishReason={finish_reason}, "
+            f"raw response={json.dumps(data)[:500]}"
+        )
+
+    img = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
+    return img.resize((1200, 675), Image.Resampling.LANCZOS)
 
 def draw_pil_gradient_background(width: int = 1200, height: int = 675) -> Image.Image:
     """Fallback Tier 2: Generates a smooth dark slate gradient background."""
@@ -83,22 +102,24 @@ def draw_pil_gradient_background(width: int = 1200, height: int = 675) -> Image.
         draw_bg.line([(0, y), (width, y)], fill=(r, g, b, 255))
     return base
 
-def generate_tech_illustration(title: str, post_topic: str) -> bytes:
+def generate_tech_illustration(title: str, post_topic: str) -> tuple[bytes, bool]:
     """Creates a 16:9 LinkedIn cover illustration (1200x675).
-    Primary: Gemini Image API background + PIL composited title text.
-    Fallback: PIL dark gradient background + PIL composited title text.
+    Returns (JPEG_bytes, is_fallback).
     """
     width, height = 1200, 675
+    is_fallback = False
 
-    # 1. Primary: Try Gemini Image Generation
-    base_img = fetch_gemini_background_image(post_topic or title)
-
-    # 2. Fallback: Draw dark slate gradient background if Gemini image generation failed
-    if base_img is None:
-        print("[INFO] Falling back to PIL dark gradient background.")
+    # 1. Primary: Gemini Image Generation
+    try:
+        base_img = fetch_gemini_background_image(post_topic or title)
+        print("[INFO] Gemini Image API background generated successfully.")
+    except Exception as exc:
+        is_fallback = True
+        print(f"[ERROR] Gemini Image API call failed: {exc}")
+        print("[WARN] Falling back to PIL dark gradient background.")
         base_img = draw_pil_gradient_background(width, height)
 
-    # 3. Standard Path: Composite PIL title card overlay
+    # 2. Standard Path: Composite PIL title card overlay
     overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
 
@@ -150,7 +171,12 @@ def generate_tech_illustration(title: str, post_topic: str) -> bytes:
     final = Image.alpha_composite(base_img, overlay).convert("RGB")
     out = io.BytesIO()
     final.save(out, format="JPEG", quality=95)
-    return out.getvalue()
+    cover_bytes = out.getvalue()
 
-def create_professional_cover_image(title: str, category: str = "SOFTWARE ENGINEERING", post_topic: str = "") -> bytes:
+    md5_hash = hashlib.md5(cover_bytes).hexdigest()[:12]
+    print(f"[INFO] Cover Image Output: Size={len(cover_bytes)} bytes, MD5={md5_hash}, IsFallback={is_fallback}")
+
+    return cover_bytes, is_fallback
+
+def create_professional_cover_image(title: str, category: str = "SOFTWARE ENGINEERING", post_topic: str = "") -> tuple[bytes, bool]:
     return generate_tech_illustration(title, post_topic)
