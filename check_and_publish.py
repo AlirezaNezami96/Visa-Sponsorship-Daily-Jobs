@@ -77,15 +77,16 @@ def edit_telegram_message(bot_token: str, chat_id: str, message_id: int, text: s
     except Exception as e:
         print(f"[WARN] Failed to edit Telegram message_id={message_id}: {e}")
 
-def send_telegram_draft(bot_token: str, chat_id: str, post_text: str, cover_bytes: bytes, is_fallback: bool = False) -> tuple[int, int]:
+def send_telegram_draft(bot_token: str, chat_id: str, post_text: str, cover_bytes: bytes, img_source: str = "gemini") -> tuple[int, int]:
     """Sends fresh photo preview and text message with 4 buttons to Telegram."""
     photo_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
     photo_msg_id = None
-    caption = (
-        "⚠️ <b>AI image generation failed — showing fallback design</b>"
-        if is_fallback else
-        "🖼️ <b>AI Generated LinkedIn Cover Illustration (16:9)</b>"
-    )
+    if img_source == "gemini":
+        caption = "🖼️ <b>AI Generated LinkedIn Cover Illustration (Gemini 2.5)</b>"
+    elif img_source == "pollinations_flux":
+        caption = "🖼️ <b>AI Generated LinkedIn Cover Illustration (FLUX Engine)</b>"
+    else:
+        caption = "⚠️ <b>AI image generation failed — showing fallback design</b>"
     try:
         files = {"photo": ("cover.jpg", cover_bytes, "image/jpeg")}
         data = {
@@ -364,15 +365,15 @@ def main():
         if msg_id:
             edit_telegram_message(bot_token, chat_id, msg_id, "🔄 <i>Cover image updated — sending new draft preview below...</i>")
 
-        new_cover_bytes, is_fallback = create_professional_cover_image(image_title, category, bg_prompt)
+        new_cover_bytes, img_source = create_professional_cover_image(image_title, category, bg_prompt)
 
         with open(COVER_FILE, "wb") as f:
             f.write(new_cover_bytes)
 
-        photo_msg_id, text_msg_id = send_telegram_draft(bot_token, chat_id, post_text, new_cover_bytes, is_fallback=is_fallback)
+        photo_msg_id, text_msg_id = send_telegram_draft(bot_token, chat_id, post_text, new_cover_bytes, img_source=img_source)
         pending_data["photo_message_id"] = photo_msg_id
         pending_data["message_id"] = text_msg_id
-        pending_data["is_fallback_image"] = is_fallback
+        pending_data["image_source"] = img_source
 
         with open(PENDING_FILE, "w", encoding="utf-8") as f:
             json.dump(pending_data, f, indent=2, ensure_ascii=False)
@@ -392,14 +393,14 @@ def main():
                 pending_data["category"] = new_cat
                 pending_data["bg_prompt"] = new_bg
 
-                new_cover_bytes, is_fallback = create_professional_cover_image(new_title, new_cat, new_bg)
+                new_cover_bytes, img_source = create_professional_cover_image(new_title, new_cat, new_bg)
                 with open(COVER_FILE, "wb") as f:
                     f.write(new_cover_bytes)
 
-                photo_msg_id, text_msg_id = send_telegram_draft(bot_token, chat_id, new_text, new_cover_bytes, is_fallback=is_fallback)
+                photo_msg_id, text_msg_id = send_telegram_draft(bot_token, chat_id, new_text, new_cover_bytes, img_source=img_source)
                 pending_data["photo_message_id"] = photo_msg_id
                 pending_data["message_id"] = text_msg_id
-                pending_data["is_fallback_image"] = is_fallback
+                pending_data["image_source"] = img_source
 
                 with open(PENDING_FILE, "w", encoding="utf-8") as f:
                     json.dump(pending_data, f, indent=2, ensure_ascii=False)
