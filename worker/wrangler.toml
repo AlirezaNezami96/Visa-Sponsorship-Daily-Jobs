@@ -1,0 +1,13 @@
+name = "telegram-relay"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+# Non-sensitive configuration can be placed here if needed.
+# Secrets should be added via `wrangler secret put <NAME>`:
+# - TELEGRAM_BOT_TOKEN
+# - TELEGRAM_WEBHOOK_SECRET
+# - TELEGRAM_AUTHORIZED_USER_ID
+# - GH_PAT
+# - GH_OWNER
+# - GH_REPO

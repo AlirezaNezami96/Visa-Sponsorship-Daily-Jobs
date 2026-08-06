@@ -1,5 +1,6 @@
 import os
 import io
+import base64
 import urllib.parse
 import requests
 from PIL import Image, ImageDraw, ImageFont
@@ -30,6 +31,40 @@ def fetch_background_image(post_topic: str) -> Image.Image:
         "Looks like it was created by a technology company for a LinkedIn announcement. 16:9 aspect ratio, high quality. "
         f"Post topic: {post_topic}"
     )
+
+    # 1. Gemini Image Generation API (if GEMINI_API_KEY is provided)
+    gemini_key = os.environ.get("GEMINI_API_KEY")
+    if gemini_key:
+        models = ["gemini-2.5-flash-image", "gemini-2.0-flash"]
+        for mod in models:
+            gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/{mod}:generateContent?key={gemini_key}"
+            headers = {"Content-Type": "application/json"}
+            payload = {
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {"responseModalities": ["IMAGE"]}
+            }
+            try:
+                print(f"[INFO] Requesting AI cover image from Gemini API ({mod})...")
+                res = requests.post(gemini_url, headers=headers, json=payload, timeout=30)
+                if res.status_code == 200:
+                    data = res.json()
+                    candidates = data.get("candidates", [])
+                    if candidates:
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        for p in parts:
+                            if "inlineData" in p:
+                                b64_data = p["inlineData"].get("data")
+                                if b64_data:
+                                    img_bytes = base64.b64decode(b64_data)
+                                    img = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
+                                    print("[INFO] Gemini AI cover background generated successfully.")
+                                    return img.resize((width, height), Image.Resampling.LANCZOS)
+                else:
+                    print(f"[WARN] Gemini API returned HTTP {res.status_code}: {res.text[:200]}")
+            except Exception as e:
+                print(f"[WARN] Error calling Gemini Image API ({mod}): {e}")
+
+    # 2. Pollinations FLUX Engine (Free fallback)
     encoded = urllib.parse.quote(prompt)
     poll_url = f"https://image.pollinations.ai/prompt/{encoded}?width=1200&height=630&model=flux&nologo=true"
     try:
@@ -39,9 +74,9 @@ def fetch_background_image(post_topic: str) -> Image.Image:
             img = Image.open(io.BytesIO(res.content)).convert("RGBA")
             return img.resize((width, height), Image.Resampling.LANCZOS)
     except Exception as e:
-        print(f"[WARN] Failed to fetch AI background image: {e}")
+        print(f"[WARN] Failed to fetch AI background image from Pollinations: {e}")
 
-    # Fallback to elegant dark blue & purple gradient background
+    # 3. Fallback to elegant dark blue & purple gradient background
     base = Image.new("RGBA", (width, height), (15, 23, 42, 255))
     draw_bg = ImageDraw.Draw(base)
     for y in range(height):

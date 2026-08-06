@@ -3,15 +3,14 @@ import sys
 import json
 import html
 import requests
-from datetime import datetime, timezone
 from image_utils import create_professional_cover_image
 
 STATE_DIR = "state"
 PENDING_FILE = os.path.join(STATE_DIR, "pending_post.json")
 COVER_FILE = os.path.join(STATE_DIR, "cover_image.jpg")
-LAST_UPDATE_FILE = os.path.join(STATE_DIR, "last_update_id.txt")
 
 def trigger_generate_workflow() -> bool:
+    """Triggers the 'Generate LinkedIn Post' workflow via GitHub Actions API."""
     repo = os.environ.get("GITHUB_REPOSITORY")
     token = os.environ.get("GH_PAT") or os.environ.get("GITHUB_TOKEN")
     if not repo or not token:
@@ -194,7 +193,7 @@ def cleanup_state_files():
 
 def main():
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+    chat_id_env = os.environ.get("TELEGRAM_CHAT_ID")
     authorized_user_id = os.environ.get("TELEGRAM_AUTHORIZED_USER_ID")
     linkedin_access_token = os.environ.get("LINKEDIN_ACCESS_TOKEN")
     linkedin_person_urn = os.environ.get("LINKEDIN_PERSON_URN", "urn:li:person:aAOQrAt7pG")
@@ -203,7 +202,7 @@ def main():
     missing = []
     if not bot_token:
         missing.append("TELEGRAM_BOT_TOKEN")
-    if not chat_id:
+    if not chat_id_env:
         missing.append("TELEGRAM_CHAT_ID")
     if not authorized_user_id:
         missing.append("TELEGRAM_AUTHORIZED_USER_ID")
@@ -216,213 +215,167 @@ def main():
 
     os.makedirs(STATE_DIR, exist_ok=True)
 
-    offset = 0
-    if os.path.exists(LAST_UPDATE_FILE):
+    # 1. Parse client payload from Cloudflare Worker repository_dispatch
+    raw_payload = os.environ.get("CLIENT_PAYLOAD")
+    payload = {}
+    if raw_payload:
         try:
-            with open(LAST_UPDATE_FILE, "r", encoding="utf-8") as f:
-                content = f.read().strip()
-                if content:
-                    offset = int(content) + 1
+            payload = json.loads(raw_payload)
         except Exception as e:
-            print(f"[WARN] Could not read {LAST_UPDATE_FILE}, defaulting offset to 0: {e}")
+            print(f"[WARN] Could not parse CLIENT_PAYLOAD JSON: {e}")
 
-    get_updates_url = f"https://api.telegram.org/bot{bot_token}/getUpdates"
-    try:
-        res = requests.get(get_updates_url, params={"offset": offset, "timeout": 5}, timeout=15)
-        res.raise_for_status()
-        res_data = res.json()
-    except Exception as e:
-        print(f"[ERROR] Failed to fetch Telegram updates: {e}")
-        send_telegram_message(bot_token, chat_id, f"❌ <b>LinkedIn Poll Failure:</b> Could not fetch Telegram updates.\n<code>{html.escape(str(e))}</code>")
-        sys.exit(1)
+    action = payload.get("action")
+    chat_id = payload.get("chat_id") or chat_id_env
+    msg_id = payload.get("message_id")
+    user_id = payload.get("user_id")
 
-    updates = res_data.get("result", [])
-    if not updates:
-        print("[INFO] No new Telegram updates found.")
+    # Safety check: verify user_id if provided in dispatch payload
+    if user_id and str(user_id) != str(authorized_user_id):
+        print(f"[WARN] Unauthorized user_id={user_id} in client_payload. Expected {authorized_user_id}. Terminating.")
         sys.exit(0)
 
-    max_update_id = offset - 1 if offset > 0 else 0
-    state_modified = False
-
-    for update in updates:
-        update_id = update.get("update_id")
-        if update_id is not None and update_id > max_update_id:
-            max_update_id = update_id
-
-        if "callback_query" not in update:
-            continue
-
-        callback = update["callback_query"]
-        callback_id = callback.get("id")
-        from_user = callback.get("from", {})
-        from_id = from_user.get("id")
-        msg = callback.get("message", {})
-        msg_id = msg.get("message_id")
-        action = callback.get("data")
-
-        if str(from_id) != str(authorized_user_id):
-            print(f"[WARN] Received callback from unauthorized user_id={from_id}. Expected {authorized_user_id}. Ignoring.")
-            continue
-
+    # If no action provided (e.g. scheduled dead-letter run)
+    if not action:
+        print("[INFO] No dispatch action provided (scheduled or manual run). Checking state...")
         if not os.path.exists(PENDING_FILE):
-            if callback_id:
-                answer_callback_query(bot_token, callback_id, "Draft no longer pending.")
-            print("[INFO] Stale callback received. pending_post.json does not exist.")
-            if msg_id:
-                edit_telegram_message(
-                    bot_token, chat_id, msg_id,
-                    "⚠️ <i>This post draft was already processed or is no longer pending.</i>"
-                )
-            state_modified = True
-            continue
+            print("[INFO] No pending post. Exiting.")
+            sys.exit(0)
+        else:
+            print("[INFO] Pending post draft exists. Waiting for user decision via Cloudflare Worker relay.")
+            sys.exit(0)
 
+    # 2. Check if pending_post.json exists
+    if not os.path.exists(PENDING_FILE):
+        print("[INFO] Stale dispatch action received. pending_post.json does not exist.")
+        if msg_id:
+            edit_telegram_message(
+                bot_token, chat_id, msg_id,
+                "⚠️ <i>This post draft was already processed or is no longer pending.</i>"
+            )
+        sys.exit(0)
+
+    try:
+        with open(PENDING_FILE, "r", encoding="utf-8") as f:
+            pending_data = json.load(f)
+    except Exception as e:
+        print(f"[ERROR] Failed to read {PENDING_FILE}: {e}")
+        sys.exit(1)
+
+    post_text = pending_data.get("text", "")
+    image_title = pending_data.get("image_title", "MOBILE AI UPDATE")
+    category = pending_data.get("category", "MOBILE AI NEWS")
+    bg_prompt = pending_data.get("bg_prompt", "")
+    photo_msg_id = pending_data.get("photo_message_id")
+    if not msg_id:
+        msg_id = pending_data.get("message_id")
+
+    cover_bytes = None
+    if os.path.exists(COVER_FILE):
         try:
-            with open(PENDING_FILE, "r", encoding="utf-8") as f:
-                pending_data = json.load(f)
+            with open(COVER_FILE, "rb") as f:
+                cover_bytes = f.read()
         except Exception as e:
-            print(f"[ERROR] Failed to read {PENDING_FILE}: {e}")
-            continue
+            print(f"[WARN] Could not read {COVER_FILE}: {e}")
 
-        post_text = pending_data.get("text", "")
-        image_title = pending_data.get("image_title", "MOBILE AI UPDATE")
-        category = pending_data.get("category", "MOBILE AI NEWS")
-        bg_prompt = pending_data.get("bg_prompt", "")
-        photo_msg_id = pending_data.get("photo_message_id")
+    # 3. Action handling
+    if action in ("approve_all", "approve"):
+        print("[INFO] Approve received via Cloudflare Worker. Publishing text and cover image to LinkedIn...")
+        success, status_code, post_urn, res_text = publish_to_linkedin(
+            linkedin_access_token, linkedin_person_urn, post_text, cover_bytes
+        )
 
-        cover_bytes = None
-        if os.path.exists(COVER_FILE):
-            try:
-                with open(COVER_FILE, "rb") as f:
-                    cover_bytes = f.read()
-            except Exception as e:
-                print(f"[WARN] Could not read {COVER_FILE}: {e}")
-
-        # 1. Accept Both
-        if action in ("approve_all", "approve"):
-            if callback_id:
-                answer_callback_query(bot_token, callback_id, "Publishing to LinkedIn...")
-            print("[INFO] Approve All received. Publishing text and cover image to LinkedIn...")
-
-            success, status_code, post_urn, res_text = publish_to_linkedin(
-                linkedin_access_token, linkedin_person_urn, post_text, cover_bytes
-            )
-
-            if success:
-                print(f"[SUCCESS] Post published to LinkedIn. URN: {post_urn}")
-                cleanup_state_files()
-                state_modified = True
-
-                if msg_id:
-                    edit_telegram_message(
-                        bot_token, chat_id, msg_id,
-                        f"✅ <b>Posted to LinkedIn (Text + Cover Image Card)</b>\n\n{html.escape(post_text)}"
-                    )
-
-                post_url = f"https://www.linkedin.com/feed/update/{post_urn}/" if post_urn else ""
-                followup_text = f"🎉 <b>LinkedIn Post Published Successfully!</b>\n\n<b>Post URN:</b> <code>{html.escape(post_urn)}</code>"
-                if post_url:
-                    followup_text += f"\n<b>Link:</b> {post_url}"
-                send_telegram_message(bot_token, chat_id, followup_text)
-            else:
-                print(f"[ERROR] LinkedIn publication failed with status {status_code}: {res_text}")
-                cleanup_state_files()
-                state_modified = True
-
-                if msg_id:
-                    edit_telegram_message(
-                        bot_token, chat_id, msg_id,
-                        f"⚠️ <b>LinkedIn Publication Failed (HTTP {status_code})</b>\n\nDraft discarded. Re-triggering new post generation..."
-                    )
-
-                alert_text = (
-                    f"⚠️ <b>LinkedIn Posting Failed (HTTP {status_code})</b>\n\n"
-                    f"<b>Response:</b> <code>{html.escape(res_text)}</code>\n\n"
-                    f"<i>The failed draft has been discarded and a new post generation workflow has been triggered automatically.</i>"
-                )
-                send_telegram_message(bot_token, chat_id, alert_text)
-                trigger_generate_workflow()
-
-        # 2. Reject Both
-        elif action in ("reject_all", "reject"):
-            if callback_id:
-                answer_callback_query(bot_token, callback_id, "Draft rejected. Generating new draft...")
-            print("[INFO] Reject received. Discarding draft and triggering new generation...")
+        if success:
+            print(f"[SUCCESS] Post published to LinkedIn. URN: {post_urn}")
             cleanup_state_files()
-            state_modified = True
 
             if msg_id:
                 edit_telegram_message(
                     bot_token, chat_id, msg_id,
-                    f"❌ <b>Draft Rejected & Discarded</b>\n\n<s>{html.escape(post_text)}</s>"
+                    f"✅ <b>Posted to LinkedIn (Text + Cover Image Card)</b>\n\n{html.escape(post_text)}"
                 )
-            send_telegram_message(
-                bot_token, chat_id,
-                "🗑️ <b>Draft Rejected & Discarded.</b> Generating a brand new post draft now..."
+
+            post_url = f"https://www.linkedin.com/feed/update/{post_urn}/" if post_urn else ""
+            followup_text = f"🎉 <b>LinkedIn Post Published Successfully!</b>\n\n<b>Post URN:</b> <code>{html.escape(post_urn)}</code>"
+            if post_url:
+                followup_text += f"\n<b>Link:</b> {post_url}"
+            send_telegram_message(bot_token, chat_id, followup_text)
+        else:
+            print(f"[ERROR] LinkedIn publication failed with status {status_code}: {res_text}")
+            cleanup_state_files()
+
+            if msg_id:
+                edit_telegram_message(
+                    bot_token, chat_id, msg_id,
+                    f"⚠️ <b>LinkedIn Publication Failed (HTTP {status_code})</b>\n\nDraft discarded. Re-triggering new post generation..."
+                )
+
+            alert_text = (
+                f"⚠️ <b>LinkedIn Posting Failed (HTTP {status_code})</b>\n\n"
+                f"<b>Response:</b> <code>{html.escape(res_text)}</code>\n\n"
+                f"<i>The failed draft has been discarded and a new post generation workflow has been triggered automatically.</i>"
             )
+            send_telegram_message(bot_token, chat_id, alert_text)
             trigger_generate_workflow()
 
-        # 3. Accept Text & Regenerate Image (re-renders cover with new background / style)
-        elif action == "regen_image":
-            if callback_id:
-                answer_callback_query(bot_token, callback_id, "Regenerating cover image...")
-            print("[INFO] Regenerating cover image headline overlay...")
-            new_cover_bytes = create_professional_cover_image(image_title, category, bg_prompt)
+    elif action in ("reject_all", "reject"):
+        print("[INFO] Reject received via Cloudflare Worker. Discarding draft and triggering new generation...")
+        cleanup_state_files()
 
-            with open(COVER_FILE, "wb") as f:
-                f.write(new_cover_bytes)
-            state_modified = True
+        if msg_id:
+            edit_telegram_message(
+                bot_token, chat_id, msg_id,
+                f"❌ <b>Draft Rejected & Discarded</b>\n\n<s>{html.escape(post_text)}</s>"
+            )
+        send_telegram_message(
+            bot_token, chat_id,
+            "🗑️ <b>Draft Rejected & Discarded.</b> Generating a brand new post draft now..."
+        )
+        trigger_generate_workflow()
 
-            if photo_msg_id:
-                edit_telegram_photo(bot_token, chat_id, photo_msg_id, new_cover_bytes)
+    elif action == "regen_image":
+        print("[INFO] Regenerating cover image headline overlay...")
+        new_cover_bytes = create_professional_cover_image(image_title, category, bg_prompt)
 
-            send_telegram_message(bot_token, chat_id, "🎨 <b>New Cover Image Card generated!</b> Check the photo preview above.")
+        with open(COVER_FILE, "wb") as f:
+            f.write(new_cover_bytes)
 
-        # 4. Accept Image & Regenerate Text
-        elif action == "regen_text":
-            if callback_id:
-                answer_callback_query(bot_token, callback_id, "Regenerating post text...")
-            print("[INFO] Regenerating post text via Z.ai...")
-            try:
-                from generate_post import call_zai_api
-                new_text, new_title, new_cat, new_bg = call_zai_api(zai_api_key)
-                if new_text:
-                    pending_data["text"] = new_text
-                    pending_data["image_title"] = new_title
-                    pending_data["category"] = new_cat
-                    pending_data["bg_prompt"] = new_bg
+        if photo_msg_id:
+            edit_telegram_photo(bot_token, chat_id, photo_msg_id, new_cover_bytes)
 
-                    new_cover_bytes = create_professional_cover_image(new_title, new_cat, new_bg)
-                    with open(COVER_FILE, "wb") as f:
-                        f.write(new_cover_bytes)
+        send_telegram_message(bot_token, chat_id, "🎨 <b>New Cover Image Card generated!</b> Check the photo preview above.")
 
-                    with open(PENDING_FILE, "w", encoding="utf-8") as f:
-                        json.dump(pending_data, f, indent=2, ensure_ascii=False)
-                    state_modified = True
+    elif action == "regen_text":
+        print("[INFO] Regenerating post text via Z.ai...")
+        try:
+            from generate_post import call_zai_api
+            new_text, new_title, new_cat, new_bg = call_zai_api(zai_api_key)
+            if new_text:
+                pending_data["text"] = new_text
+                pending_data["image_title"] = new_title
+                pending_data["category"] = new_cat
+                pending_data["bg_prompt"] = new_bg
 
-                    if photo_msg_id:
-                        edit_telegram_photo(bot_token, chat_id, photo_msg_id, new_cover_bytes)
+                new_cover_bytes = create_professional_cover_image(new_title, new_cat, new_bg)
+                with open(COVER_FILE, "wb") as f:
+                    f.write(new_cover_bytes)
 
-                    if msg_id:
-                        formatted_text = (
-                            f"📝 <b>New LinkedIn Post Draft Pending Approval (Text & Headline Regenerated):</b>\n\n"
-                            f"{html.escape(new_text)}\n\n"
-                            f"<i>Please choose an action below:</i>"
-                        )
-                        edit_telegram_message(bot_token, chat_id, msg_id, formatted_text, keep_keyboard=True)
-                    send_telegram_message(bot_token, chat_id, "✍️ <b>New post text & headline generated!</b> Updated draft text above.")
-            except Exception as exc:
-                print(f"[ERROR] Text regeneration failed: {exc}")
-                send_telegram_message(bot_token, chat_id, f"❌ <b>Text regeneration failed:</b> {html.escape(str(exc))}")
+                with open(PENDING_FILE, "w", encoding="utf-8") as f:
+                    json.dump(pending_data, f, indent=2, ensure_ascii=False)
 
-    if max_update_id >= offset:
-        with open(LAST_UPDATE_FILE, "w", encoding="utf-8") as f:
-            f.write(str(max_update_id))
-        state_modified = True
+                if photo_msg_id:
+                    edit_telegram_photo(bot_token, chat_id, photo_msg_id, new_cover_bytes)
 
-    if state_modified:
-        print(f"[INFO] Pipeline state modified. Last update ID: {max_update_id}")
-    else:
-        print("[INFO] No state changes.")
+                if msg_id:
+                    formatted_text = (
+                        f"📝 <b>New LinkedIn Post Draft Pending Approval (Text & Headline Regenerated):</b>\n\n"
+                        f"{html.escape(new_text)}\n\n"
+                        f"<i>Please choose an action below:</i>"
+                    )
+                    edit_telegram_message(bot_token, chat_id, msg_id, formatted_text, keep_keyboard=True)
+                send_telegram_message(bot_token, chat_id, "✍️ <b>New post text & headline generated!</b> Updated draft text above.")
+        except Exception as exc:
+            print(f"[ERROR] Text regeneration failed: {exc}")
+            send_telegram_message(bot_token, chat_id, f"❌ <b>Text regeneration failed:</b> {html.escape(str(exc))}")
 
 if __name__ == "__main__":
     main()

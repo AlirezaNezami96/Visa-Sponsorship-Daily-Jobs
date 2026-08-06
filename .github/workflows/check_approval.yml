@@ -1,13 +1,14 @@
 # LinkedIn Content Approval & Publishing Workflow
-# Scheduled every 15 minutes during the daily window (15:00 - 20:30 UTC)
-# Also supports manual trigger via workflow_dispatch
+# Triggered instantly via Cloudflare Worker repository_dispatch (types: [telegram_approval])
+# Also includes a low-frequency schedule fallback (dead-letter check) and manual trigger
 
 name: Check LinkedIn Approval & Publish
 
 on:
+  repository_dispatch:
+    types: [telegram_approval]
   schedule:
-    - cron: "*/15 15-19 * * *"
-    - cron: "0,15,30 20 * * *"
+    - cron: "0 16-21 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -38,9 +39,11 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Poll Telegram approval & publish if approved
+      - name: Process Telegram approval & publish if approved
         env:
+          CLIENT_PAYLOAD: ${{ toJson(github.event.client_payload) }}
           ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_AUTHORIZED_USER_ID: ${{ secrets.TELEGRAM_AUTHORIZED_USER_ID }}
