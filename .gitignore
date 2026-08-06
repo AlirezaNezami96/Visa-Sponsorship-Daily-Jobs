@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Node.js / Cloudflare Worker
+node_modules/
+dist/
+.wrangler/
+
+# Environment & Credentials
+.env
+*.pem
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Temporary test images (preserve state/.gitkeep)
+*.jpg
+*.jpeg
+*.png
+!state/.gitkeep
