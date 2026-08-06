@@ -130,9 +130,16 @@ def send_telegram_draft(bot_token: str, chat_id: str, post_text: str, cover_byte
 
     return photo_msg_id, text_msg_id
 
+def get_linkedin_api_version() -> str:
+    """Returns valid 6-digit YYYYMM LinkedIn API version string (e.g. '202501')."""
+    raw = os.environ.get("LINKEDIN_API_VERSION", "202501").strip()
+    if len(raw) == 8 and raw.isdigit():
+        return raw[:6]
+    return raw if raw else "202501"
+
 def upload_image_to_linkedin(access_token: str, person_urn: str, image_bytes: bytes) -> str:
     init_url = "https://api.linkedin.com/rest/images?action=initializeUpload"
-    linkedin_version = os.environ.get("LINKEDIN_API_VERSION", "202501")
+    linkedin_version = get_linkedin_api_version()
     headers = {
         "Authorization": f"Bearer {access_token}",
         "LinkedIn-Version": linkedin_version,
@@ -171,7 +178,7 @@ def upload_image_to_linkedin(access_token: str, person_urn: str, image_bytes: by
 
 def publish_to_linkedin(access_token: str, person_urn: str, text: str, cover_bytes: bytes = None) -> tuple[bool, int, str, str]:
     url = "https://api.linkedin.com/rest/posts"
-    linkedin_version = os.environ.get("LINKEDIN_API_VERSION", "202501")
+    linkedin_version = get_linkedin_api_version()
 
     if not person_urn.startswith("urn:li:person:"):
         person_urn = f"urn:li:person:{person_urn}"
