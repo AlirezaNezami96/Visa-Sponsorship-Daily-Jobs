@@ -10,8 +10,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 FONT_FILE = "Roboto-Bold.ttf"
 
-# Configurable Active Image Provider: "pollinations" | "gemini"
-ACTIVE_IMAGE_PROVIDER = "pollinations"
+# Configurable Active Image Provider: "gemini" | "pollinations"
+ACTIVE_IMAGE_PROVIDER = "gemini"
 
 def ensure_font_downloaded() -> str:
     """Ensures Roboto-Bold font is available locally."""
@@ -28,17 +28,28 @@ def ensure_font_downloaded() -> str:
     return FONT_FILE if os.path.exists(FONT_FILE) else ""
 
 def fetch_gemini_background_image(post_topic: str) -> Image.Image | None:
-    """DISABLED TEMPORARILY: Gemini Image API background generator (preserved for future restoration)."""
+    """Gemini Image API background generator (gemini-2.5-flash-image)."""
     gemini_key = os.environ.get("GEMINI_API_KEY")
     if not gemini_key:
         print("[WARN] GEMINI_API_KEY is not set.")
         return None
 
-    topic_clean = post_topic.strip()[:150] if post_topic else "software engineering and mobile development"
+    topic_clean = post_topic.strip() if post_topic else "Mobile AI & Software Engineering"
     prompt = (
-        f"A clean, minimal, abstract digital illustration for a software engineering article about {topic_clean}. "
-        "Dark slate and navy background, subtle glowing neon blue and purple nodes, geometric network lines, high contrast visual metaphor. "
-        "No text, no letters, no words, no logos, no mascots."
+        "Create a modern professional LinkedIn post illustration for a software engineering / technology article.\n\n"
+        "The image should visually represent the main idea of the post using a clean, minimal, premium style. "
+        "Focus on concepts like innovation, software development, artificial intelligence, mobile apps, cloud technology, "
+        "automation, or digital transformation depending on the topic.\n\n"
+        "Style: futuristic but professional, suitable for a senior developer's LinkedIn profile. Use a dark background "
+        "with elegant blue and purple gradients, subtle glowing elements, abstract UI interfaces, code elements, digital networks, "
+        "and modern technology aesthetics.\n\n"
+        "Include a short, bold title text in the center representing the main topic of the post (2-5 words maximum). "
+        "Make the typography clean, modern, and highly readable.\n\n"
+        "Avoid cartoon characters, mascots, exaggerated 3D illustrations, and overly busy designs. "
+        "The image should look like it was created by a technology company for a LinkedIn announcement.\n\n"
+        "Aspect ratio: 16:9.\n"
+        "High quality, professional, minimal, visually striking.\n"
+        f"Post topic: {topic_clean}"
     )
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key={gemini_key}"
