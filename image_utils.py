@@ -104,6 +104,7 @@ def fetch_pollinations_background_image(post_topic: str) -> Image.Image | None:
 
     try:
         print(f"[INFO] Requesting 16:9 cover background from Pollinations.ai API (seed={seed})...")
+        print(f"[INFO] Image Generation Prompt:\n>>>\n{full_prompt}\n<<<")
         r = requests.get(url, headers=headers, timeout=40)
         if r.status_code == 200 and len(r.content) > 3000:
             img = Image.open(io.BytesIO(r.content)).convert("RGBA")
