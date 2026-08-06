@@ -1,0 +1,11 @@
+{
+  "text": "Running a 3B parameter model on a smartphone sounds incredible until you watch the battery icon drop 1% every ninety seconds.\n\nEveryone talks about on-device AI privacy, but almost nobody talks about thermal limits.\n\nWhen testing local inference runtimes on mobile recently, the initial performance numbers looked fantastic on paper. Low latency, zero network roundtrips, total offline privacy. But running continuous local matrix math turns the phone's processor into a pocket warmer fast 📱\n\nMobile chips are optimized for intense, ultra-short bursts of work — like rendering a 60fps transition or applying a photo filter. Small language models do the exact opposite. They demand steady, high-power calculations for tens of seconds at a time.\n\nWithin two minutes, the operating system steps in to save the device from overheating. It throttles the chip frequency down hard ⚡\n\nThat smooth, fast token generation suddenly stutters, and your private on-device model becomes significantly slower than a standard cloud API call over a weak cellular network.\n\nThe engineering challenge for mobile AI isn't just compressing models down to fit in memory. It's building UI patterns and task workflows designed for two-second bursts of inference rather than long continuous generation.\n\nAre you seeing real user demand for fully offline local AI features, or is a hybrid cloud approach still the only practical answer for longer interactions?\n\n#OnDeviceAI #MobileDevelopment #AIEngineering #TechTrends",
+  "image_title": "ON-DEVICE AI THERMAL REALITY",
+  "category": "MOBILE AI ENGINEERING",
+  "bg_prompt": "A smartphone processor struggling with thermal throttling while running small language models locally.",
+  "cover_file": "state/cover_image.jpg",
+  "image_source": "disabled",
+  "generated_at": "2026-08-06T11:13:43.291984+00:00",
+  "photo_message_id": null,
+  "message_id": 81
+}
