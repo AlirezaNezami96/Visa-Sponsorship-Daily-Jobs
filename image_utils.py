@@ -10,8 +10,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 FONT_FILE = "Roboto-Bold.ttf"
 
-# Configurable Active Image Provider: "gemini" | "pollinations"
-ACTIVE_IMAGE_PROVIDER = "gemini"
+# Configurable Active Image Provider: "disabled" | "gemini" | "pollinations"
+ACTIVE_IMAGE_PROVIDER = "disabled"
 
 def ensure_font_downloaded() -> str:
     """Ensures Roboto-Bold font is available locally."""
@@ -84,9 +84,8 @@ def fetch_gemini_background_image(post_topic: str) -> Image.Image | None:
     return None
 
 def fetch_pollinations_background_image(post_topic: str) -> Image.Image | None:
-    """Active Image Provider: Fetches a 1200x675 (16:9) technology illustration from Pollinations.ai API."""
+    """Fetches a 1200x675 (16:9) technology illustration from Pollinations.ai API."""
     api_key = os.environ.get("POLLINATIONS_API_KEY")
-
     topic_str = post_topic.strip() if post_topic else "Mobile AI & Software Engineering"
 
     full_prompt = (
@@ -151,8 +150,12 @@ def draw_pil_gradient_background(width: int = 1200, height: int = 675) -> Image.
 
 def generate_tech_illustration(title: str, post_topic: str) -> tuple[bytes, str]:
     """Service Layer Entrypoint: Generates a 16:9 LinkedIn cover illustration (1200x675).
-    Returns (JPEG_bytes, image_source) where image_source is 'pollinations', 'gemini', or 'pil_fallback'.
+    If ACTIVE_IMAGE_PROVIDER is 'disabled', returns (b"", "disabled").
     """
+    if ACTIVE_IMAGE_PROVIDER in ("disabled", "none", "off"):
+        print("[INFO] Image generation is currently DISABLED.")
+        return b"", "disabled"
+
     width, height = 1200, 675
     base_img = None
     source = "pil_fallback"

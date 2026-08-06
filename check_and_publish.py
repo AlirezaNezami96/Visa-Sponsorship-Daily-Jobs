@@ -87,18 +87,19 @@ def send_telegram_draft(bot_token: str, chat_id: str, post_text: str, cover_byte
         caption = "🖼️ <b>AI Generated LinkedIn Cover Illustration (Pollinations.ai)</b>"
     else:
         caption = "⚠️ <b>AI image generation failed — showing fallback design</b>"
-    try:
-        files = {"photo": ("cover.jpg", cover_bytes, "image/jpeg")}
-        data = {
-            "chat_id": chat_id,
-            "caption": caption,
-            "parse_mode": "HTML"
-        }
-        p_res = requests.post(photo_url, data=data, files=files, timeout=25)
-        if p_res.status_code == 200:
-            photo_msg_id = p_res.json().get("result", {}).get("message_id")
-    except Exception as e:
-        print(f"[WARN] Failed to send Telegram photo preview: {e}")
+    if cover_bytes and img_source != "disabled":
+        try:
+            files = {"photo": ("cover.jpg", cover_bytes, "image/jpeg")}
+            data = {
+                "chat_id": chat_id,
+                "caption": caption,
+                "parse_mode": "HTML"
+            }
+            p_res = requests.post(photo_url, data=data, files=files, timeout=25)
+            if p_res.status_code == 200:
+                photo_msg_id = p_res.json().get("result", {}).get("message_id")
+        except Exception as e:
+            print(f"[WARN] Failed to send Telegram photo preview: {e}")
 
     msg_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     formatted_text = (
