@@ -10,6 +10,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 FONT_FILE = "Roboto-Bold.ttf"
 
+# Configurable Active Image Provider: "pollinations" | "gemini"
+ACTIVE_IMAGE_PROVIDER = "pollinations"
+
 def ensure_font_downloaded() -> str:
     """Ensures Roboto-Bold font is available locally."""
     if not os.path.exists(FONT_FILE):
@@ -25,7 +28,7 @@ def ensure_font_downloaded() -> str:
     return FONT_FILE if os.path.exists(FONT_FILE) else ""
 
 def fetch_gemini_background_image(post_topic: str) -> Image.Image | None:
-    """Calls Gemini API (gemini-2.5-flash-image) with responseModalities: ['IMAGE']."""
+    """DISABLED TEMPORARILY: Gemini Image API background generator (preserved for future restoration)."""
     gemini_key = os.environ.get("GEMINI_API_KEY")
     if not gemini_key:
         print("[WARN] GEMINI_API_KEY is not set.")
@@ -41,20 +44,10 @@ def fetch_gemini_background_image(post_topic: str) -> Image.Image | None:
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key={gemini_key}"
     headers = {"Content-Type": "application/json"}
     payload = {
-        "contents": [
-            {
-                "parts": [
-                    {
-                        "text": prompt
-                    }
-                ]
-            }
-        ],
+        "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
             "responseModalities": ["IMAGE"],
-            "imageConfig": {
-                "aspectRatio": "16:9"
-            }
+            "imageConfig": {"aspectRatio": "16:9"}
         }
     }
 
@@ -80,32 +73,51 @@ def fetch_gemini_background_image(post_topic: str) -> Image.Image | None:
     return None
 
 def fetch_pollinations_background_image(post_topic: str) -> Image.Image | None:
-    """Fetches a high-resolution 16:9 AI illustration from Pollinations FLUX engine."""
-    topic_clean = post_topic.strip()[:100] if post_topic else "software engineering and mobile AI"
-    prompt = (
-        f"Modern professional 16:9 LinkedIn technology post illustration for software engineering article about {topic_clean}. "
-        "Dark futuristic background with glowing blue and purple nodes, abstract UI, digital networks. High quality 8k."
+    """Active Image Provider: Fetches a 1200x675 (16:9) FLUX technology illustration from Pollinations.ai."""
+    api_key = os.environ.get("POLLINATIONS_API_KEY")
+
+    default_style_prompt = (
+        "Create a premium LinkedIn technology illustration.\n"
+        "Dark navy background with blue and purple gradients.\n"
+        "Modern software engineering aesthetic.\n"
+        "Abstract UI elements, AI visualization, digital innovation.\n"
+        "Minimal, clean, professional corporate design.\n"
+        "No cartoon style, no watermark, no logos.\n"
+        "Suitable for a senior software developer personal brand.\n"
+        "16:9 format."
     )
+
+    if post_topic and post_topic.strip():
+        full_prompt = f"{default_style_prompt}\nTopic: {post_topic.strip()[:100]}"
+    else:
+        full_prompt = default_style_prompt
+
     seed = random.randint(100, 999999)
-    encoded_prompt = urllib.parse.quote(prompt)
-    url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1200&height=675&seed={seed}&model=flux&nologo=true"
+    encoded_prompt = urllib.parse.quote(full_prompt)
+    url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1200&height=675&model=flux&nologo=true&seed={seed}"
+    if api_key:
+        url += f"&api_key={api_key}"
+
+    headers = {}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
 
     try:
-        print(f"[INFO] Requesting AI illustration from Pollinations FLUX engine (seed={seed})...")
-        r = requests.get(url, timeout=30)
+        print(f"[INFO] Requesting 16:9 cover background from Pollinations.ai (FLUX engine, seed={seed})...")
+        r = requests.get(url, headers=headers, timeout=40)
         if r.status_code == 200 and len(r.content) > 3000:
             img = Image.open(io.BytesIO(r.content)).convert("RGBA")
-            print("[INFO] Pollinations FLUX background generated successfully.")
+            print("[INFO] Pollinations.ai FLUX background generated successfully.")
             return img.resize((1200, 675), Image.Resampling.LANCZOS)
         else:
-            print(f"[WARN] Pollinations returned HTTP {r.status_code}")
+            print(f"[ERROR] Pollinations.ai API call failed (HTTP {r.status_code}): {r.text[:200]}")
     except Exception as e:
-        print(f"[WARN] Pollinations fetch failed: {e}")
+        print(f"[ERROR] Exception during Pollinations.ai image generation: {e}")
 
     return None
 
 def draw_pil_gradient_background(width: int = 1200, height: int = 675) -> Image.Image:
-    """Fallback Tier 3: Generates a smooth dark slate gradient background."""
+    """Fallback Tier: Generates a smooth dark slate gradient background."""
     base = Image.new("RGBA", (width, height), (15, 23, 42, 255))
     draw_bg = ImageDraw.Draw(base)
     for y in range(height):
@@ -116,26 +128,37 @@ def draw_pil_gradient_background(width: int = 1200, height: int = 675) -> Image.
     return base
 
 def generate_tech_illustration(title: str, post_topic: str) -> tuple[bytes, str]:
-    """Creates a 16:9 LinkedIn cover illustration (1200x675).
-    Returns (JPEG_bytes, image_source) where image_source is 'gemini', 'pollinations_flux', or 'pil_fallback'.
+    """Service Layer Entrypoint: Generates a 16:9 LinkedIn cover illustration (1200x675).
+    Returns (JPEG_bytes, image_source) where image_source is 'pollinations_flux', 'gemini', or 'pil_fallback'.
     """
     width, height = 1200, 675
-    source = "gemini"
+    base_img = None
+    source = "pil_fallback"
 
-    # 1. Primary: Gemini Image API
-    base_img = fetch_gemini_background_image(post_topic or title)
-
-    # 2. Secondary: Pollinations FLUX AI engine if Gemini failed/quota exceeded
-    if base_img is None:
-        source = "pollinations_flux"
-        print("[INFO] Gemini Image API unavailable. Requesting Pollinations FLUX AI engine...")
+    if ACTIVE_IMAGE_PROVIDER == "pollinations":
+        print("[INFO] Active Image Provider: Pollinations.ai (FLUX)")
         base_img = fetch_pollinations_background_image(post_topic or title)
+        if base_img:
+            source = "pollinations_flux"
+        else:
+            print("[WARN] Pollinations.ai generation failed. Falling back to PIL dark gradient background.")
+            base_img = draw_pil_gradient_background(width, height)
+            source = "pil_fallback"
 
-    # 3. Final Fallback: PIL dark gradient if both AI image APIs failed
-    if base_img is None:
-        source = "pil_fallback"
-        print("[WARN] All AI image APIs failed. Using PIL dark gradient fallback.")
+    elif ACTIVE_IMAGE_PROVIDER == "gemini":
+        print("[INFO] Active Image Provider: Gemini API")
+        base_img = fetch_gemini_background_image(post_topic or title)
+        if base_img:
+            source = "gemini"
+        else:
+            print("[WARN] Gemini Image API generation failed. Falling back to PIL dark gradient background.")
+            base_img = draw_pil_gradient_background(width, height)
+            source = "pil_fallback"
+
+    else:
+        print(f"[WARN] Unknown provider '{ACTIVE_IMAGE_PROVIDER}'. Using PIL dark gradient background.")
         base_img = draw_pil_gradient_background(width, height)
+        source = "pil_fallback"
 
     # Standard Path: Composite PIL title card overlay
     overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
