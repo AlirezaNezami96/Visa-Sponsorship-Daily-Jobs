@@ -258,9 +258,14 @@ def main():
     payload = {}
     if raw_payload:
         try:
-            payload = json.loads(raw_payload)
+            parsed = json.loads(raw_payload)
+            if isinstance(parsed, dict):
+                payload = parsed
         except Exception as e:
             print(f"[WARN] Could not parse CLIENT_PAYLOAD JSON: {e}")
+
+    if not isinstance(payload, dict):
+        payload = {}
 
     action = payload.get("action")
     chat_id = payload.get("chat_id") or chat_id_env
