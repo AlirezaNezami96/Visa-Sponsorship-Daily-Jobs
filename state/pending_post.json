@@ -1,0 +1,11 @@
+{
+  "text": "Most developers assume on-device LLMs fail because mobile chips are too slow. The actual killer is much quieter: the operating system memory manager.\n\nIf your local AI app suddenly disappears in the background, your model speed isn't the problem.\n\nWhile testing a 2-billion parameter model on a mobile device recently, the token generation speed was surprisingly solid. Text was streaming faster than most people can read. But the moment the user switched apps or the screen turned off, the operating system quietly killed the whole process.\n\nWhen you run a compressed AI model directly on a phone, it has to keep gigabytes of model weights parked in system memory. On a device with 8 gigabytes of RAM, that model might take up half of the entire memory budget. 📱\n\nMobile operating systems are aggressively designed to preserve battery and keep the interface smooth. The second another app needs memory, the operating system targets the heaviest process running. So while the mobile chip handles the math just fine, the system views your local model as a threat and terminates it without warning. ⚙️\n\nBuilding reliable mobile AI isn't just about getting a model to load. It requires designing around sudden process deaths, aggressive state recovery, and accepting that on-device inference usually has to be a foreground-first experience.\n\nAre you treating on-device inference purely as a foreground task, or have you found a clean pattern for handling heavy background memory pressure?\n\n#OnDeviceAI #MobileDevelopment #AndroidDev #MachineLearning",
+  "image_title": "ON-DEVICE AI MEMORY TRAPS",
+  "category": "SOFTWARE ENGINEERING",
+  "bg_prompt": "An Android smartphone RAM allocation diagram showing background process termination while executing a local machine learning model.",
+  "cover_file": "state/cover_image.jpg",
+  "image_source": "disabled",
+  "generated_at": "2026-08-07T16:24:06.251210+00:00",
+  "photo_message_id": null,
+  "message_id": 83
+}
