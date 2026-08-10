@@ -1,11 +1,11 @@
 {
-  "text": "Running a 3B parameter model on a mobile device sounds impressive until your app crashes from an Out Of Memory error on mid-tier hardware.\n\nMost mobile teams fail at on-device AI because they treat edge inference like server-side API calls.\n\nShrinking a model to INT4 quantization is only half the battle. If your runtime leaks native memory or stalls the main thread during tensor allocation, the user experience collapses.\n\n⚡ Memory allocation patterns: Server runtimes allocate memory fluidly on demand. On mobile, unmanaged heap allocation triggers thermal throttling and aggressive kills by the OS low-memory daemon.\n\n🛠️ Engine overhead: Heavy runtimes bloat your binary size before loading a single weight file into memory. Frameworks like ExecuTorch isolate execution graphs to keep the native footprint minimal.\n\n📌 Thread context switching: Routing tensor execution to the NPU or GPU requires strict memory mapping. Default background thread pools still fight with UI rendering pipelines for cache locality.\n\nPrioritize static memory allocation profiles and hardware delegate stability before optimizing raw token generation speed. A reliable 12 tokens per second beats a choppy 30 tokens per second that crashes mid-session.\n\nAre you targeting GPU/NPU delegates for your local models, or sticking to CPU execution for broader device coverage?\n\n#OnDeviceAI #MobileEngineering #AndroidDev #MachineLearning",
-  "image_title": "ON-DEVICE AI MEMORY TRAPS",
-  "category": "SOFTWARE ENGINEERING",
-  "bg_prompt": "Technical breakdown of memory allocation and runtime stability challenges when deploying local LLMs on mobile devices.",
+  "text": "Running a 3B parameter model directly on a mid-range Android device used to feel like an exercise in thermal throttling. But recent optimizations in ExecuTorch and 4-bit quantization are changing what is practical on edge hardware.\n\nThe main issue with local inference on mobile has never been raw compute speed. It is unified memory bandwidth and battery power. When an unoptimized runtime pegs the GPU, thermal management throttles your core frequencies within two minutes.\n\nBy shifting matrix multiplication to dedicated NPUs and keeping weight sizes under 2GB, offline background tasks suddenly become viable. You get zero network latency, total data privacy, and zero API costs per user.\n\nThe trade-off is precision. Drops in output quality are real when compressing weights down to INT4, especially for complex reasoning tasks. But for structured text extraction or quick classification, local models are ready for production.\n\nAre you testing local LLMs on mobile yet, or are API calls still the default for your stack?\n\n(Link in the first comment)",
+  "image_title": "ON-DEVICE AI ON MOBILE",
+  "category": "ON-DEVICE AI",
+  "bg_prompt": "Running quantized local language models efficiently on mobile device neural processing units.",
   "cover_file": "state/cover_image.jpg",
   "image_source": "disabled",
-  "generated_at": "2026-08-10T15:13:31.199492+00:00",
+  "generated_at": "2026-08-10T15:49:50.033114+00:00",
   "photo_message_id": null,
-  "message_id": 90
+  "message_id": 91
 }
