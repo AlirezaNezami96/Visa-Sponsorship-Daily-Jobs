@@ -284,13 +284,41 @@ def main():
             sys.exit(0)
 
     if not os.path.exists(PENDING_FILE):
-        print("[INFO] Stale dispatch action received. pending_post.json does not exist.")
-        if msg_id:
-            edit_telegram_message(
-                bot_token, chat_id, msg_id,
-                "⚠️ <i>This post draft was already processed or is no longer pending.</i>"
+        print(f"[INFO] Dispatch action '{action}' received, but {PENDING_FILE} does not exist.")
+        if action in ("reject_regen", "reject_all", "regen_text"):
+            print("[INFO] Action requires generating a new post. Triggering generate.yml workflow...")
+            cleanup_state_files()
+            if msg_id:
+                edit_telegram_message(
+                    bot_token, chat_id, msg_id,
+                    "🔄 <b>Draft Rejected — Generating New Draft...</b>"
+                )
+            send_telegram_message(
+                bot_token, chat_id,
+                "🔄 <b>Generating a brand new post draft now...</b>"
             )
-        sys.exit(0)
+            trigger_generate_workflow()
+            sys.exit(0)
+        elif action in ("reject", "reject_only"):
+            print("[INFO] Reject action received. Cleaning up state...")
+            cleanup_state_files()
+            if msg_id:
+                edit_telegram_message(
+                    bot_token, chat_id, msg_id,
+                    "❌ <b>Draft Rejected & Discarded</b>"
+                )
+            send_telegram_message(
+                bot_token, chat_id,
+                "🗑️ <b>Draft Rejected.</b> No new post will be generated."
+            )
+            sys.exit(0)
+        else:
+            if msg_id:
+                edit_telegram_message(
+                    bot_token, chat_id, msg_id,
+                    "⚠️ <i>This post draft was already processed or is no longer pending.</i>"
+                )
+            sys.exit(0)
 
     try:
         with open(PENDING_FILE, "r", encoding="utf-8") as f:
