@@ -4,6 +4,7 @@ import json
 import html
 import requests
 from datetime import datetime, timezone
+import random
 from image_utils import create_professional_cover_image
 
 STATE_DIR = "state"
