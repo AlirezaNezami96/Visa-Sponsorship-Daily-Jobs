@@ -1,0 +1,11 @@
+{
+  "text": "Most engineers think squeezing a 3B parameter model onto a smartphone requires aggressive 4-bit quantization.\n\nBut the main bottleneck isn't RAM capacity.\n\nIt's memory bandwidth saturation and thermal throttling during long generation loops.\n\nWhen deploying local LLMs to mobile devices with ExecuTorch or ONNX Runtime, dropping from FP16 to INT4 reduces memory footprint by up to 75 percent.\n\nYet assuming INT4 automatically means lower latency is a mistake.\n\n❌ INT4 Quantization: Dramatically reduces RAM footprint, but CPU and NPU dequantization overhead causes latency spikes if the chip lacks native 4-bit vector instructions.\n\n✅ FP16 Precision: Consumes more RAM, but runs directly on modern mobile GPU hardware pipelines without runtime unpacking penalties.\n\n⚡ Thermal Throttling: High memory transfers trigger rapid thermal limits, cutting processor clock speeds and causing severe token-per-second degradation after 30 seconds of execution.\n\n🛠️ Optimization Strategy: Group-wise weight-only INT8 quantization combined with static memory allocation offers the best balance of speed, memory bus usage, and power draw.\n\n📌 Memory size reduction is useless if dequantization logic starves your memory bus. Always profile native instruction set support before committing to a quantization scheme.\n\nHow are you balancing thermal limits and memory bandwidth when running local inference on mobile?\n\n#OnDeviceAI #AndroidDev #MobileEngineering #MachineLearning",
+  "image_title": "ON-DEVICE LLM QUANTIZATION",
+  "category": "ON-DEVICE AI",
+  "bg_prompt": "An engineering comparison between memory bandwidth limitations and local LLM quantization performance on mobile processors.",
+  "cover_file": "state/cover_image.jpg",
+  "image_source": "disabled",
+  "generated_at": "2026-08-10T15:07:53.311555+00:00",
+  "photo_message_id": null,
+  "message_id": 89
+}
