@@ -270,9 +270,16 @@ def main():
     msg_id = payload.get("message_id")
     user_id = payload.get("user_id")
 
-    if user_id and str(user_id) != str(authorized_user_id):
-        print(f"[WARN] Unauthorized user_id={user_id} in client_payload. Expected {authorized_user_id}. Terminating.")
-        sys.exit(0)
+    if user_id and authorized_user_id:
+        u_str = str(user_id).strip()
+        auth_str = str(authorized_user_id).strip()
+        if u_str != auth_str:
+            print(f"[WARN] Unauthorized user_id='{u_str}' in client_payload. Expected '{auth_str}'. Terminating.")
+            sys.exit(0)
+        else:
+            print(f"[INFO] User authorization verified (user_id='{u_str}').")
+    else:
+        print(f"[INFO] User authorization check skipped (user_id={user_id}, authorized_user_id={authorized_user_id}).")
 
     if not action:
         print("[INFO] No dispatch action provided (scheduled or manual run). Checking state...")
