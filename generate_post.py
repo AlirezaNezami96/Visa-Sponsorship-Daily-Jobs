@@ -202,7 +202,11 @@ def main():
 
     os.makedirs(STATE_DIR, exist_ok=True)
 
-    if os.path.exists(PENDING_FILE):
+    force_gen = os.environ.get("FORCE_GENERATE", "false").lower() in ("true", "1")
+    event_name = os.environ.get("GITHUB_EVENT_NAME", "")
+    is_manual_or_dispatch = event_name in ("workflow_dispatch", "repository_dispatch") or force_gen
+
+    if os.path.exists(PENDING_FILE) and not is_manual_or_dispatch:
         print(f"[INFO] {PENDING_FILE} exists. Previous draft is still awaiting decision.")
         send_telegram_alert(
             bot_token,

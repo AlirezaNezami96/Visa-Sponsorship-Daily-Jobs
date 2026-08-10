@@ -43,6 +43,7 @@ jobs:
           POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
           python generate_post.py
 
@@ -50,5 +51,5 @@ jobs:
         run: |
           git config user.name "content-bot"
           git config user.email "content-bot@users.noreply.github.com"
-          git add state/pending_post.json 2>/dev/null || true
+          git add -A state/ 2>/dev/null || true
           git diff --cached --quiet || (git commit -m "chore: add pending linkedin post draft [skip ci]" && git push)
