@@ -59,12 +59,11 @@ def edit_telegram_message(bot_token: str, chat_id: str, message_id: int, text: s
         payload["reply_markup"] = {
             "inline_keyboard": [
                 [
-                    {"text": "✅ Accept Both", "callback_data": "approve_all"},
-                    {"text": "❌ Reject Both", "callback_data": "reject_all"}
+                    {"text": "✅ Accept", "callback_data": "approve"}
                 ],
                 [
-                    {"text": "📝 Accept Text & New Image", "callback_data": "regen_image"},
-                    {"text": "🖼️ Accept Image & New Text", "callback_data": "regen_text"}
+                    {"text": "❌ Reject", "callback_data": "reject"},
+                    {"text": "🔄 Reject & Regenerate", "callback_data": "reject_regen"}
                 ]
             ]
         }
@@ -114,12 +113,11 @@ def send_telegram_draft(bot_token: str, chat_id: str, post_text: str, cover_byte
         "reply_markup": {
             "inline_keyboard": [
                 [
-                    {"text": "✅ Accept Both", "callback_data": "approve_all"},
-                    {"text": "❌ Reject Both", "callback_data": "reject_all"}
+                    {"text": "✅ Accept", "callback_data": "approve"}
                 ],
                 [
-                    {"text": "📝 Accept Text & New Image", "callback_data": "regen_image"},
-                    {"text": "🖼️ Accept Image & New Text", "callback_data": "regen_text"}
+                    {"text": "❌ Reject", "callback_data": "reject"},
+                    {"text": "🔄 Reject & Regenerate", "callback_data": "reject_regen"}
                 ]
             ]
         }
@@ -317,8 +315,8 @@ def main():
             print(f"[WARN] Could not read {COVER_FILE}: {e}")
 
     # 1. Accept Both
-    if action in ("approve_all", "approve"):
-        print("[INFO] Approve received via Cloudflare Worker. Publishing text and cover image to LinkedIn...")
+    if action in ("approve", "approve_all", "accept"):
+        print("[INFO] Approve received via Cloudflare Worker. Publishing text to LinkedIn...")
         success, status_code, post_urn, res_text = publish_to_linkedin(
             linkedin_access_token, linkedin_person_urn, post_text, cover_bytes
         )
@@ -330,7 +328,7 @@ def main():
             if msg_id:
                 edit_telegram_message(
                     bot_token, chat_id, msg_id,
-                    f"✅ <b>Posted to LinkedIn (Text + 16:9 Cover Illustration)</b>\n\n{html.escape(post_text)}"
+                    f"✅ <b>Posted to LinkedIn</b>\n\n{html.escape(post_text)}"
                 )
 
             post_url = f"https://www.linkedin.com/feed/update/{post_urn}/" if post_urn else ""
@@ -356,15 +354,30 @@ def main():
             send_telegram_message(bot_token, chat_id, alert_text)
             trigger_generate_workflow()
 
-    # 2. Reject Both
-    elif action in ("reject_all", "reject"):
-        print("[INFO] Reject received via Cloudflare Worker. Discarding draft and triggering new generation...")
+    # 2. Reject & Don't Generate New Post
+    elif action in ("reject", "reject_only"):
+        print("[INFO] Reject received via Cloudflare Worker. Discarding draft without generating a new post...")
         cleanup_state_files()
 
         if msg_id:
             edit_telegram_message(
                 bot_token, chat_id, msg_id,
                 f"❌ <b>Draft Rejected & Discarded</b>\n\n<s>{html.escape(post_text)}</s>"
+            )
+        send_telegram_message(
+            bot_token, chat_id,
+            "🗑️ <b>Draft Rejected.</b> No new post will be generated."
+        )
+
+    # 3. Reject & Generate New Post
+    elif action in ("reject_regen", "reject_all"):
+        print("[INFO] Reject & Regenerate received via Cloudflare Worker. Discarding draft and triggering new generation...")
+        cleanup_state_files()
+
+        if msg_id:
+            edit_telegram_message(
+                bot_token, chat_id, msg_id,
+                f"🔄 <b>Draft Rejected — Generating New Draft...</b>\n\n<s>{html.escape(post_text)}</s>"
             )
         send_telegram_message(
             bot_token, chat_id,

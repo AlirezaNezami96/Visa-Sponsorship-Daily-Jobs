@@ -167,12 +167,11 @@ def send_telegram_draft(bot_token: str, chat_id: str, post_text: str, cover_byte
         "reply_markup": {
             "inline_keyboard": [
                 [
-                    {"text": "✅ Accept Both", "callback_data": "approve_all"},
-                    {"text": "❌ Reject Both", "callback_data": "reject_all"}
+                    {"text": "✅ Accept", "callback_data": "approve"}
                 ],
                 [
-                    {"text": "📝 Accept Text & New Image", "callback_data": "regen_image"},
-                    {"text": "🖼️ Accept Image & New Text", "callback_data": "regen_text"}
+                    {"text": "❌ Reject", "callback_data": "reject"},
+                    {"text": "🔄 Reject & Regenerate", "callback_data": "reject_regen"}
                 ]
             ]
         }
