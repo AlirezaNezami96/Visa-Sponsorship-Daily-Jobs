@@ -11,6 +11,33 @@ STATE_DIR = "state"
 PENDING_FILE = os.path.join(STATE_DIR, "pending_post.json")
 COVER_FILE = os.path.join(STATE_DIR, "cover_image.jpg")
 
+def ensure_telegram_webhook(bot_token: str) -> None:
+    """Ensures Telegram bot webhook is registered to point to the Cloudflare Worker relay."""
+    worker_url = os.environ.get("WORKER_URL", "https://telegram-relay.linkedindailyposts.workers.dev")
+    secret_token = os.environ.get("TELEGRAM_WEBHOOK_SECRET", "my_webhook_secret_99")
+    try:
+        info_url = f"https://api.telegram.org/bot{bot_token}/getWebhookInfo"
+        res = requests.get(info_url, timeout=10)
+        if res.status_code == 200:
+            current_url = res.json().get("result", {}).get("url", "")
+            if current_url == worker_url:
+                print(f"[INFO] Telegram webhook is already active: {current_url}")
+                return
+
+        set_url = f"https://api.telegram.org/bot{bot_token}/setWebhook"
+        payload = {
+            "url": worker_url,
+            "secret_token": secret_token,
+            "allowed_updates": ["callback_query"]
+        }
+        set_res = requests.post(set_url, json=payload, timeout=10)
+        if set_res.status_code == 200 and set_res.json().get("ok"):
+            print(f"[SUCCESS] Registered Telegram webhook: {worker_url}")
+        else:
+            print(f"[WARN] Failed to set Telegram webhook: {set_res.text}")
+    except Exception as e:
+        print(f"[WARN] Error ensuring Telegram webhook: {e}")
+
 def send_telegram_alert(bot_token: str, chat_id: str, text: str) -> None:
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     payload = {
@@ -208,6 +235,7 @@ def main():
         sys.exit(1)
 
     os.makedirs(STATE_DIR, exist_ok=True)
+    ensure_telegram_webhook(bot_token)
 
     force_gen = os.environ.get("FORCE_GENERATE", "false").lower() in ("true", "1")
     event_name = os.environ.get("GITHUB_EVENT_NAME", "")
