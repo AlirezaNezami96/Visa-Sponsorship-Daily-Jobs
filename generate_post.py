@@ -79,9 +79,17 @@ Return your response in exact JSON format with four fields:
   "bg_prompt": "<Main post topic sentence describing the core concept>"
 }"""
 
+    now_utc = datetime.now(timezone.utc)
+    day_name = now_utc.strftime("%A")
+    date_str = now_utc.strftime("%Y-%m-%d %H:%M:%S UTC")
+    random_seed = random.randint(1000, 999999)
+
     user_prompt = (
-        "Write today's high-signal LinkedIn post using the Weekly Content Calendar Matrix based on today's day of the week. "
-        "Also craft a short bold image_title (2 to 5 words MAXIMUM), a category name, and a one-sentence bg_prompt describing the post topic concept. "
+        f"Current UTC Timestamp: {date_str} (Random Seed: {random_seed})\n"
+        f"Today is {day_name}.\n\n"
+        f"You must strictly generate today's post matching the {day_name.upper()} theme from the Weekly Content Calendar Matrix.\n"
+        f"Pick a fresh, unique, highly specific technical topic for {day_name}. "
+        f"Do NOT repeat past generic topics. Focus purely on the {day_name.upper()} matrix theme.\n\n"
         "Return ONLY valid JSON."
     )
 
@@ -92,7 +100,7 @@ Return your response in exact JSON format with four fields:
         "contents": [{"parts": [{"text": user_prompt}]}],
         "generationConfig": {
             "responseMimeType": "application/json",
-            "temperature": 0.7
+            "temperature": 0.85
         }
     }
 
