@@ -1,11 +1,11 @@
 {
-  "text": "Running a 3B parameter model directly on a mid-range Android device used to feel like an exercise in thermal throttling. But recent optimizations in ExecuTorch and 4-bit quantization are changing what is practical on edge hardware.\n\nThe main issue with local inference on mobile has never been raw compute speed. It is unified memory bandwidth and battery power. When an unoptimized runtime pegs the GPU, thermal management throttles your core frequencies within two minutes.\n\nBy shifting matrix multiplication to dedicated NPUs and keeping weight sizes under 2GB, offline background tasks suddenly become viable. You get zero network latency, total data privacy, and zero API costs per user.\n\nThe trade-off is precision. Drops in output quality are real when compressing weights down to INT4, especially for complex reasoning tasks. But for structured text extraction or quick classification, local models are ready for production.\n\nAre you testing local LLMs on mobile yet, or are API calls still the default for your stack?\n\n(Link in the first comment)",
-  "image_title": "ON-DEVICE AI ON MOBILE",
-  "category": "ON-DEVICE AI",
-  "bg_prompt": "Running quantized local language models efficiently on mobile device neural processing units.",
+  "text": "I spent the weekend testing local text embeddings directly on an Android device to make debug logs searchable using natural language.\n\nNormally, searching through thousands of lines of client-side logs during QA requires exact keyword matches or exporting everything to an external tool. I wanted to see if a small 22M parameter model running via ONNX Runtime Mobile could generate vector embeddings fast enough on a midrange phone.\n\nThe results surprised me. Generating embeddings for 500 log entries took under 120 milliseconds on CPU, with zero noticeable impact on main thread rendering. Storing those vectors in a local database allowed me to query terms like \"checkout network timeout\" and instantly surface the relevant stack trace.\n\nProcessing logs locally keeps sensitive data on-device, eliminates API calls, and gives developers a powerful diagnostic tool inside debug builds.\n\nHave you experimented with running lightweight vector models locally inside your mobile apps yet?",
+  "image_title": "ON-DEVICE EMBEDDINGS EXPERIMENT",
+  "category": "SOFTWARE ENGINEERING",
+  "bg_prompt": "Testing quantized local text embeddings on Android for natural language debug log search.",
   "cover_file": "state/cover_image.jpg",
   "image_source": "disabled",
-  "generated_at": "2026-08-10T15:49:50.033114+00:00",
+  "generated_at": "2026-08-10T15:55:04.691964+00:00",
   "photo_message_id": null,
-  "message_id": 91
+  "message_id": 93
 }
