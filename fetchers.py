@@ -138,6 +138,28 @@ def fetch_personio(slug):
     return result
 
 
+def fetch_workable(slug):
+    """Fetch jobs from Workable ATS.
+    API: https://apply.workable.com/api/v3/accounts/{slug}/jobs
+    Requires POST with empty JSON body.
+    """
+    url = f"https://apply.workable.com/api/v3/accounts/{slug}/jobs"
+    r = _post(url, json={})
+    data = r.json()
+    result = []
+    for j in data.get("results", []):
+        shortcode = j.get("shortcode", "")
+        location = j.get("location", {}) or {}
+        loc_str = location.get("city", "") or location.get("country", "")
+        result.append({
+            "title": j.get("title", ""),
+            "url": f"https://apply.workable.com/{slug}/j/{shortcode}/" if shortcode else f"https://apply.workable.com/{slug}/",
+            "location": loc_str,
+            "department": j.get("department", ""),
+        })
+    return result
+
+
 # Mapping of ATS type to fetcher function
 FETCHERS = {
     "greenhouse": fetch_greenhouse,
@@ -145,5 +167,6 @@ FETCHERS = {
     "ashby": fetch_ashby,
     "smartrecruiters": fetch_smartrecruiters,
     "personio": fetch_personio,
+    "workable": fetch_workable,
     # workday and custom are handled by fetcher_custom.py
 }
