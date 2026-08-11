@@ -4,6 +4,12 @@
 
 name: Daily Job Scan
 
+# All three scanners write state back to main. Serialize them so a manual run
+# cannot race a scheduled run and lose deduplication state.
+concurrency:
+  group: job-discovery-state
+  cancel-in-progress: false
+
 on:
   schedule:
     - cron: "30 4 * * *"
@@ -49,9 +55,18 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
 
       - name: Install Python dependencies
-        run: |
-          pip install -r requirements.txt
-          playwright install chromium --with-deps
+        run: pip install -r requirements.txt
+
+      - name: Restore Playwright browser cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}
+
+      - name: Install headless Chromium
+        # The crawler only launches headless Chromium; the headless shell is
+        # substantially smaller to download and is restored from cache later.
+        run: python -m playwright install --only-shell chromium
 
       - name: Run job scraper
         env:
@@ -73,6 +88,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add seen_jobs.json 2>/dev/null || true
-          git diff --cached --quiet || git commit -m "chore: update seen_jobs state [skip ci]"
-          git push 2>/dev/null || echo "Push failed or no changes — this is fine for the first run"
+          git add seen_jobs.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "chore: update seen_jobs state [skip ci]"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

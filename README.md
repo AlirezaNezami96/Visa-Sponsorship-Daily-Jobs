@@ -4,7 +4,9 @@ Daily job scraper for 100+ visa-sponsoring companies. Runs on **GitHub Actions**
 
 **What it does:** Every day at a time you choose, it scans 160+ companies' job boards, filters for roles matching your keywords (e.g., "mobile", "android", "software engineer"), deduplicates against previously seen jobs, and emails you only the new matches.
 
-**How it works:** ~70% of the companies use Greenhouse, Lever, Ashby, or SmartRecruiters — all have **free public JSON APIs**, so there's no HTML scraping or anti-bot issues for the majority. The remaining ~30% use Playwright (headless browser) as a fallback.
+**How it works:** Companies on Greenhouse, Lever, Ashby, SmartRecruiters, Personio, and Workable use their public job APIs. All other career sites use a static-first parser, with Playwright only as a fallback for JavaScript-rendered pages.
+
+The daily scanners use bounded concurrency: API requests run in parallel, static career pages are fetched in parallel, and browser-only pages share one Chromium process. This avoids the previous cost of launching one browser per company while keeping request volume bounded and retrying transient errors.
 
 ---
 
@@ -15,10 +17,10 @@ companies.json ──► run.py (orchestrator)
                         │
           ┌─────────────┼──────────────┐
           ▼             ▼              ▼
-   API Fetchers   Playwright      filter.py
-   (Greenhouse,   Fetcher        (keyword match
-    Lever, Ashby,   (custom/      + dedup)
-    SmartRecruiters)  Workday)       │
+   API Fetchers   Static HTML      filter.py
+   (Greenhouse,   then one shared  (keyword match
+    Lever, Ashby,   Playwright        + dedup)
+    Workable...)    fallback)         │
                                         ▼
                                   email_sender.py
                                   (Resend/SendGrid/
@@ -33,7 +35,8 @@ companies.json ──► run.py (orchestrator)
 | `build_companies.py` | Builds `companies.json` from GitHub repos + curated list |
 | `classify.py` | ATS detection from URLs |
 | `fetchers.py` | JSON API fetchers for Greenhouse, Lever, Ashby, SmartRecruiters, Personio |
-| `fetcher_custom.py` | Playwright-based fetcher for Workday and custom career pages |
+| `job_pipeline.py` | Shared, concurrent acquisition layer for the visa and remote scans |
+| `fetcher_custom.py` | Static-first parser plus a single shared Playwright browser for custom career pages |
 | `filter.py` | Keyword matching + dedup (edit `KEYWORDS_INCLUDE` here) |
 | `email_sender.py` | Email dispatch via Resend, SendGrid, or Gmail SMTP |
 | `discover_ats.py` | Optional: probes companies to auto-discover their ATS |
@@ -179,7 +182,7 @@ Use [crontab.guru](https://crontab.guru) to convert your time.
 ```bash
 # Install dependencies
 pip install -r requirements.txt
-playwright install chromium
+python -m playwright install --only-shell chromium
 
 # Dry run (no email)
 python run.py --dry-run
@@ -193,6 +196,20 @@ python run.py
 # Rebuild companies list from GitHub repos
 python run.py --build
 ```
+
+`--dry-run` never writes the seen-state file, so previewing a run cannot suppress the next email alert.
+
+### Scraper Tuning
+
+The defaults are safe for GitHub-hosted runners. On a smaller self-hosted runner, lower these environment variables instead of changing source code:
+
+```bash
+SCRAPER_API_WORKERS=12       # Public ATS requests
+SCRAPER_STATIC_WORKERS=24    # Static career-page requests
+SCRAPER_BROWSER_WORKERS=6    # Concurrent pages in the one shared Chromium browser
+```
+
+Set `SCRAPER_DISABLE_BROWSER=true` for a fast, static-only diagnostic run.
 
 ### GitHub Actions
 
@@ -242,7 +259,7 @@ This probes each company to find if they use Greenhouse/Lever/Ashby. Takes ~10 m
 
 ## How State Works (Deduplication)
 
-- `seen_jobs.json` tracks every job URL we've already alerted you about
+- `seen_jobs.json` tracks every job URL we've already alerted you about (with tracking parameters normalized)
 - It's committed to the repo so GitHub Actions can read/write it across runs
 - Entries older than 30 days are automatically pruned
 - **Don't delete this file** — if you do, you'll get re-alerted on every job
@@ -253,7 +270,7 @@ This probes each company to find if they use Greenhouse/Lever/Ashby. Takes ~10 m
 
 | Component | Cost | Free Tier |
 |-----------|------|-----------|
-| GitHub Actions | $0 | 2,000 min/month free (this uses ~10-15 min/day) |
+| GitHub Actions | $0 | 2,000 min/month free; usage depends on custom career pages |
 | Resend | $0 | 3,000 emails/month |
 | Gmail SMTP | $0 | ~500 emails/day |
 | SendGrid | $0 | 100 emails/day |
@@ -280,12 +297,12 @@ This probes each company to find if they use Greenhouse/Lever/Ashby. Takes ~10 m
 - Run `python run.py --classify-only` to verify companies are classified correctly
 
 **GitHub Actions timing out?**
-- The 30-minute timeout is generous. If it hits this, reduce the company list
-- Custom/Playwright companies are slow; consider removing some
+- The scanner has a 60-minute timeout. First check the custom-source summary in the log.
+- Lower `SCRAPER_BROWSER_WORKERS` only on constrained self-hosted runners; on GitHub-hosted runners, first rebuild the company list to remove stale sources.
 
 **Rate limited by an ATS?**
-- The script already includes a 0.5s delay between requests
-- If you still get 429s, increase `REQUEST_DELAY` in `run.py`
+- Public ATS calls retry transient 429/5xx responses with backoff.
+- If a provider still rate-limits you, lower `SCRAPER_API_WORKERS` for the next run.
 
 ---
 

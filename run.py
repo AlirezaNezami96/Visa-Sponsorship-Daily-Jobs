@@ -12,12 +12,10 @@ import argparse
 import json
 import os
 import sys
-import time
 import logging
 
-from fetchers import FETCHERS
-from fetcher_custom import fetch_custom_sync
-from filter import dedupe, _load_seen, _save_seen, matches
+from filter import dedupe, _load_seen, _save_seen
+from job_pipeline import fetch_companies
 from email_sender import send_email
 
 logging.basicConfig(
@@ -28,7 +26,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 COMPANIES_FILE = "companies.json"
-REQUEST_DELAY = 0.05  # seconds between calls
 
 
 def load_companies() -> list:
@@ -43,38 +40,6 @@ def load_companies() -> list:
     # Combine scrapable + custom_ats into one list
     companies = data.get("scrapable", []) + data.get("custom_ats", [])
     return companies
-
-
-def fetch_jobs_for_company(company: dict) -> list:
-    """Fetch all jobs for a single company using the appropriate fetcher."""
-    name = company["name"]
-    ats = company["ats"]
-    slug = company.get("slug")
-    url = company["careers_url"]
-
-    if ats in FETCHERS:
-        logger.info(f"  [{ats.upper()}] {name} (slug: {slug})")
-        try:
-            jobs = FETCHERS[ats](slug)
-            logger.info(f"    -> {len(jobs)} jobs found")
-            return jobs
-        except Exception as e:
-            logger.warning(f"    -> Error: {e}")
-            return [{"error": str(e)}]
-
-    elif ats in ("custom", "workday", "unknown"):
-        logger.info(f"  [CUSTOM] {name} ({url})")
-        try:
-            jobs = fetch_custom_sync(url)
-            logger.info(f"    -> {len(jobs)} jobs found")
-            return jobs
-        except Exception as e:
-            logger.warning(f"    -> Error: {e}")
-            return [{"error": str(e)}]
-
-    else:
-        logger.warning(f"  [SKIP] {name} — unknown ATS: {ats}")
-        return []
 
 
 def run(dry_run: bool = False):
@@ -97,36 +62,31 @@ def run(dry_run: bool = False):
     total_matching = 0
     errors = 0
 
-    for i, company in enumerate(companies):
+    for i, result in enumerate(fetch_companies(companies)):
+        company = result.company
         name = company["name"]
-        logger.info(f"[{i+1}/{len(companies)}] Fetching {name}...")
-
-        try:
-            jobs = fetch_jobs_for_company(company)
-            total_fetched += len([j for j in jobs if "error" not in j])
-
-            if jobs and "error" not in jobs[0]:
-                new = dedupe(name, jobs, seen)
-                if new:
-                    total_matching += len(new)
-                    report.append((name, new))
-                    for j in new:
-                        logger.info(f"    MATCH: {j['title']} — {j.get('location', '')}")
-
-            elif jobs and "error" in jobs[0]:
-                errors += 1
-                logger.warning(f"  Error fetching {name}: {jobs[0]['error']}")
-
-        except Exception as e:
+        if result.error:
             errors += 1
-            logger.error(f"  Unexpected error for {name}: {e}")
+            logger.warning("[%d/%d] [%s] %s -> Error: %s", i + 1, len(companies), result.method.upper(), name, result.error)
+            continue
 
-        # Rate limiting
-        time.sleep(REQUEST_DELAY)
+        jobs = result.jobs
+        total_fetched += len(jobs)
+        logger.info("[%d/%d] [%s] %s -> %d jobs", i + 1, len(companies), result.method.upper(), name, len(jobs))
+        new = dedupe(name, jobs, seen)
+        if new:
+            total_matching += len(new)
+            report.append((name, new))
+            for job in new:
+                logger.info("    MATCH: %s — %s", job["title"], job.get("location", ""))
 
-    # Save updated seen store
-    _save_seen(seen)
-    logger.info(f"Updated seen store: {len(seen)} entries")
+    # A dry run must be repeatable: it previews results without consuming the
+    # alerts that the next scheduled run should send.
+    if not dry_run:
+        _save_seen(seen)
+        logger.info(f"Updated seen store: {len(seen)} entries")
+    else:
+        logger.info("[DRY RUN] Seen store left unchanged")
 
     # Summary
     logger.info(f"\n{'='*50}")

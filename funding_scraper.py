@@ -14,10 +14,15 @@ import re
 import time
 import datetime
 import logging
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 import feedparser
 from bs4 import BeautifulSoup
 from typing import List, Dict, Optional
+from urllib.parse import urljoin
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from filter import KEYWORDS_INCLUDE
 
@@ -29,6 +34,44 @@ HEADERS = {
         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     )
 }
+
+_thread_local = threading.local()
+FUNDING_SIGNAL = re.compile(
+    r"\b(?:raises?|raised|raising|secures?|secured|closes?|closed|bags?|lands?|"
+    r"gets?|obtains?|collects?|receives?|attracts?)\b"
+    r"(?:\W+\w+){0,6}?\W+(?:funding|funds|investment|financing|capital|"
+    r"pre-seed|seed|series\s+[a-z]|round)\b"
+    r"|\b(?:pre-seed|seed|series\s+[a-z])\s+(?:round|funding)\b",
+    re.IGNORECASE,
+)
+
+
+def _http_session() -> requests.Session:
+    """Use a per-thread retrying session for independent news sources."""
+    session = getattr(_thread_local, "session", None)
+    if session is None:
+        retry = Retry(
+            total=2,
+            connect=2,
+            read=2,
+            backoff_factor=0.4,
+            status_forcelist=(429, 500, 502, 503, 504),
+            allowed_methods=frozenset(("GET",)),
+            raise_on_status=False,
+        )
+        adapter = HTTPAdapter(max_retries=retry, pool_connections=2, pool_maxsize=2)
+        session = requests.Session()
+        session.headers.update(HEADERS)
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
+        _thread_local.session = session
+    return session
+
+
+def _get(url: str) -> requests.Response:
+    response = _http_session().get(url, timeout=15)
+    response.raise_for_status()
+    return response
 
 # ------------------------------------------------------------------ #
 #  Location Exclusion & Target Region Constants
@@ -109,6 +152,11 @@ def is_excluded_location(text: str) -> bool:
     return False
 
 
+def is_funding_announcement(text: str) -> bool:
+    """Exclude general news so the digest contains funding events only."""
+    return bool(FUNDING_SIGNAL.search(text))
+
+
 def extract_funding_amount(text: str) -> str:
     """Extract funding amount (e.g. $60M, €5.5 million, £10 million)."""
     pattern = r"(\$[\d\.]+\s*(?:million|m|billion|b)?|€[\d\.]+\s*(?:million|m|billion|b)?|£[\d\.]+\s*(?:million|m|billion|b)?|\b\d+\.?\d*\s*million\s*(?:dollars|euros|pounds|USD|EUR|GBP)?|\b\d+\.?\d*\s*m\b)"
@@ -126,9 +174,19 @@ def extract_round(text: str) -> str:
 def extract_company_name(title: str) -> str:
     """Cleanly infer company name from article title."""
     # Common patterns: "Company raises...", "Company secures...", "How Company enables..."
-    m = re.search(r"^([A-Z0-9\.\-\s]+?)\s+(?:raises|secures|bags|closes|gets|launches|obtains|collects)", title, re.IGNORECASE)
+    m = re.search(
+        r"^([A-Z0-9\.\-\s]+?)\s+(?:raises|secures|bags|closes|gets|obtains|collects|receives|attracts)",
+        title,
+        re.IGNORECASE,
+    )
     if m:
         name = m.group(1).strip()
+        name = re.sub(
+            r"^(?:[A-Za-z]+\s+){0,2}(?:startup|scaleup|biotech|fintech|company)\s+",
+            "",
+            name,
+            flags=re.IGNORECASE,
+        )
         if len(name) > 2 and len(name) < 40 and not name.lower().startswith(("how", "why", "the")):
             return name
 
@@ -166,8 +224,7 @@ def scrape_rss_feed(source: dict) -> List[Dict]:
     logger.info(f"Scraping RSS feed: {source['name']} ({source['url']})")
     results = []
     try:
-        r = requests.get(source["url"], headers=HEADERS, timeout=15)
-        r.raise_for_status()
+        r = _get(source["url"])
         feed = feedparser.parse(r.text)
 
         for entry in feed.entries:
@@ -176,6 +233,12 @@ def scrape_rss_feed(source: dict) -> List[Dict]:
             link = entry.get("link", "").strip()
 
             combined_text = f"{title} {summary}"
+
+            # The old implementation included every recent article from a
+            # funding publication, including policy and opinion pieces.
+            if not is_funding_announcement(combined_text):
+                logger.debug(f"  [EXCLUDE Not funding] {title}")
+                continue
 
             # 1. Location filter: Exclude US & India
             if is_excluded_location(combined_text):
@@ -219,8 +282,7 @@ def scrape_html_fallback(source: dict) -> List[Dict]:
     logger.info(f"Scraping HTML fallback: {source['name']} ({source['url']})")
     results = []
     try:
-        r = requests.get(source["url"], headers=HEADERS, timeout=15)
-        r.raise_for_status()
+        r = _get(source["url"])
         soup = BeautifulSoup(r.text, "html.parser")
 
         # Find article links
@@ -234,15 +296,13 @@ def scrape_html_fallback(source: dict) -> List[Dict]:
             combined_text = title
 
             # Check if this article looks like a funding announcement
-            if not any(k in title.lower() for k in ["raises", "secures", "funding", "million", "seed", "capital", "round", "exits"]):
+            if not is_funding_announcement(title):
                 continue
 
             if is_excluded_location(combined_text):
                 continue
 
-            if href.startswith("/"):
-                from urllib.parse import urljoin
-                href = urljoin(source["url"], href)
+            href = urljoin(source["url"], href)
 
             company = extract_company_name(title)
             amount = extract_funding_amount(combined_text)
@@ -278,15 +338,27 @@ def scrape_html_fallback(source: dict) -> List[Dict]:
 
 
 def fetch_all_funding_deals() -> List[Dict]:
-    """Scrape all funding sources and return clean list of funding deals."""
-    all_deals = []
-    for source in SOURCES:
+    """Fetch independent funding sources concurrently and retain source order."""
+    def fetch_source(source: dict) -> List[Dict]:
         if source["type"] == "rss":
-            deals = scrape_rss_feed(source)
-        else:
-            deals = scrape_html_fallback(source)
-        all_deals.extend(deals)
-        time.sleep(0.3)  # Be polite
+            return scrape_rss_feed(source)
+        return scrape_html_fallback(source)
+
+    source_results: dict[int, List[Dict]] = {}
+    with ThreadPoolExecutor(max_workers=min(6, len(SOURCES)), thread_name_prefix="funding-source") as executor:
+        futures = {
+            executor.submit(fetch_source, source): index
+            for index, source in enumerate(SOURCES)
+        }
+        for future in as_completed(futures):
+            index = futures[future]
+            try:
+                source_results[index] = future.result()
+            except Exception as exc:  # Individual sources must not block a digest.
+                logger.warning("Unexpected funding source failure: %s", exc)
+                source_results[index] = []
+
+    all_deals = [deal for index in range(len(SOURCES)) for deal in source_results[index]]
 
     # Deduplicate deals by URL or Title across sources
     seen_keys = set()

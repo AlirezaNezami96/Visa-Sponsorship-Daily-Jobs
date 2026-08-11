@@ -163,8 +163,11 @@ def run(dry_run: bool = False):
     for d in new_deals:
         logger.info(f"  MATCH: [{d['region']}] {d['company']} — {d['amount']} ({d['title'][:60]}...)")
 
-    _save_seen_funding(seen)
-    logger.info(f"Updated seen funding store: {len(seen)} entries")
+    if not dry_run:
+        _save_seen_funding(seen)
+        logger.info(f"Updated seen funding store: {len(seen)} entries")
+    else:
+        logger.info("[DRY RUN] Funding seen store left unchanged")
 
     if not dry_run and new_deals:
         send_funding_email(new_deals)

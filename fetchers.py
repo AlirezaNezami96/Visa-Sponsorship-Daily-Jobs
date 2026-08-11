@@ -1,18 +1,48 @@
 """Fetchers for each ATS type with public JSON APIs.
 No HTML scraping needed — these are clean JSON endpoints.
 """
-import requests
+import threading
 import time
 
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
-SESSION = requests.Session()
-SESSION.headers.update({"User-Agent": "Mozilla/5.0 (compatible; JobScraper/1.0)"})
+
+_thread_local = threading.local()
+
+
+def _session() -> requests.Session:
+    """Create a retrying session per worker thread.
+
+    The orchestrators fetch independent public job boards concurrently.  A
+    session must not be shared across those threads, while transient 429/5xx
+    responses should be retried rather than treating an entire company as down.
+    """
+    session = getattr(_thread_local, "session", None)
+    if session is None:
+        retry = Retry(
+            total=2,
+            connect=2,
+            read=2,
+            backoff_factor=0.4,
+            status_forcelist=(429, 500, 502, 503, 504),
+            allowed_methods=frozenset(("GET", "POST")),
+            raise_on_status=False,
+        )
+        adapter = HTTPAdapter(max_retries=retry, pool_connections=4, pool_maxsize=4)
+        session = requests.Session()
+        session.headers.update({"User-Agent": "Mozilla/5.0 (compatible; JobDiscoveryBot/2.0)"})
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
+        _thread_local.session = session
+    return session
 
 
 def _get(url, **kwargs):
     """Wraps requests.get with timeout and error handling."""
     kwargs.setdefault("timeout", 20)
-    r = SESSION.get(url, **kwargs)
+    r = _session().get(url, **kwargs)
     r.raise_for_status()
     return r
 
@@ -20,7 +50,7 @@ def _get(url, **kwargs):
 def _post(url, **kwargs):
     """Wraps requests.post with timeout and error handling."""
     kwargs.setdefault("timeout", 20)
-    r = SESSION.post(url, **kwargs)
+    r = _session().post(url, **kwargs)
     r.raise_for_status()
     return r
 

@@ -17,25 +17,12 @@ import argparse
 import json
 import os
 import sys
-import time
 import logging
 
-from fetchers import FETCHERS
-from fetcher_custom import fetch_custom_sync
-from filter import _load_seen, _save_seen, matches
+from filter import _load_seen, _save_seen
+from job_pipeline import fetch_companies
 
-# Override the seen-file path for the remote pipeline so it is isolated
-# from the visa-sponsorship pipeline's seen_jobs.json
 REMOTE_SEEN_FILE = "seen_remote_jobs.json"
-
-# ------------------------------------------------------------------ #
-#  Monkey-patch filter.SEEN_FILE so _load_seen / _save_seen use the
-#  remote file without modifying filter.py at all.
-# ------------------------------------------------------------------ #
-import filter as _filter_module
-_filter_module.SEEN_FILE = REMOTE_SEEN_FILE
-
-from email_sender import send_email as _base_send_email
 
 logging.basicConfig(
     level=logging.INFO,
@@ -45,7 +32,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 REMOTE_COMPANIES_FILE = "remote_companies.json"
-REQUEST_DELAY = 0.05  # seconds between calls
 
 
 # ------------------------------------------------------------------ #
@@ -53,11 +39,8 @@ REQUEST_DELAY = 0.05  # seconds between calls
 # ------------------------------------------------------------------ #
 def send_remote_email(report: list):
     """Send the remote-job digest email with a distinct subject/header."""
-    import os
-    import requests as http_requests
     from email_sender import (
         _send_via_resend, _send_via_sendgrid, _send_via_gmail_smtp,
-        _build_html,
     )
 
     if not report:
@@ -138,38 +121,6 @@ def load_remote_companies() -> list:
     return data.get("scrapable", []) + data.get("custom_ats", [])
 
 
-def fetch_jobs_for_company(company: dict) -> list:
-    """Fetch all jobs for a single remote company."""
-    name = company["name"]
-    ats = company["ats"]
-    slug = company.get("slug")
-    url = company.get("careers_url", "")
-
-    if ats in FETCHERS:
-        logger.info(f"  [{ats.upper()}] {name} (slug: {slug})")
-        try:
-            jobs = FETCHERS[ats](slug)
-            logger.info(f"    -> {len(jobs)} jobs found")
-            return jobs
-        except Exception as e:
-            logger.warning(f"    -> Error: {e}")
-            return [{"error": str(e)}]
-
-    elif ats in ("custom", "workday", "unknown", "workable"):
-        logger.info(f"  [CUSTOM] {name} ({url})")
-        try:
-            jobs = fetch_custom_sync(url)
-            logger.info(f"    -> {len(jobs)} jobs found")
-            return jobs
-        except Exception as e:
-            logger.warning(f"    -> Error: {e}")
-            return [{"error": str(e)}]
-
-    else:
-        logger.warning(f"  [SKIP] {name} — unknown ATS: {ats}")
-        return []
-
-
 def run(dry_run: bool = False):
     """Main remote-jobs pipeline."""
     companies = load_remote_companies()
@@ -180,7 +131,7 @@ def run(dry_run: bool = False):
         ats_counts[c["ats"]] = ats_counts.get(c["ats"], 0) + 1
     logger.info(f"ATS distribution: {ats_counts}")
 
-    seen = _load_seen()
+    seen = _load_seen(REMOTE_SEEN_FILE)
     logger.info(f"Seen store (remote): {len(seen)} entries")
 
     report = []
@@ -190,34 +141,29 @@ def run(dry_run: bool = False):
 
     from filter import dedupe
 
-    for i, company in enumerate(companies):
+    for i, result in enumerate(fetch_companies(companies)):
+        company = result.company
         name = company["name"]
-        logger.info(f"[{i+1}/{len(companies)}] Fetching {name}...")
-
-        try:
-            jobs = fetch_jobs_for_company(company)
-            total_fetched += len([j for j in jobs if "error" not in j])
-
-            if jobs and "error" not in jobs[0]:
-                new = dedupe(name, jobs, seen)
-                if new:
-                    total_matching += len(new)
-                    report.append((name, new))
-                    for j in new:
-                        logger.info(f"    MATCH: {j['title']} — {j.get('location', 'Remote')}")
-
-            elif jobs and "error" in jobs[0]:
-                errors += 1
-                logger.warning(f"  Error fetching {name}: {jobs[0]['error']}")
-
-        except Exception as e:
+        if result.error:
             errors += 1
-            logger.error(f"  Unexpected error for {name}: {e}")
+            logger.warning("[%d/%d] [%s] %s -> Error: %s", i + 1, len(companies), result.method.upper(), name, result.error)
+            continue
 
-        time.sleep(REQUEST_DELAY)
+        jobs = result.jobs
+        total_fetched += len(jobs)
+        logger.info("[%d/%d] [%s] %s -> %d jobs", i + 1, len(companies), result.method.upper(), name, len(jobs))
+        new = dedupe(name, jobs, seen)
+        if new:
+            total_matching += len(new)
+            report.append((name, new))
+            for job in new:
+                logger.info("    MATCH: %s — %s", job["title"], job.get("location", "Remote"))
 
-    _save_seen(seen)
-    logger.info(f"Updated remote seen store: {len(seen)} entries")
+    if not dry_run:
+        _save_seen(seen, REMOTE_SEEN_FILE)
+        logger.info(f"Updated remote seen store: {len(seen)} entries")
+    else:
+        logger.info("[DRY RUN] Remote seen store left unchanged")
 
     logger.info(f"\n{'='*50}")
     logger.info(f"TOTALS: {total_fetched} jobs fetched, {total_matching} new remote matches, {errors} errors")
