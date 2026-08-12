@@ -1,0 +1,11 @@
+{
+  "text": "ExecuTorch just achieved 45 tok/sec INT4 local inference on mid-tier mobile NPUs.\n\nIt runs fully offline LLM reasoning on hardware previously limited to basic feature classification.\n\nNo cloud API calls. No thermal throttling. Just raw on-device NPU compilation.\n\nHere's how it works:\n\n- Traditional mobile runtimes load full FP16 weights into unified memory, crushing RAM limits.\n- ExecuTorch bypasses CPU fallback by targeting the Hexagon NPU directly via static memory planning.\n- Dynamic KV cache allocation is replaced with fixed-size pre-allocated INT4 buffers.\n\nThe result:\n\n- 45 tokens/sec generation on Snapdragon 8 Gen 3\n- Under 850 MB peak memory footprint for a 1.5B model\n- Zero CPU thermal throttling during 5-minute continuous generation\n- 60% reduction in battery drain compared to GPU execution\n\nThe wildest part:\n\nYou do not lose output coherence. Grouped-query attention combined with per-channel INT4 quantization keeps perplexity loss under 1.5% compared to FP16.\n\nWhat this actually means:\n\n- Instant real-time text generation without internet connectivity\n- Zero API latency and total privacy for sensitive user data\n- Zero cloud compute costs per user request\n\nCompatible with iOS CoreML and Android NNAPI via PyTorch export pipelines.\n\nOpen-source under BSD License. (Link in the first comment)",
+  "image_title": "EXECUTORCH INT4 NPU INFERENCE",
+  "category": "EDGE ML & MOBILE AI",
+  "bg_prompt": "ExecuTorch running 4-bit quantized local LLM inference on mobile NPU hardware",
+  "cover_file": "state/cover_image.jpg",
+  "image_source": "disabled",
+  "generated_at": "2026-08-12T16:25:32.475792+00:00",
+  "photo_message_id": null,
+  "message_id": 99
+}
