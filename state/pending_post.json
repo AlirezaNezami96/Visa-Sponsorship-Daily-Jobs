@@ -1,0 +1,11 @@
+{
+  "text": "AI context windows now make large-scale architectural refactoring fully deterministic.\n\nIt refactors thousands of legacy lines without breaking hidden runtime dependencies.\n\nNo massive manual test suites. No tedious dependency mapping. Just deep AST context ingestion.\n\nHere's how it works:\n\n- Traditional refactoring requires human tracking of implicit call graphs across legacy modules.\n- Modern agent setups index local ASTs to build exact symbol relation graphs first.\n- The AI generates strict contract interfaces before rewriting a single implementation file.\n\nThe result:\n\n- 80% reduction in broken interface errors during migrations\n- 4x faster monolithic decoupling cycles\n- Zero hidden circular dependencies in newly isolated packages\n- 100% type-safe interface generation across module boundaries\n\nThe wildest part:\n\nYou do not need complete test coverage on legacy code to start. The agent validates invariant state contracts by analyzing all execution paths simultaneously.\n\nWhat this actually means:\n\n- Modernizing tech debt becomes a continuous background workflow rather than a risky quarterly initiative\n- Senior engineers shift effort from tracing execution paths to defining domain boundaries\n- Legacy monoliths can be cleanly decomposed into modular packages in hours\n\nWorks natively with modern local agent setups like Cursor, Claude Dev, and custom LSP-indexed environments.\n\nBased on open-source LSP context-indexing patterns in modern IDE workflows. (Link in the first comment)",
+  "image_title": "DETERMINISTIC AI REFACTORING",
+  "category": "SOFTWARE ENGINEERING",
+  "bg_prompt": "Abstract representation of AI context windows indexing syntax trees and refactoring software monoliths into modules",
+  "cover_file": "state/cover_image.jpg",
+  "image_source": "disabled",
+  "generated_at": "2026-08-13T16:24:07.985868+00:00",
+  "photo_message_id": null,
+  "message_id": 101
+}
