@@ -31,18 +31,23 @@ companies.json ──► run.py (orchestrator)
 
 | File | Purpose |
 |------|----------|
-| `run.py` | Main orchestrator. Run this. |
+| `run.py` | Main orchestrator for Android / Mobile Visa Jobs. |
+| `run_remote.py` | Remote jobs scanner. |
+| `run_junior_ai.py` | Junior / Trainee / Associate AI & ML jobs scanner. |
 | `build_companies.py` | Builds `companies.json` from GitHub repos + curated list |
 | `classify.py` | ATS detection from URLs |
-| `fetchers.py` | JSON API fetchers for Greenhouse, Lever, Ashby, SmartRecruiters, Personio |
-| `job_pipeline.py` | Shared, concurrent acquisition layer for the visa and remote scans |
+| `fetchers.py` | JSON API fetchers for Greenhouse, Lever, Ashby, SmartRecruiters, Personio, Workable |
+| `job_pipeline.py` | Shared, concurrent acquisition layer for the visa, remote, and junior AI scans |
 | `fetcher_custom.py` | Static-first parser plus a single shared Playwright browser for custom career pages |
-| `filter.py` | Keyword matching + dedup (edit `KEYWORDS_INCLUDE` here) |
+| `filter.py` | Keyword matching + dedup (includes `matches_junior_ai`) |
 | `email_sender.py` | Email dispatch via Resend, SendGrid, or Gmail SMTP |
 | `discover_ats.py` | Optional: probes companies to auto-discover their ATS |
 | `companies.json` | Company list with ATS classification |
 | `seen_jobs.json` | State store for deduplication (committed to repo) |
-| `.github/workflows/daily-jobs.yml` | GitHub Actions cron job |
+| `seen_junior_ai_jobs.json` | State store for Junior AI deduplication (committed to repo) |
+| `.github/workflows/daily-jobs.yml` | GitHub Actions cron job for Visa Jobs |
+| `.github/workflows/daily-remote-jobs.yml` | GitHub Actions cron job for Remote Jobs |
+| `.github/workflows/daily-junior-ai-jobs.yml` | GitHub Actions cron job for Junior AI & ML Jobs |
 
 ---
 

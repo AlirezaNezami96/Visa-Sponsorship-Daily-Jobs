@@ -131,3 +131,70 @@ def dedupe(company: str, jobs: list, seen: dict) -> list:
         new_jobs.append(j)
 
     return new_jobs
+
+
+# --- Junior / Entry-Level AI & ML Keywords ---
+JUNIOR_AI_DOMAIN_KEYWORDS = [
+    "ai ", " ai", "ai/ml", "ml ", " ml", "machine learning",
+    "deep learning", "nlp", "llm", "genai", "generative ai",
+    "artificial intelligence", "computer vision", "data science",
+    "data scientist", "prompt engineer", "ai engineer", "ml engineer",
+    "ai developer", "ml developer", "ai researcher"
+]
+
+JUNIOR_AI_LEVEL_KEYWORDS = [
+    "junior", "jr", "jr.", "trainee", "intern", "internship",
+    "associate", "graduate", "entry level", "entry-level",
+    "starter", "apprentice", "fellow", "fellowship", "early career",
+    "early-career", "0-1", "0-2", "new grad", "fresh"
+]
+
+JUNIOR_AI_EXCLUDE_KEYWORDS = [
+    "senior", "sr.", "sr ", " lead", "lead ", "staff", "principal",
+    "head", "director", "manager", "vp", "chief", "expert", "architect",
+    "mid-level", "mid level", "experienced", "l5", "l6", "l7", "ii", "iii", "iv"
+]
+
+
+def matches_junior_ai(title: str) -> bool:
+    """Check if a job title matches Junior/Entry/Trainee AI/ML roles."""
+    t = title.lower()
+
+    # Must NOT contain any mid/senior exclude keyword
+    if any(k in t for k in JUNIOR_AI_EXCLUDE_KEYWORDS):
+        return False
+
+    # Must contain at least one AI/ML domain keyword
+    if not any(k in t for k in JUNIOR_AI_DOMAIN_KEYWORDS):
+        return False
+
+    # Must contain at least one Junior/Entry level keyword
+    if not any(k in t for k in JUNIOR_AI_LEVEL_KEYWORDS):
+        return False
+
+    return True
+
+
+def dedupe_junior_ai(company: str, jobs: list, seen: dict) -> list:
+    """Filter jobs by Junior AI keyword match and deduplicate against seen store."""
+    new_jobs = []
+    for j in jobs:
+        title = str(j.get("title", "")).strip()
+        url = str(j.get("url", "")).strip()
+        if not title or not url:
+            continue
+
+        key = f"{company.casefold()}|{_canonical_job_url(url)}"
+        legacy_key = f"{company}|{url}"
+
+        if key in seen or legacy_key in seen:
+            continue
+
+        if not matches_junior_ai(title):
+            continue
+
+        seen[key] = {"t": int(time.time())}
+        new_jobs.append(j)
+
+    return new_jobs
+
