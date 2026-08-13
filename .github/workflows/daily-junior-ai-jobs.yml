@@ -21,6 +21,14 @@ on:
         options:
           - "true"
           - "false"
+      rebuild:
+        description: "Rebuild ai_companies.json before scanning"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
 
 permissions:
   contents: write
@@ -64,6 +72,10 @@ jobs:
       - name: Install headless Chromium
         run: python -m playwright install --only-shell chromium
 
+      - name: Rebuild ai_companies.json (if requested)
+        if: github.event.inputs.rebuild == 'true'
+        run: python build_ai_companies.py
+
       - name: Run Junior AI job scraper
         env:
           EMAIL_PROVIDER: ${{ secrets.EMAIL_PROVIDER || 'resend' }}
@@ -84,10 +96,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add seen_junior_ai_jobs.json
+          git add seen_junior_ai_jobs.json ai_companies.json
           if git diff --cached --quiet; then
             exit 0
           fi
           git commit -m "chore: update Junior AI scanner state [skip ci]"
           git pull --rebase origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
+

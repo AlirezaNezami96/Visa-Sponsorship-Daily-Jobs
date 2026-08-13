@@ -19,8 +19,7 @@ from filter import _load_seen, _save_seen, dedupe_junior_ai
 from job_pipeline import fetch_companies
 
 JUNIOR_AI_SEEN_FILE = "seen_junior_ai_jobs.json"
-COMPANIES_FILE = "companies.json"
-REMOTE_COMPANIES_FILE = "remote_companies.json"
+AI_COMPANIES_FILE = "ai_companies.json"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -103,26 +102,17 @@ def _build_junior_ai_html(report: list, total_jobs: int) -> str:
 #  Main pipeline
 # ------------------------------------------------------------------ #
 def load_all_target_companies() -> list:
-    """Load companies from both companies.json and remote_companies.json,
-    deduplicating by careers_url.
-    """
-    all_companies = []
-    seen_urls = set()
+    """Load companies specifically from dedicated ai_companies.json."""
+    if not os.path.exists(AI_COMPANIES_FILE):
+        logger.info(f"{AI_COMPANIES_FILE} not found. Building it now...")
+        import build_ai_companies
+        build_ai_companies.main()
 
-    for path in [COMPANIES_FILE, REMOTE_COMPANIES_FILE]:
-        if os.path.exists(path):
-            with open(path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                cos = data.get("scrapable", []) + data.get("custom_ats", [])
-                for c in cos:
-                    url = c.get("careers_url", "").strip().lower()
-                    if url and url not in seen_urls:
-                        seen_urls.add(url)
-                        all_companies.append(c)
-                    elif not url:
-                        all_companies.append(c)
+    with open(AI_COMPANIES_FILE, "r", encoding="utf-8") as f:
+        data = json.load(f)
 
-    return all_companies
+    return data.get("scrapable", []) + data.get("custom_ats", [])
+
 
 
 def run(dry_run: bool = False):
@@ -208,14 +198,21 @@ def classify_only():
 def main():
     parser = argparse.ArgumentParser(description="Junior AI & ML Job Scraper")
     parser.add_argument("--dry-run", action="store_true", help="Don't send email")
+    parser.add_argument("--build", action="store_true", help="Rebuild ai_companies.json first")
     parser.add_argument("--classify-only", action="store_true", help="Show ATS stats")
     args = parser.parse_args()
+
+    if args.build:
+        import build_ai_companies
+        build_ai_companies.main()
+        print()
 
     if args.classify_only:
         classify_only()
         return
 
     run(dry_run=args.dry_run)
+
 
 
 if __name__ == "__main__":
