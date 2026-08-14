@@ -148,9 +148,37 @@ Return your response in exact JSON format with four fields:
         "Return ONLY valid JSON."
     )
 
-    last_error = None
+    # Primary path: google-genai SDK using client.interactions.create with gemini-3.6-flash
+    try:
+        from google import genai
+        client = genai.Client(api_key=api_key)
+        full_input = f"{system_prompt}\n\n---\n\n{user_prompt}"
+        print("[INFO] Calling Gemini Text API model=gemini-3.6-flash...")
+        interaction = client.interactions.create(
+            model="gemini-3.6-flash",
+            input=full_input,
+            response_mime_type="application/json"
+        )
+        raw_content = (interaction.output_text or "").strip()
+        if raw_content.startswith("```json"):
+            raw_content = raw_content.split("```json", 1)[1].rsplit("```", 1)[0].strip()
+        elif raw_content.startswith("```"):
+            raw_content = raw_content.split("```", 1)[1].rsplit("```", 1)[0].strip()
+
+        parsed = json.loads(raw_content)
+        p_text = parsed.get("post_text", "").strip()
+        img_title = parsed.get("image_title", "MOBILE AI UPDATE").strip()
+        cat = parsed.get("category", "SOFTWARE ENGINEERING").strip()
+        bg_p = parsed.get("bg_prompt", "modern mobile technology").strip()
+
+        if p_text:
+            return p_text, img_title, cat, bg_p
+    except Exception as exc:
+        print(f"[WARN] genai.Client interactions call error: {exc}. Trying fallback...")
+        last_error = str(exc)
+
+    models = ["gemini-3.6-flash", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-2.0-flash"]
     headers = {"Content-Type": "application/json"}
-    # Each call uses a fresh, single-turn conversation (no history) to avoid repetition
     payload = {
         "systemInstruction": {"parts": [{"text": system_prompt}]},
         "contents": [{"role": "user", "parts": [{"text": user_prompt}]}],
@@ -163,7 +191,7 @@ Return your response in exact JSON format with four fields:
     for model in models:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
         try:
-            print(f"[INFO] Calling Gemini Text API model={model}...")
+            print(f"[INFO] Calling Gemini Text API fallback model={model}...")
             resp = requests.post(url, headers=headers, json=payload, timeout=30)
             if resp.status_code == 200:
                 data = resp.json()
