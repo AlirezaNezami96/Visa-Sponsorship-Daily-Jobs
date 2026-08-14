@@ -13,10 +13,10 @@ class TestLinkedInGeneratorGemini(unittest.TestCase):
 
         mock_interaction = MagicMock()
         mock_interaction.output_text = json.dumps({
-            "post_text": "Sample viral LinkedIn post on AI breakthroughs.",
-            "image_title": "AI BREAKTHROUGH",
-            "category": "AI TRENDS",
-            "bg_prompt": "futuristic artificial intelligence concept"
+            "post_text": "Sample viral LinkedIn post on saving time with AI.",
+            "image_title": "AI PRODUCTIVITY",
+            "category": "AI TOOLS / PRODUCTIVITY",
+            "bg_prompt": "minimalist productivity workplace illustration"
         })
         mock_client.interactions.create.return_value = mock_interaction
 
@@ -27,10 +27,10 @@ class TestLinkedInGeneratorGemini(unittest.TestCase):
         _, kwargs = mock_client.interactions.create.call_args
         self.assertEqual(kwargs["model"], "gemini-3.6-flash")
         self.assertEqual(kwargs["response_mime_type"], "application/json")
-        self.assertEqual(post_text, "Sample viral LinkedIn post on AI breakthroughs.")
-        self.assertEqual(image_title, "AI BREAKTHROUGH")
-        self.assertEqual(category, "AI TRENDS")
-        self.assertEqual(bg_prompt, "futuristic artificial intelligence concept")
+        self.assertEqual(post_text, "Sample viral LinkedIn post on saving time with AI.")
+        self.assertEqual(image_title, "AI PRODUCTIVITY")
+        self.assertEqual(category, "AI TOOLS / PRODUCTIVITY")
+        self.assertEqual(bg_prompt, "minimalist productivity workplace illustration")
 
 
 if __name__ == "__main__":
