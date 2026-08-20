@@ -12,7 +12,7 @@ from job_radar.fetchers.custom import fetch_custom_many_sync
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_API_WORKERS = 12
+DEFAULT_API_WORKERS = 32
 API_ATS = frozenset(ATS_FETCHERS.keys())
 
 

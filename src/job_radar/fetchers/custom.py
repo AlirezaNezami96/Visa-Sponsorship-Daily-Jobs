@@ -12,7 +12,7 @@ import os
 import re
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -22,10 +22,14 @@ from urllib3.util.retry import Retry
 
 logger = logging.getLogger(__name__)
 
-HTTP_TIMEOUT_SECONDS = 10
-NAVIGATION_TIMEOUT_MS = 12_000
-DEFAULT_STATIC_WORKERS = 24
-DEFAULT_BROWSER_WORKERS = 6
+HTTP_CONNECT_TIMEOUT = 3.0
+HTTP_READ_TIMEOUT = 5.0
+HTTP_TIMEOUT = (HTTP_CONNECT_TIMEOUT, HTTP_READ_TIMEOUT)
+NAVIGATION_TIMEOUT_MS = 8_000
+DEFAULT_STATIC_WORKERS = 32
+DEFAULT_BROWSER_WORKERS = 10
+DEFAULT_MAX_BROWSER_PAGES = 50
+
 USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 "
@@ -35,6 +39,24 @@ HEADERS = {
     "User-Agent": USER_AGENT,
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
+
+BLACKLISTED_CUSTOM_DOMAINS = {
+    "linkedin.com", "indeed.com", "glassdoor.com", "ziprecruiter.com",
+    "jooble.org", "monster.com", "talent.com", "dice.com", "simplyhired.com",
+    "remotive.com", "weworkremotely.com", "wellfound.com", "angel.co",
+    "jobrapido.com", "neuvoo.com", "careerbuilder.com", "stepstone.de",
+    "totaljobs.com", "reed.co.uk", "cv-library.co.uk", "adzuna.com",
+    "flexjobs.com", "workingnomads.com", "remote.co", "himalayas.app",
+    "remoteok.com", "seek.com.au", "xing.com", "naukri.com", "naukrime.com",
+    "jobsite.co.uk", "justremote.co", "dailyremote.com", "remotely.io",
+    "workfromhomejobs.com", "virtualvocations.com",
+}
+
+SPA_MARKER_PATTERN = re.compile(
+    r"(?:myworkdaysite|workday|icims|successfactors|oraclecloud|taleo|phenom|"
+    r"__next_data__|id=[\"'](?:root|app|__next)[\"']|react-root|angular|vue)",
+    re.IGNORECASE,
+)
 
 _thread_local = threading.local()
 _JOB_COLLECTION_KEYS = {
@@ -69,19 +91,31 @@ def _env_positive_int(name: str, default: int) -> int:
         return default
 
 
+def is_blacklisted_custom_url(url: str) -> bool:
+    """Check if URL belongs to a known job board or aggregator that shouldn't be crawled."""
+    if not url or not url.startswith(("http://", "https://")):
+        return True
+    try:
+        host = urlparse(url).netloc.lower()
+        if host.startswith("www."):
+            host = host[4:]
+        return any(host == b or host.endswith("." + b) for b in BLACKLISTED_CUSTOM_DOMAINS)
+    except Exception:
+        return True
+
+
 def _http_session() -> requests.Session:
     session = getattr(_thread_local, "session", None)
     if session is None:
+        # Zero retries on connect/DNS to avoid hanging on dead domains
         retry = Retry(
-            total=2,
-            connect=2,
-            read=2,
-            backoff_factor=0.4,
-            status_forcelist=(429, 500, 502, 503, 504),
-            allowed_methods=frozenset(("GET",)),
+            total=0,
+            connect=0,
+            read=0,
+            status=0,
             raise_on_status=False,
         )
-        adapter = HTTPAdapter(max_retries=retry, pool_connections=4, pool_maxsize=4)
+        adapter = HTTPAdapter(max_retries=retry, pool_connections=32, pool_maxsize=32)
         session = requests.Session()
         session.headers.update({"User-Agent": USER_AGENT, "Accept": "text/html,application/xhtml+xml"})
         session.mount("https://", adapter)
@@ -198,6 +232,8 @@ def _jobs_from_json(data: Any, base_url: str, depth: int = 0) -> List[Dict[str, 
 
 
 def extract_jobs_from_html(html: str, base_url: str) -> List[Dict[str, str]]:
+    if not html:
+        return []
     soup = BeautifulSoup(html, "html.parser")
     jobs: List[Dict[str, str]] = []
     seen_urls: set[str] = set()
@@ -242,10 +278,27 @@ def extract_jobs_from_html(html: str, base_url: str) -> List[Dict[str, str]]:
     return jobs
 
 
+def _fetch_static_entry(url: str) -> Tuple[str, List[Dict[str, str]], bool, bool]:
+    """Fetch static HTML and return (url, jobs, is_http_200, is_spa_candidate)."""
+    if is_blacklisted_custom_url(url):
+        return url, [], False, False
+
+    try:
+        response = _http_session().get(url, timeout=HTTP_TIMEOUT)
+        if response.status_code != 200:
+            return url, [], False, False
+        html = response.text
+        jobs = extract_jobs_from_html(html, url)
+        is_spa = bool(SPA_MARKER_PATTERN.search(html[:10000])) or "workday" in url.lower()
+        return url, jobs, True, is_spa
+    except Exception as exc:
+        logger.debug("Static fetch failed for %s: %s", url, exc)
+        return url, [], False, False
+
+
 def _fetch_static(url: str) -> List[Dict[str, str]]:
-    response = _http_session().get(url, timeout=HTTP_TIMEOUT_SECONDS)
-    response.raise_for_status()
-    return extract_jobs_from_html(response.text, url)
+    _, jobs, _, _ = _fetch_static_entry(url)
+    return jobs
 
 
 async def _fetch_dynamic_pages(urls: List[str], workers: int) -> dict[str, List[Dict[str, str]]]:
@@ -266,7 +319,7 @@ async def _fetch_dynamic_pages(urls: List[str], workers: int) -> dict[str, List[
         )
 
         async def skip_heavy_assets(route) -> None:
-            if route.request.resource_type in {"image", "media", "font"}:
+            if route.request.resource_type in {"image", "media", "font", "stylesheet"}:
                 await route.abort()
             else:
                 await route.continue_()
@@ -278,7 +331,7 @@ async def _fetch_dynamic_pages(urls: List[str], workers: int) -> dict[str, List[
                 page = await context.new_page()
                 try:
                     await page.goto(url, wait_until="domcontentloaded", timeout=NAVIGATION_TIMEOUT_MS)
-                    await page.wait_for_timeout(350)
+                    await page.wait_for_timeout(250)
                     results[url] = extract_jobs_from_html(await page.content(), url)
                 except Exception as exc:
                     logger.debug("Dynamic fetch failed for %s: %s", url, exc)
@@ -318,33 +371,45 @@ def _run_async(coro):
 
 
 def fetch_custom_many_sync(urls: Iterable[str]) -> dict[str, List[Dict[str, str]]]:
-    unique_urls = list(dict.fromkeys(url for url in urls if url))
+    raw_urls = [url for url in urls if url and not is_blacklisted_custom_url(url)]
+    unique_urls = list(dict.fromkeys(raw_urls))
     results: dict[str, List[Dict[str, str]]] = {url: [] for url in unique_urls}
     static_workers = _env_positive_int("SCRAPER_STATIC_WORKERS", DEFAULT_STATIC_WORKERS)
 
     if not unique_urls:
         return results
 
-    static_failures = 0
-    with ThreadPoolExecutor(max_workers=min(static_workers, len(unique_urls)), thread_name_prefix="static-careers") as executor:
-        futures = {executor.submit(_fetch_static, url): url for url in unique_urls}
-        for future in as_completed(futures):
-            url = futures[future]
-            try:
-                results[url] = future.result()
-            except requests.RequestException as exc:
-                static_failures += 1
-                logger.debug("Static fetch failed for %s: %s", url, exc)
-            except Exception as exc:
-                static_failures += 1
-                logger.debug("Static parsing failed for %s: %s", url, exc)
+    static_hits = 0
+    spa_candidates: List[str] = []
+    failed_or_empty: int = 0
 
-    needs_browser = [url for url in unique_urls if not results[url]]
+    with ThreadPoolExecutor(max_workers=min(static_workers, len(unique_urls)), thread_name_prefix="static-careers") as executor:
+        futures = {executor.submit(_fetch_static_entry, url): url for url in unique_urls}
+        for future in as_completed(futures):
+            try:
+                url, jobs, is_http_200, is_spa = future.result()
+                if jobs:
+                    results[url] = jobs
+                    static_hits += 1
+                elif is_http_200:
+                    if is_spa or "career" in url.lower() or "job" in url.lower():
+                        spa_candidates.append(url)
+                    else:
+                        failed_or_empty += 1
+                else:
+                    failed_or_empty += 1
+            except Exception as exc:
+                failed_or_empty += 1
+
+    # Filter browser candidates: only load pages that actually returned HTTP 200 and look like SPAs
+    max_browser_pages = _env_positive_int("SCRAPER_MAX_BROWSER_PAGES", DEFAULT_MAX_BROWSER_PAGES)
+    needs_browser = [url for url in spa_candidates if not results[url]][:max_browser_pages]
+
     if needs_browser and os.environ.get("SCRAPER_DISABLE_BROWSER", "").lower() not in {"1", "true", "yes"}:
         browser_workers = _env_positive_int("SCRAPER_BROWSER_WORKERS", DEFAULT_BROWSER_WORKERS)
         logger.info(
-            "Custom fetch: %d/%d static hits; rendering %d remaining pages with one Chromium process (%d pages at a time)",
-            len(unique_urls) - len(needs_browser), len(unique_urls), len(needs_browser), browser_workers,
+            "Custom fetch: %d static hits; rendering %d SPA candidate pages with Chromium (%d concurrency)",
+            static_hits, len(needs_browser), browser_workers,
         )
         try:
             dynamic_results = _run_async(_fetch_dynamic_pages(needs_browser, browser_workers))
@@ -352,14 +417,14 @@ def fetch_custom_many_sync(urls: Iterable[str]) -> dict[str, List[Dict[str, str]
                 if jobs:
                     results[url] = jobs
         except Exception as exc:
-            logger.warning("Shared Playwright fallback failed: %s", exc)
+            logger.warning("Playwright fallback failed: %s", exc)
     elif needs_browser:
-        logger.info("Custom fetch: browser fallback disabled; %d pages left unrendered", len(needs_browser))
+        logger.info("Custom fetch: browser fallback disabled; %d candidate pages unrendered", len(needs_browser))
 
     found = sum(bool(jobs) for jobs in results.values())
     logger.info(
-        "Custom fetch complete: %d/%d sources yielded jobs (%d static request failures)",
-        found, len(unique_urls), static_failures,
+        "Custom fetch complete: %d/%d sources yielded jobs in fast mode",
+        found, len(unique_urls),
     )
     return results
 

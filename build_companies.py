@@ -98,6 +98,14 @@ ATS_PATTERNS = {
     "workday":         r"mywd\.jobs|wd\d?\.myworkdaysite|workday\.com",
 }
 
+BLACKLISTED_DOMAINS = {
+    "linkedin.com", "indeed.com", "glassdoor.com", "ziprecruiter.com",
+    "jooble.org", "monster.com", "talent.com", "dice.com", "simplyhired.com",
+    "remotive.com", "weworkremotely.com", "wellfound.com", "angel.co",
+    "jobrapido.com", "neuvoo.com", "careerbuilder.com", "stepstone.de",
+    "totaljobs.com", "reed.co.uk", "cv-library.co.uk", "adzuna.com",
+}
+
 def classify_ats(url: str):
     if not url:
         return "unknown", None
@@ -107,6 +115,11 @@ def classify_ats(url: str):
             groups = [g for g in m.groups() if g]
             slug = groups[0] if groups and ats != "workday" else None
             return ats, slug
+    # If URL is from a blacklisted domain, do not treat as custom career page
+    u_lower = url.lower()
+    for b in BLACKLISTED_DOMAINS:
+        if b in u_lower:
+            return "unknown", None
     return "custom", None
 
 
@@ -581,6 +594,7 @@ def main():
     custom = [
         c for c in all_companies
         if c.get("ats") not in API_ATS and c.get("careers_url")
+        and not any(b in c.get("careers_url", "").lower() for b in BLACKLISTED_DOMAINS)
     ]
     scrapable_names = {c["name"].lower() for c in scrapable}
     custom = [c for c in custom if c["name"].lower() not in scrapable_names]

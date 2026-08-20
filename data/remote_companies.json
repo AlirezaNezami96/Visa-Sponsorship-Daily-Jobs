@@ -3671,13 +3671,6 @@
       "source": "curated_remote"
     },
     {
-      "name": "Adzuna",
-      "careers_url": "https://adzuna.com",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
       "name": "Aether",
       "careers_url": "https://aether.app/jobs",
       "ats": "custom",
@@ -3811,13 +3804,6 @@
       "source": "curated_remote"
     },
     {
-      "name": "Careerbuilder",
-      "careers_url": "https://careerbuilder.com",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
       "name": "Careerjet",
       "careers_url": "https://careerjet.com",
       "ats": "custom",
@@ -3916,22 +3902,8 @@
       "source": "curated_remote"
     },
     {
-      "name": "Cv Library",
-      "careers_url": "https://cv-library.co.uk",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
       "name": "Cybereason",
       "careers_url": "https://cybereason.com/careers",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
-      "name": "Dailyremote",
-      "careers_url": "https://dailyremote.com",
       "ats": "custom",
       "slug": null,
       "source": "curated_remote"
@@ -3960,13 +3932,6 @@
     {
       "name": "Devitjobs",
       "careers_url": "https://devitjobs.de",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
-      "name": "Dice",
-      "careers_url": "https://dice.com",
       "ats": "custom",
       "slug": null,
       "source": "curated_remote"
@@ -4070,13 +4035,6 @@
       "source": "curated_remote"
     },
     {
-      "name": "Flexjobs",
-      "careers_url": "https://flexjobs.com",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
       "name": "Fly",
       "careers_url": "https://fly.io/jobs",
       "ats": "custom",
@@ -4161,13 +4119,6 @@
       "source": "curated_remote"
     },
     {
-      "name": "Gulftalent",
-      "careers_url": "https://gulftalent.com",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
       "name": "Hacker News",
       "careers_url": "https://hacker-news.firebaseio.com/v0/item/whoishiring",
       "ats": "custom",
@@ -4191,13 +4142,6 @@
     {
       "name": "Hetzner",
       "careers_url": "https://hetzner.com/careers",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
-      "name": "Himalayas",
-      "careers_url": "https://himalayas.app",
       "ats": "custom",
       "slug": null,
       "source": "curated_remote"
@@ -4329,13 +4273,6 @@
       "source": "curated_remote"
     },
     {
-      "name": "Jobsite",
-      "careers_url": "https://jobsite.co.uk",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
       "name": "Jobspresso",
       "careers_url": "https://jobspresso.co",
       "ats": "custom",
@@ -4357,22 +4294,8 @@
       "source": "curated_remote"
     },
     {
-      "name": "Jooble",
-      "careers_url": "https://jooble.org",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
       "name": "Journalismjobs",
       "careers_url": "https://journalismjobs.com",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
-      "name": "Justremote",
-      "careers_url": "https://justremote.co",
       "ats": "custom",
       "slug": null,
       "source": "curated_remote"
@@ -4485,20 +4408,6 @@
     {
       "name": "Namecheap",
       "careers_url": "https://namecheap.com/careers",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
-      "name": "Naukri",
-      "careers_url": "https://naukri.com",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
-      "name": "Naukrime",
-      "careers_url": "https://naukrime.com",
       "ats": "custom",
       "slug": null,
       "source": "curated_remote"
@@ -4658,13 +4567,6 @@
       "source": "curated_remote"
     },
     {
-      "name": "Reed",
-      "careers_url": "https://reed.co.uk",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
       "name": "Remote Game Jobs",
       "careers_url": "https://remote-game-jobs.com",
       "ats": "custom",
@@ -4681,13 +4583,6 @@
     {
       "name": "Remote Jobs",
       "careers_url": "https://remote-jobs.ie",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
-      "name": "Remote",
-      "careers_url": "https://remote.co",
       "ats": "custom",
       "slug": null,
       "source": "curated_remote"
@@ -4763,20 +4658,6 @@
       "source": "curated_remote"
     },
     {
-      "name": "Remotely",
-      "careers_url": "https://remotely.io",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
-      "name": "Remoteok",
-      "careers_url": "https://remoteok.com",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
       "name": "Remotesouthamerica",
       "careers_url": "https://remotesouthamerica.com",
       "ats": "custom",
@@ -4807,13 +4688,6 @@
     {
       "name": "Remotework",
       "careers_url": "https://remotework.es",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
-      "name": "Remotive",
-      "careers_url": "https://remotive.com",
       "ats": "custom",
       "slug": null,
       "source": "curated_remote"
@@ -4854,13 +4728,6 @@
       "source": "curated_remote"
     },
     {
-      "name": "Seek",
-      "careers_url": "https://seek.com.au",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
       "name": "Sentinelone",
       "careers_url": "https://sentinelone.com/careers",
       "ats": "custom",
@@ -4877,13 +4744,6 @@
     {
       "name": "Shine",
       "careers_url": "https://shine.com",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
-      "name": "Simplyhired",
-      "careers_url": "https://simplyhired.com",
       "ats": "custom",
       "slug": null,
       "source": "curated_remote"
@@ -4926,13 +4786,6 @@
     {
       "name": "Stackoverrun",
       "careers_url": "https://stackoverrun.com",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
-      "name": "Stepstone",
-      "careers_url": "https://stepstone.de",
       "ats": "custom",
       "slug": null,
       "source": "curated_remote"
@@ -4994,13 +4847,6 @@
       "source": "curated_remote"
     },
     {
-      "name": "Totaljobs",
-      "careers_url": "https://totaljobs.com",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
       "name": "Turing",
       "careers_url": "https://turing.com",
       "ats": "custom",
@@ -5050,13 +4896,6 @@
       "source": "curated_remote"
     },
     {
-      "name": "Virtualvocations",
-      "careers_url": "https://virtualvocations.com",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
       "name": "Vultr",
       "careers_url": "https://vultr.com/careers",
       "ats": "custom",
@@ -5073,20 +4912,6 @@
     {
       "name": "Webflow",
       "careers_url": "https://webflow.com/careers",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
-      "name": "Wellfound",
-      "careers_url": "https://wellfound.com",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
-      "name": "Weworkremotely",
-      "careers_url": "https://weworkremotely.com",
       "ats": "custom",
       "slug": null,
       "source": "curated_remote"
@@ -5113,20 +4938,6 @@
       "source": "curated_remote"
     },
     {
-      "name": "Workfromhomejobs",
-      "careers_url": "https://workfromhomejobs.com",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
-      "name": "Workingnomads",
-      "careers_url": "https://workingnomads.com",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
       "name": "Workopolis",
       "careers_url": "https://workopolis.com",
       "ats": "custom",
@@ -5148,22 +4959,8 @@
       "source": "curated_remote"
     },
     {
-      "name": "Xing",
-      "careers_url": "https://xing.com",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
       "name": "Zapier",
       "careers_url": "https://zapier.com/careers",
-      "ats": "custom",
-      "slug": null,
-      "source": "curated_remote"
-    },
-    {
-      "name": "Ziprecruiter",
-      "careers_url": "https://ziprecruiter.com",
       "ats": "custom",
       "slug": null,
       "source": "curated_remote"
@@ -5556,13 +5353,6 @@
     {
       "name": "toptal.com/careers",
       "careers_url": "https://www.toptal.com/careers",
-      "ats": "custom",
-      "slug": null,
-      "source": "adherb"
-    },
-    {
-      "name": "remote.com/careers",
-      "careers_url": "https://www.remote.com/careers",
       "ats": "custom",
       "slug": null,
       "source": "adherb"
@@ -6926,13 +6716,6 @@
       "source": "hugo53"
     },
     {
-      "name": "https://himalayas.app",
-      "careers_url": "https://himalayas.app",
-      "ats": "custom",
-      "slug": null,
-      "source": "hugo53"
-    },
-    {
       "name": "https://workaline.com/",
       "careers_url": "https://workaline.com/",
       "ats": "custom",
@@ -6968,29 +6751,8 @@
       "source": "hugo53"
     },
     {
-      "name": "https://weworkremotely.com",
-      "careers_url": "https://weworkremotely.com",
-      "ats": "custom",
-      "slug": null,
-      "source": "hugo53"
-    },
-    {
-      "name": "https://dailyremote.com",
-      "careers_url": "https://dailyremote.com",
-      "ats": "custom",
-      "slug": null,
-      "source": "hugo53"
-    },
-    {
       "name": "http://careers.stackoverflow.com/jobs/remote",
       "careers_url": "http://careers.stackoverflow.com/jobs/remote",
-      "ats": "custom",
-      "slug": null,
-      "source": "hugo53"
-    },
-    {
-      "name": "http://www.flexjobs.com/jobs/",
-      "careers_url": "http://www.flexjobs.com/jobs/",
       "ats": "custom",
       "slug": null,
       "source": "hugo53"
@@ -7019,13 +6781,6 @@
     {
       "name": "http://workinstartups.com/",
       "careers_url": "http://workinstartups.com/",
-      "ats": "custom",
-      "slug": null,
-      "source": "hugo53"
-    },
-    {
-      "name": "https://angel.co/jobs",
-      "careers_url": "https://angel.co/jobs",
       "ats": "custom",
       "slug": null,
       "source": "hugo53"
@@ -7234,13 +6989,6 @@
       "source": "hugo53"
     },
     {
-      "name": "https://rubyonremote.com",
-      "careers_url": "https://rubyonremote.com/",
-      "ats": "custom",
-      "slug": null,
-      "source": "hugo53"
-    },
-    {
       "name": "http://remoteclub.io/",
       "careers_url": "http://remoteclub.io/",
       "ats": "custom",
@@ -7306,13 +7054,6 @@
     {
       "name": "https://reactjsjob.com",
       "careers_url": "https://reactjsjob.com/remote/jobs",
-      "ats": "custom",
-      "slug": null,
-      "source": "hugo53"
-    },
-    {
-      "name": "https://europeanremote.com",
-      "careers_url": "https://europeanremote.com",
       "ats": "custom",
       "slug": null,
       "source": "hugo53"
@@ -7395,5 +7136,5 @@
       "source": "hugo53"
     }
   ],
-  "last_updated": "2026-08-11"
+  "last_updated": "2026-08-20"
 }
