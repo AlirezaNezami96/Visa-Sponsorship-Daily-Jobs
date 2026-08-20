@@ -17,6 +17,7 @@ from job_radar.config.models import (
     RadarConfig,
     ResumeConfig,
     ResumeMatcherConfig,
+    SearchGroundingConfig,
     SourcesConfig,
     SupabaseConfig,
     TrackConfig,
@@ -137,6 +138,17 @@ def load_radar_config(config_path: Optional[str] = None) -> RadarConfig:
         cache_file=rm_raw.get("cache_file", "state/resume_match_cache.json"),
     )
 
+    # 10. Search grounding config
+    sg_raw = data.get("search_grounding", {})
+    search_grounding = SearchGroundingConfig(
+        enabled=bool(sg_raw.get("enabled", True)),
+        model=os.environ.get("SEARCH_GROUNDING_MODEL", sg_raw.get("model", "gemini-3.7-flash")),
+        fallback_model=sg_raw.get("fallback_model", "gemini-3.6-flash"),
+        thinking_level=sg_raw.get("thinking_level", "HIGH"),
+        run_hours_utc=sg_raw.get("run_hours_utc", [3, 15]),
+        force_run=bool(sg_raw.get("force_run", False)),
+    )
+
     return RadarConfig(
         tracks=tracks,
         geography=geography,
@@ -147,6 +159,7 @@ def load_radar_config(config_path: Optional[str] = None) -> RadarConfig:
         freshness=freshness,
         supabase=supabase,
         resume_matcher=resume_matcher,
+        search_grounding=search_grounding,
     )
 
 

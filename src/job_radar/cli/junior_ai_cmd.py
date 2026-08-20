@@ -3,16 +3,19 @@ from __future__ import annotations
 
 import argparse
 import collections
+import datetime
 import logging
 import os
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
+from job_radar.config.loader import get_config
 from job_radar.dedup.store import bulk_mark_sent, is_already_sent, is_available as supabase_available
 from job_radar.fetchers.jobboards import (
     DEFAULT_CONFIG_PATH,
     fetch_all_jobboard_jobs,
     load_config,
 )
+from job_radar.fetchers.search_grounding import fetch_search_grounded_jobs
 from job_radar.filters.dedupe import (
     _load_seen,
     _save_seen,
@@ -33,24 +36,25 @@ def run(
     queries: list = None,
     max_results: int = None,
     config_path: str = DEFAULT_CONFIG_PATH,
+    no_search_grounding: bool = False,
+    force_search_grounding: bool = False,
 ) -> List[Tuple[str, List[dict]]]:
     cfg = load_config(config_path)
+    radar_cfg = get_config()
+    if no_search_grounding:
+        radar_cfg.search_grounding.enabled = False
+    if force_search_grounding:
+        radar_cfg.search_grounding.force_run = True
+
     target_countries = countries or cfg.get("active_countries", [])
     target_queries = queries or cfg.get("search_queries", ["Junior AI Engineer"])
-
-    # Load freshness config
-    max_age_days = 5
-    try:
-        from job_radar.config.loader import get_config
-        radar_cfg = get_config()
-        max_age_days = radar_cfg.freshness.max_age_days
-    except Exception:
-        pass
+    max_age_days = radar_cfg.freshness.max_age_days
 
     logger.info("Initializing Junior AI Job-Board Scanner")
     logger.info("Target Countries: %s", ", ".join(target_countries) if target_countries else "All")
     logger.info("Search Queries: %s", ", ".join(target_queries))
     logger.info("Freshness filter: max_age=%d days", max_age_days)
+    logger.info("Search grounding: %s (model: %s, scheduled hours: %s UTC)", "Enabled" if radar_cfg.search_grounding.enabled else "Disabled", radar_cfg.search_grounding.model, radar_cfg.search_grounding.run_hours_utc)
     logger.info("Supabase dedup: %s", "Connected" if supabase_available() else "Fallback → JSON seen-store")
 
     seen = _load_seen(JUNIOR_AI_SEEN_FILE)
@@ -61,12 +65,10 @@ def run(
     gemini_key = os.environ.get("GEMINI_API_KEY")
     if gemini_key:
         try:
-            from job_radar.config.loader import get_config
-            r_cfg = get_config()
-            if r_cfg.resume_matcher.enabled:
+            if radar_cfg.resume_matcher.enabled:
                 resume_text = fetch_resume_text(
-                    doc_id=r_cfg.resume.doc_id,
-                    access_method=r_cfg.resume.access_method,
+                    doc_id=radar_cfg.resume.doc_id,
+                    access_method=radar_cfg.resume.access_method,
                 )
         except Exception as exc:
             logger.warning("Resume fetch failed: %s — skipping ATS scoring", exc)
@@ -78,6 +80,20 @@ def run(
         max_results_override=max_results,
     )
     logger.info("Fetched %d raw candidate jobs across job boards", len(fetched_jobs))
+
+    # 4th source: Gemini Search-Grounded Discovery for Junior AI/Intern jobs
+    current_utc_hour = datetime.datetime.now(datetime.timezone.utc).hour
+    should_run_grounding = radar_cfg.search_grounding.enabled and (
+        current_utc_hour in radar_cfg.search_grounding.run_hours_utc or getattr(radar_cfg.search_grounding, "force_run", False)
+    )
+    if should_run_grounding:
+        logger.info("Triggering search grounding for 'ai_intern' (UTC hour %d)...", current_utc_hour)
+        grounded_jobs = fetch_search_grounded_jobs("ai_intern", config=radar_cfg)
+        if grounded_jobs:
+            logger.info("Search grounding discovered %d Junior AI candidate jobs", len(grounded_jobs))
+            fetched_jobs.extend(grounded_jobs)
+    else:
+        logger.debug("Search grounding skipped for this slot (current UTC hour: %d, scheduled: %s)", current_utc_hour, radar_cfg.search_grounding.run_hours_utc)
 
     # Freshness filter
     fetched_jobs = filter_fresh_jobs(fetched_jobs, max_age_days=max_age_days)
@@ -95,12 +111,7 @@ def run(
     # Resume matching
     if resume_text and new_matching_jobs:
         logger.info("Running resume matching for %d Junior AI jobs...", len(new_matching_jobs))
-        try:
-            from job_radar.config.loader import get_config
-            match_cfg = get_config()
-        except Exception:
-            match_cfg = None
-        match_resume_batch(new_matching_jobs, resume_text, config=match_cfg)
+        match_resume_batch(new_matching_jobs, resume_text, config=radar_cfg)
 
     grouped = collections.defaultdict(list)
     for job in new_matching_jobs:
@@ -140,6 +151,8 @@ def main():
     parser.add_argument("--queries", type=str, default=None, help="Comma-separated queries list")
     parser.add_argument("--max-results", type=int, default=None, help="Max results per search query per country")
     parser.add_argument("--config", type=str, default=DEFAULT_CONFIG_PATH, help="Path to jobboard_config.json")
+    parser.add_argument("--no-search-grounding", action="store_true", help="Disable Gemini search-grounded discovery")
+    parser.add_argument("--force-search-grounding", action="store_true", help="Force search-grounded discovery regardless of scheduled UTC hours")
     args = parser.parse_args()
 
     countries = [c.strip() for c in args.countries.split(",")] if args.countries else None
@@ -151,6 +164,8 @@ def main():
         queries=queries,
         max_results=args.max_results,
         config_path=args.config,
+        no_search_grounding=args.no_search_grounding,
+        force_search_grounding=args.force_search_grounding,
     )
 
 

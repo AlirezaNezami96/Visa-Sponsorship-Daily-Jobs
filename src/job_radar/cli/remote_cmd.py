@@ -2,17 +2,20 @@
 from __future__ import annotations
 
 import argparse
+import collections
 import datetime
 import json
 import logging
 import os
 import sys
-from typing import List
+from typing import List, Optional
 
+from job_radar.config.loader import get_config
+from job_radar.dedup.store import bulk_mark_sent, is_already_sent, is_available as supabase_available
 from job_radar.fetchers.pipeline import fetch_companies
+from job_radar.fetchers.search_grounding import fetch_search_grounded_jobs
 from job_radar.filters.dedupe import _load_seen, _save_seen, dedupe
 from job_radar.filters.freshness import filter_fresh_jobs
-from job_radar.dedup.store import bulk_mark_sent, is_already_sent, is_available as supabase_available
 from job_radar.notifications.email import (
     _send_via_gmail_smtp,
     _send_via_resend,
@@ -113,7 +116,17 @@ def load_remote_companies() -> list:
     return data.get("scrapable", []) + data.get("custom_ats", [])
 
 
-def run(dry_run: bool = False):
+def run(
+    dry_run: bool = False,
+    no_search_grounding: bool = False,
+    force_search_grounding: bool = False,
+):
+    cfg = get_config()
+    if no_search_grounding:
+        cfg.search_grounding.enabled = False
+    if force_search_grounding:
+        cfg.search_grounding.force_run = True
+
     companies = load_remote_companies()
     logger.info("Loaded %d remote companies", len(companies))
 
@@ -126,8 +139,6 @@ def run(dry_run: bool = False):
     gemini_key = os.environ.get("GEMINI_API_KEY")
     if gemini_key:
         try:
-            from job_radar.config.loader import get_config
-            cfg = get_config()
             if cfg.resume_matcher.enabled:
                 resume_text = fetch_resume_text(
                     doc_id=cfg.resume.doc_id,
@@ -141,14 +152,7 @@ def run(dry_run: bool = False):
     total_fetched = 0
     total_matching = 0
     errors = 0
-
-    # Load freshness config
-    try:
-        from job_radar.config.loader import get_config
-        cfg = get_config()
-        max_age_days = cfg.freshness.max_age_days
-    except Exception:
-        max_age_days = 5
+    max_age_days = cfg.freshness.max_age_days
 
     for i, result in enumerate(fetch_companies(companies)):
         company = result.company
@@ -174,15 +178,38 @@ def run(dry_run: bool = False):
             all_new_jobs.extend(new)
             report.append((name, new))
 
+    # 4th source: Gemini Search-Grounded Discovery for remote jobs
+    current_utc_hour = datetime.datetime.now(datetime.timezone.utc).hour
+    should_run_grounding = cfg.search_grounding.enabled and (
+        current_utc_hour in cfg.search_grounding.run_hours_utc or getattr(cfg.search_grounding, "force_run", False)
+    )
+    if should_run_grounding:
+        logger.info("Triggering search grounding for 'remote' (UTC hour %d)...", current_utc_hour)
+        grounded_jobs = fetch_search_grounded_jobs("remote", config=cfg)
+        if grounded_jobs:
+            total_fetched += len(grounded_jobs)
+            grounded_jobs = filter_fresh_jobs(grounded_jobs, max_age_days=max_age_days)
+            grounded_by_company = collections.defaultdict(list)
+            for j in grounded_jobs:
+                cname = j.get("company", "Direct Search")
+                grounded_by_company[cname].append(j)
+
+            for cname, cjobs in grounded_by_company.items():
+                new = dedupe(cname, cjobs, seen)
+                if supabase_available() and new:
+                    new = [j for j in new if not is_already_sent(j.get("url", ""))]
+                if new:
+                    total_matching += len(new)
+                    all_new_jobs.extend(new)
+                    report.append((cname, new))
+            logger.info("Search grounding added %d new remote candidate matches", sum(len(j) for _, j in report[-len(grounded_by_company):]))
+    else:
+        logger.debug("Search grounding skipped for this slot (current UTC hour: %d, scheduled: %s)", current_utc_hour, cfg.search_grounding.run_hours_utc)
+
     # Resume matching for all new remote jobs in one batch
     if resume_text and all_new_jobs:
         logger.info("Running resume matching for %d remote jobs...", len(all_new_jobs))
-        try:
-            from job_radar.config.loader import get_config
-            match_cfg = get_config()
-        except Exception:
-            match_cfg = None
-        match_resume_batch(all_new_jobs, resume_text, config=match_cfg)
+        match_resume_batch(all_new_jobs, resume_text, config=cfg)
 
     if not dry_run:
         _save_seen(seen, REMOTE_SEEN_FILE)
@@ -211,8 +238,14 @@ def main():
     )
     parser = argparse.ArgumentParser(description="Remote Job Scraper")
     parser.add_argument("--dry-run", action="store_true", help="Don't send email")
+    parser.add_argument("--no-search-grounding", action="store_true", help="Disable Gemini search-grounded discovery")
+    parser.add_argument("--force-search-grounding", action="store_true", help="Force search-grounded discovery regardless of scheduled UTC hours")
     args = parser.parse_args()
-    run(dry_run=args.dry_run)
+    run(
+        dry_run=args.dry_run,
+        no_search_grounding=args.no_search_grounding,
+        force_search_grounding=args.force_search_grounding,
+    )
 
 
 if __name__ == "__main__":

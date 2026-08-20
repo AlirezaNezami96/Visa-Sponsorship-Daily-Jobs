@@ -82,6 +82,21 @@ class ResumeMatcherConfig:
 
 
 @dataclass
+class SearchGroundingConfig:
+    """Configuration for the Gemini search-grounding job-discovery source."""
+    enabled: bool = True
+    model: str = "gemini-3.7-flash"
+    fallback_model: str = "gemini-3.6-flash"
+    thinking_level: str = "HIGH"
+    # Cost control: grounding is billed per search query the model runs, not per call.
+    # Only fire on these UTC hours instead of all four scheduled runs — same 5-day
+    # discovery window gets re-covered by the free direct-API/ATS fetchers on the
+    # in-between runs anyway.
+    run_hours_utc: List[int] = field(default_factory=lambda: [3, 15])
+    force_run: bool = False
+
+
+@dataclass
 class RadarConfig:
     tracks: TrackConfig = field(default_factory=TrackConfig)
     geography: GeographyConfig = field(default_factory=GeographyConfig)
@@ -92,3 +107,4 @@ class RadarConfig:
     freshness: FreshnessConfig = field(default_factory=FreshnessConfig)
     supabase: SupabaseConfig = field(default_factory=SupabaseConfig)
     resume_matcher: ResumeMatcherConfig = field(default_factory=ResumeMatcherConfig)
+    search_grounding: SearchGroundingConfig = field(default_factory=SearchGroundingConfig)

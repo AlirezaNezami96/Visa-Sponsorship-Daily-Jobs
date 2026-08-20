@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
 import logging
 import os
@@ -13,6 +14,7 @@ from job_radar.config.loader import get_config
 from job_radar.dedup.store import bulk_mark_sent, is_already_sent, is_available as supabase_available
 from job_radar.fetchers.pipeline import fetch_companies
 from job_radar.fetchers.public_apis import fetch_all_public_apis
+from job_radar.fetchers.search_grounding import fetch_search_grounded_jobs
 from job_radar.filters.dedupe import _load_seen, _save_seen, dedupe_radar_jobs
 from job_radar.filters.freshness import filter_fresh_jobs
 from job_radar.notifications.email import send_radar_digest
@@ -58,18 +60,25 @@ def run(
     no_llm: bool = False,
     no_public_apis: bool = False,
     no_companies: bool = False,
+    no_search_grounding: bool = False,
+    force_search_grounding: bool = False,
     limit: Optional[int] = None,
     send_empty: Optional[bool] = None,
 ) -> Tuple[List[dict], List[dict]]:
     cfg = get_config()
     if no_llm:
         cfg.classifier.enabled = False
+    if no_search_grounding:
+        cfg.search_grounding.enabled = False
+    if force_search_grounding:
+        cfg.search_grounding.force_run = True
 
     logger.info("=" * 60)
     logger.info("🚀 Launching AI Internship & Engineer Remote Job Radar")
     logger.info("LLM Classifier: %s (model: %s, min_score: %d)", "Enabled" if cfg.classifier.enabled else "Disabled (Rule-based)", cfg.classifier.model, cfg.classifier.min_relevance_score)
     logger.info("Freshness filter: max_age=%d days", cfg.freshness.max_age_days)
     logger.info("Resume matcher: %s (model: %s)", "Enabled" if cfg.resume_matcher.enabled else "Disabled", cfg.resume_matcher.model)
+    logger.info("Search grounding: %s (model: %s, scheduled hours: %s UTC)", "Enabled" if cfg.search_grounding.enabled else "Disabled", cfg.search_grounding.model, cfg.search_grounding.run_hours_utc)
     logger.info("Supabase dedup: %s", "Connected" if supabase_available() else "Fallback → JSON seen-store")
     logger.info("=" * 60)
 
@@ -105,6 +114,20 @@ def run(
         public_jobs = fetch_all_public_apis(cfg.sources.public_apis)
         boards_count = len([k for k, v in cfg.sources.public_apis.items() if v])
         raw_jobs.extend(public_jobs)
+
+    # 4th source: Gemini Search-Grounded Discovery
+    current_utc_hour = datetime.datetime.now(datetime.timezone.utc).hour
+    should_run_grounding = cfg.search_grounding.enabled and (
+        current_utc_hour in cfg.search_grounding.run_hours_utc or getattr(cfg.search_grounding, "force_run", False)
+    )
+    if should_run_grounding:
+        logger.info("Triggering search grounding for 'visa_sponsorship' (UTC hour %d)...", current_utc_hour)
+        grounded_jobs = fetch_search_grounded_jobs("visa_sponsorship", config=cfg)
+        if grounded_jobs:
+            logger.info("Search grounding discovered %d visa sponsorship candidate jobs", len(grounded_jobs))
+            raw_jobs.extend(grounded_jobs)
+    else:
+        logger.debug("Search grounding skipped for this slot (current UTC hour: %d, scheduled: %s)", current_utc_hour, cfg.search_grounding.run_hours_utc)
 
     logger.info("Total raw candidate pool: %d listings", len(raw_jobs))
 
@@ -194,6 +217,8 @@ def main():
     parser.add_argument("--no-llm", action="store_true", help="Bypass LLM API calls and use heuristic classifier")
     parser.add_argument("--no-public-apis", action="store_true", help="Disable public job board APIs")
     parser.add_argument("--no-companies", action="store_true", help="Disable direct company ATS scanning")
+    parser.add_argument("--no-search-grounding", action="store_true", help="Disable Gemini search-grounded discovery")
+    parser.add_argument("--force-search-grounding", action="store_true", help="Force search-grounded discovery regardless of scheduled UTC hours")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of companies scanned")
     parser.add_argument("--send-empty", action="store_true", help="Send email digest even when zero new jobs are found")
     args = parser.parse_args()
@@ -203,6 +228,8 @@ def main():
         no_llm=args.no_llm,
         no_public_apis=args.no_public_apis,
         no_companies=args.no_companies,
+        no_search_grounding=args.no_search_grounding,
+        force_search_grounding=args.force_search_grounding,
         limit=args.limit,
         send_empty=args.send_empty if args.send_empty else None,
     )

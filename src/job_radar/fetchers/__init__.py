@@ -33,6 +33,10 @@ from job_radar.fetchers.public_apis import (
     fetch_remoteok,
     fetch_remotive,
 )
+from job_radar.fetchers.search_grounding import (
+    CATEGORY_PROFILES,
+    fetch_search_grounded_jobs,
+)
 
 __all__ = [
     "ATS_FETCHERS",
@@ -64,4 +68,6 @@ __all__ = [
     "fetch_arbeitnow",
     "fetch_himalayas",
     "fetch_hn_who_is_hiring",
+    "CATEGORY_PROFILES",
+    "fetch_search_grounded_jobs",
 ]

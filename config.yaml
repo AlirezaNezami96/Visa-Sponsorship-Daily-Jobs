@@ -151,3 +151,18 @@ supabase:
   # Set false to fall back to JSON seen-store files (for local dev without Supabase)
   enabled: true
   # URL and key from env vars: SUPABASE_URL and SUPABASE_KEY (service role)
+
+# --- Gemini Search-Grounded Discovery (4th Source) ---
+search_grounding:
+  enabled: true
+  model: "gemini-3.7-flash"
+  fallback_model: "gemini-3.6-flash"
+  thinking_level: "HIGH"
+  # Run only on specific UTC hours to control search grounding query costs
+  # Runs at 03:00 and 15:00 UTC by default; other slots covered by direct ATS/board APIs
+  run_hours_utc:
+    - 3
+    - 15
+  # Set to true to bypass hour gating (e.g. for testing)
+  force_run: false
+
