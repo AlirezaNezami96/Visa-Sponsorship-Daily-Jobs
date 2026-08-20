@@ -1,0 +1,126 @@
+# AI Internship & Engineer Remote Job Radar Configuration
+
+tracks:
+  internship:
+    include:
+      - "ai intern"
+      - "machine learning intern"
+      - "ml intern"
+      - "applied ai intern"
+      - "applied scientist intern"
+      - "ai research intern"
+      - "ml research intern"
+      - "nlp intern"
+      - "computer vision intern"
+      - "cv intern"
+      - "generative ai intern"
+      - "llm intern"
+      - "deep learning intern"
+      - "data science intern"
+      - "ai engineer intern"
+      - "ml engineer intern"
+      - "ai fellowship"
+      - "ml fellowship"
+      - "ai apprentice"
+      - "ai trainee"
+      - "ml trainee"
+
+  engineer:
+    include:
+      - "ai engineer"
+      - "machine learning engineer"
+      - "ml engineer"
+      - "applied ai engineer"
+      - "research engineer"
+      - "nlp engineer"
+      - "computer vision engineer"
+      - "cv engineer"
+      - "generative ai engineer"
+      - "llm engineer"
+      - "deep learning engineer"
+      - "mlops engineer"
+      - "ai agent engineer"
+      - "agent engineer"
+      - "junior ai engineer"
+      - "junior machine learning engineer"
+      - "junior ml engineer"
+      - "entry level ai engineer"
+      - "entry level machine learning engineer"
+      - "associate ai engineer"
+      - "associate machine learning engineer"
+      - "graduate ai engineer"
+      - "graduate machine learning engineer"
+      - "ai developer"
+      - "ml developer"
+
+  seniority_exclude:
+    - "senior"
+    - "sr"
+    - "sr."
+    - "staff"
+    - "principal"
+    - "lead"
+    - "director"
+    - "head of"
+    - "vp"
+    - "vice president"
+    - "chief"
+    - "architect"
+    - "experienced"
+    - "manager"
+    - "l5"
+    - "l6"
+    - "l7"
+
+  borderline_review:
+    - "prompt engineer"
+    - "data scientist"
+    - "data science"
+    - "ai specialist"
+    - "ai generalist"
+    - "ai solutions engineer"
+
+geography:
+  allowed_remote_scopes:
+    - "worldwide"
+    - "region_restricted"
+  preferred_regions:
+    - "worldwide"
+    - "any"
+    - "remote"
+    - "us"
+    - "usa"
+    - "united states"
+    - "uk"
+    - "united kingdom"
+    - "ca"
+    - "canada"
+    - "eu"
+    - "europe"
+    - "germany"
+    - "netherlands"
+    - "ireland"
+
+classifier:
+  enabled: true
+  provider: "gemini" # options: "gemini", "anthropic", "openai"
+  model: "gemini-3.6-flash" # or "claude-3-5-haiku-20241022", "gpt-4o-mini"
+  min_relevance_score: 60
+  cache_file: "state/classifier_cache.json"
+
+email:
+  send_empty_digests: false
+  show_visa_tag: true
+
+sources:
+  company_files:
+    - "ai_companies.json"
+    - "companies.json"
+    - "remote_companies.json"
+  enable_public_apis: true
+  public_apis:
+    remoteok: true
+    remotive: true
+    arbeitnow: true
+    himalayas: true
+    hn_hiring: true

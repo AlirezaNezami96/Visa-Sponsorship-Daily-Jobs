@@ -1,22 +1,32 @@
 #!/usr/bin/env python3
-"""
-Main orchestrator: fetches jobs from all companies, filters, deduplicates, emails.
+"""AI Internship & Early-Career Engineer Remote Job Radar.
+
+Discovers, filters, classifies, and alerts for remote AI/ML opportunities
+across direct company ATS feeds and public job board APIs.
 
 Usage:
-    python run.py                    # Normal run
-    python run.py --dry-run          # Print results without sending email
-    python run.py --build            # Rebuild companies.json first
-    python run.py --classify-only    # Only show ATS classification stats
+    python run.py                     # Full daily radar run
+    python run.py --dry-run           # Preview matches without sending email or updating seen store
+    python run.py --no-llm            # Run with fast heuristic classification (bypassing LLM API)
+    python run.py --no-public-apis    # Fetch only direct company career boards
+    python run.py --limit 10          # Limit company scan for quick debugging
 """
+from __future__ import annotations
+
 import argparse
 import json
+import logging
 import os
 import sys
-import logging
+import time
+from typing import Any, Dict, List, Tuple
 
-from filter import dedupe, _load_seen, _save_seen
+from classify_relevance import classify_and_filter_jobs
+from config_loader import get_config, load_radar_config
+from email_sender import send_radar_digest
+from fetchers_public_apis import fetch_all_public_apis
+from filter import _load_seen, _save_seen, dedupe_radar_jobs
 from job_pipeline import fetch_companies
-from email_sender import send_email
 
 logging.basicConfig(
     level=logging.INFO,
@@ -25,135 +35,174 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-COMPANIES_FILE = "companies.json"
+SEEN_FILE = "seen_jobs.json"
 
 
-def load_companies() -> list:
-    """Load the scrapable companies list."""
-    if not os.path.exists(COMPANIES_FILE):
-        logger.error(f"{COMPANIES_FILE} not found. Run 'python build_companies.py' first.")
-        sys.exit(1)
+def load_all_target_companies(company_files: List[str], limit: Optional[int] = None) -> List[dict]:
+    """Load and combine deduplicated company targets from JSON files."""
+    combined: Dict[str, dict] = {}
 
-    with open(COMPANIES_FILE, "r") as f:
-        data = json.load(f)
-
-    # Combine scrapable + custom_ats into one list
-    companies = data.get("scrapable", []) + data.get("custom_ats", [])
-    return companies
-
-
-def run(dry_run: bool = False):
-    """Main pipeline."""
-    companies = load_companies()
-    logger.info(f"Loaded {len(companies)} companies")
-
-    # ATS distribution
-    ats_counts = {}
-    for c in companies:
-        ats_counts[c["ats"]] = ats_counts.get(c["ats"], 0) + 1
-    logger.info(f"ATS distribution: {ats_counts}")
-
-    # Load seen store
-    seen = _load_seen()
-    logger.info(f"Seen store: {len(seen)} entries")
-
-    report = []  # list of (company_name, [matching_jobs])
-    total_fetched = 0
-    total_matching = 0
-    errors = 0
-
-    for i, result in enumerate(fetch_companies(companies)):
-        company = result.company
-        name = company["name"]
-        if result.error:
-            errors += 1
-            logger.warning("[%d/%d] [%s] %s -> Error: %s", i + 1, len(companies), result.method.upper(), name, result.error)
+    for fname in company_files:
+        if not os.path.exists(fname):
+            logger.debug("Company file %s not found; skipping", fname)
             continue
+        try:
+            with open(fname, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            # Both 'scrapable' (API) and 'custom_ats' / 'custom' entries
+            entries = data.get("scrapable", []) + data.get("custom_ats", [])
+            for c in entries:
+                name = c.get("name", "").strip()
+                if not name:
+                    continue
+                # If duplicate company, prefer direct ATS over custom
+                if name not in combined or (c.get("ats") != "custom" and combined[name].get("ats") == "custom"):
+                    combined[name] = c
+        except Exception as exc:
+            logger.warning("Failed to load company file %s: %s", fname, exc)
 
-        jobs = result.jobs
-        total_fetched += len(jobs)
-        logger.info("[%d/%d] [%s] %s -> %d jobs", i + 1, len(companies), result.method.upper(), name, len(jobs))
-        new = dedupe(name, jobs, seen)
-        if new:
-            total_matching += len(new)
-            report.append((name, new))
-            for job in new:
-                logger.info("    MATCH: %s — %s", job["title"], job.get("location", ""))
+    all_companies = list(combined.values())
+    if limit and limit > 0:
+        all_companies = all_companies[:limit]
+    return all_companies
 
-    # A dry run must be repeatable: it previews results without consuming the
-    # alerts that the next scheduled run should send.
+
+def run(
+    dry_run: bool = False,
+    no_llm: bool = False,
+    no_public_apis: bool = False,
+    no_companies: bool = False,
+    limit: Optional[int] = None,
+    send_empty: Optional[bool] = None,
+) -> Tuple[List[dict], List[dict]]:
+    """Execute the full AI Radar pipeline."""
+    cfg = get_config()
+    if no_llm:
+        cfg.classifier.enabled = False
+
+    logger.info("=" * 60)
+    logger.info("🚀 Launching AI Internship & Engineer Remote Job Radar")
+    logger.info("LLM Classifier: %s (model: %s, min_score: %d)", "Enabled" if cfg.classifier.enabled else "Disabled (Rule-based)", cfg.classifier.model, cfg.classifier.min_relevance_score)
+    logger.info("=" * 60)
+
+    # 1. Load seen store
+    seen = _load_seen(SEEN_FILE)
+    logger.info("Loaded seen store: %d entries", len(seen))
+
+    raw_jobs: List[dict] = []
+    companies_count = 0
+    errors_count = 0
+
+    # 2. Fetch Direct Company ATS Feeds
+    if not no_companies:
+        companies = load_all_target_companies(cfg.sources.company_files, limit=limit)
+        companies_count = len(companies)
+        logger.info("Scanning %d curated companies...", companies_count)
+
+        for result in fetch_companies(companies):
+            comp_name = result.company.get("name", "Unknown")
+            if result.error:
+                errors_count += 1
+                logger.debug("[%s] %s -> Error: %s", result.method.upper(), comp_name, result.error)
+                continue
+            for j in result.jobs:
+                item = dict(j)
+                if not item.get("company"):
+                    item["company"] = comp_name
+                if not item.get("source"):
+                    item["source"] = result.method.upper()
+                raw_jobs.append(item)
+
+        logger.info("Fetched %d raw listings from company ATS feeds", len(raw_jobs))
+
+    # 3. Fetch Public Job Board APIs
+    boards_count = 0
+    if not no_public_apis and cfg.sources.enable_public_apis:
+        public_jobs = fetch_all_public_apis(cfg.sources.public_apis)
+        boards_count = len([k for k, v in cfg.sources.public_apis.items() if v])
+        raw_jobs.extend(public_jobs)
+
+    logger.info("Total raw candidate pool: %d listings", len(raw_jobs))
+
+    # 4. Multi-Track Keyword Pre-Filter + Fingerprint Deduplication
+    candidate_jobs = dedupe_radar_jobs(raw_jobs, seen, config=cfg)
+    logger.info("Surviving keyword pre-filter candidates: %d jobs", len(candidate_jobs))
+
+    # 5. LLM Relevance Classification Pass
+    qualified_jobs, clf_stats = classify_and_filter_jobs(candidate_jobs, config=cfg)
+
+    # 6. Group into Dual Tracks
+    internships = [j for j in qualified_jobs if j.get("classified_track") == "internship"]
+    engineers = [j for j in qualified_jobs if j.get("classified_track") == "engineer"]
+
+    # 7. Persist seen store (unless dry-run)
     if not dry_run:
-        _save_seen(seen)
-        logger.info(f"Updated seen store: {len(seen)} entries")
+        _save_seen(seen, SEEN_FILE)
+        logger.info("Persisted updated seen store: %d entries", len(seen))
     else:
-        logger.info("[DRY RUN] Seen store left unchanged")
+        logger.info("[DRY RUN] Seen store left unmodified")
 
-    # Summary
-    logger.info(f"\n{'='*50}")
-    logger.info(f"TOTALS: {total_fetched} jobs fetched, {total_matching} new matches, {errors} errors")
-    logger.info(f"Companies with matches: {len(report)}")
+    # 8. Console Summary
+    total_found = len(internships) + len(engineers)
+    logger.info("\n" + "=" * 60)
+    logger.info("🎯 RADAR RUN COMPLETE: %d new matches (%d internships, %d engineers)", total_found, len(internships), len(engineers))
+    logger.info("=" * 60)
 
-    if report:
-        logger.info(f"\nNew jobs found:")
-        for company, jobs in report:
-            for j in jobs:
-                logger.info(f"  - [{company}] {j['title']} ({j.get('location', '')})")
+    if internships:
+        logger.info("\n🎓 NEW AI/ML INTERNSHIPS (%d):", len(internships))
+        for j in internships:
+            logger.info("  • [%s] %s — %s (%d%% match)", j.get("company"), j.get("title"), j.get("location"), j.get("relevance_score", 0))
+            if j.get("why_matched"):
+                logger.info("    ↳ %s", j.get("why_matched"))
 
-    # Send email (unless dry run or no matches)
-    if not dry_run and report:
-        logger.info("\nSending email...")
-        send_email(report)
-    elif dry_run and report:
-        logger.info(f"\n[DRY RUN] Would send email with {len(report)} companies")
-    elif not report:
-        logger.info("\nNo new matching jobs today. No email sent.")
+    if engineers:
+        logger.info("\n🚀 NEW EARLY-CAREER AI ENGINEERS (%d):", len(engineers))
+        for j in engineers:
+            logger.info("  • [%s] %s — %s (%d%% match)", j.get("company"), j.get("title"), j.get("location"), j.get("relevance_score", 0))
+            if j.get("why_matched"):
+                logger.info("    ↳ %s", j.get("why_matched"))
 
-    return report
+    # 9. Send Email Digest
+    health_info = {
+        "companies_scanned": companies_count,
+        "boards_scanned": boards_count,
+        "errors": errors_count,
+        "total_evaluated": len(candidate_jobs),
+    }
 
+    send_empty_flag = send_empty if send_empty is not None else cfg.email.send_empty_digests
+    if not dry_run:
+        send_radar_digest(
+            internships=internships,
+            engineers=engineers,
+            health_info=health_info,
+            send_empty=send_empty_flag,
+            show_visa_tag=cfg.email.show_visa_tag,
+        )
+    else:
+        logger.info("[DRY RUN] Would dispatch email digest: %d internships, %d engineers", len(internships), len(engineers))
 
-def classify_only():
-    """Just show ATS classification stats, don't fetch anything."""
-    companies = load_companies()
-    ats_counts = {}
-    for c in companies:
-        ats = c["ats"]
-        ats_counts[ats] = ats_counts.get(ats, 0) + 1
-
-    print(f"\n{'='*50}")
-    print(f"Total companies: {len(companies)}")
-    print(f"\nATS Distribution:")
-    for ats, count in sorted(ats_counts.items(), key=lambda x: -x[1]):
-        pct = count / len(companies) * 100
-        bar = "\u2588" * int(pct / 5)
-        print(f"  {ats:20s} {count:4d} ({pct:5.1f}%) {bar}")
-
-    print(f"\nCompanies by ATS:")
-    for ats in sorted(ats_counts.keys()):
-        cos = [c for c in companies if c["ats"] == ats]
-        print(f"\n  [{ats.upper()}]")
-        for c in cos[:10]:
-            print(f"    - {c['name']:30s} {c['careers_url'][:60]}")
-        if len(cos) > 10:
-            print(f"    ... and {len(cos) - 10} more")
+    return internships, engineers
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Visa Job Scraper")
-    parser.add_argument("--dry-run", action="store_true", help="Don't send email")
-    parser.add_argument("--build", action="store_true", help="Rebuild companies.json first")
-    parser.add_argument("--classify-only", action="store_true", help="Show ATS classification stats")
+    parser = argparse.ArgumentParser(description="AI Internship & Engineer Remote Job Radar")
+    parser.add_argument("--dry-run", action="store_true", help="Preview matches without persisting seen store or sending email")
+    parser.add_argument("--no-llm", action="store_true", help="Bypass LLM API calls and use heuristic classifier")
+    parser.add_argument("--no-public-apis", action="store_true", help="Disable public job board APIs (RemoteOK, Remotive, etc.)")
+    parser.add_argument("--no-companies", action="store_true", help="Disable direct company ATS scanning")
+    parser.add_argument("--limit", type=int, default=None, help="Limit number of companies scanned")
+    parser.add_argument("--send-empty", action="store_true", help="Send email digest even when zero new jobs are found")
     args = parser.parse_args()
 
-    if args.build:
-        import build_companies
-        build_companies.main()
-        print()
-
-    if args.classify_only:
-        classify_only()
-        return
-
-    run(dry_run=args.dry_run)
+    run(
+        dry_run=args.dry_run,
+        no_llm=args.no_llm,
+        no_public_apis=args.no_public_apis,
+        no_companies=args.no_companies,
+        limit=args.limit,
+        send_empty=args.send_empty if args.send_empty else None,
+    )
 
 
 if __name__ == "__main__":

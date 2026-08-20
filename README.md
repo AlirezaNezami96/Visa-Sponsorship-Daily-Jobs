@@ -1,53 +1,82 @@
-# Visa Job Scraper
+# AI Internship & Early-Career Engineer Remote Job Radar
 
-Daily job scraper for 100+ visa-sponsoring companies. Runs on **GitHub Actions** (free), no paid services needed.
+A dedicated, autonomous radar for **AI/ML internships** and **early-career (0–2 yrs) remote engineer roles**. Runs 100% free on **GitHub Actions**, scans direct company ATS APIs + public remote job boards, uses Gemini/LLM relevance filtering, deduplicates cross-source postings, and delivers clean daily email digests.
 
-**What it does:** Every day at a time you choose, it scans 160+ companies' job boards, filters for roles matching your keywords (e.g., "mobile", "android", "software engineer"), deduplicates against previously seen jobs, and emails you only the new matches.
+---
 
-**How it works:** Companies on Greenhouse, Lever, Ashby, SmartRecruiters, Personio, and Workable use their public job APIs. All other career sites use a static-first parser, with Playwright only as a fallback for JavaScript-rendered pages.
+## ⚡ What It Does
 
-The daily scanners use bounded concurrency: API requests run in parallel, static career pages are fetched in parallel, and browser-only pages share one Chromium process. This avoids the previous cost of launching one browser per company while keeping request volume bounded and retrying transient errors.
+1. **Two-Track Targeting**:
+   - **Track 1: AI & ML Internships** (Student, Intern, Co-op, Fellowship, Trainee).
+   - **Track 2: Early-Career AI Engineers** (Junior, Entry-level, Associate, 0–2 yrs exp).
+   - Strictly filters out senior, staff, principal, lead, and management postings.
+2. **Direct ATS APIs & Public Job Boards**:
+   - Hits live JSON APIs for Greenhouse, Lever, Ashby, Workable, SmartRecruiters, and Personio across top AI labs and tech employers (Anthropic, OpenAI, Databricks, Scale AI, Mistral, Together AI, etc.).
+   - Fetches free, compliant public remote job board APIs: **RemoteOK**, **Remotive**, **Arbeitnow**, **Himalayas**, and **Hacker News "Who is Hiring"**.
+3. **LLM Relevance & Remote Scope Classifier**:
+   - Optional AI auditor powered by `gemini-3.6-flash` (or Anthropic/OpenAI) that screens candidate descriptions, scores relevance (0–100), detects genuine AI/ML day-to-day focus vs. non-AI roles, and checks worldwide/regional remote scope.
+   - **Disk Caching**: Results are hashed and saved to `state/classifier_cache.json` for 0 repeated API costs.
+4. **Smart Cross-Source Deduplication**:
+   - Canonical URL normalization and `(normalized_company, normalized_title, normalized_location)` fingerprinting prevent duplicate alerts when a role is syndicated across multiple boards.
+5. **Dual-Track Email Digest**:
+   - Responsive HTML digest grouped into Internships and Early-Career Engineers with match score pills, one-line "why it matched" explanations, direct apply buttons, and run health stats.
 
 ---
 
 ## Architecture
 
 ```
-companies.json ──► run.py (orchestrator)
-                        │
-          ┌─────────────┼──────────────┐
-          ▼             ▼              ▼
-   API Fetchers   Static HTML      filter.py
-   (Greenhouse,   then one shared  (keyword match
-    Lever, Ashby,   Playwright        + dedup)
-    Workable...)    fallback)         │
-                                        ▼
-                                  email_sender.py
-                                  (Resend/SendGrid/
-                                   Gmail SMTP)
+                      ┌──────────────────────────────────────────────┐
+                      │                 config.yaml                  │
+                      └──────────────────────┬───────────────────────┘
+                                             │
+      ┌──────────────────────────────────────┴──────────────────────────────────────┐
+      │                                                                             │
+      ▼                                                                             ▼
+Direct ATS APIs & Custom                              Public Remote Job Board APIs
+(Greenhouse, Lever, Ashby,                            (RemoteOK, Remotive, Arbeitnow,
+ Workable, SmartRecruiters)                            Himalayas, Hacker News)
+      │                                                                             │
+      └──────────────────────────────────────┬──────────────────────────────────────┘
+                                             ▼
+                                  filter.py (Pre-filter)
+                               - Seniority Exclusions
+                               - Multi-Track Regex Matching
+                               - Cross-Source Fingerprint Dedup
+                                             │
+                                             ▼
+                             classify_relevance.py (LLM Filter)
+                               - Gemini 3.6 Flash / Anthropic / OpenAI
+                               - Relevance Scoring (0-100) & Why snippet
+                               - Disk Cache: state/classifier_cache.json
+                                             │
+                                             ▼
+                                email_sender.py (Dual-Track HTML)
+                               - 🎓 AI & ML Internships
+                               - 🚀 Early-Career AI Engineers
+                               - Run Health & Source Attribution
+                                             │
+                                             ▼
+                                 GitHub Actions Cron (Daily)
 ```
 
 ## Project Files
 
 | File | Purpose |
 |------|----------|
-| `run.py` | Main orchestrator for Android / Mobile Visa Jobs. |
-| `run_remote.py` | Remote jobs scanner. |
-| `run_junior_ai.py` | Junior / Trainee / Associate AI & ML jobs scanner. |
-| `build_companies.py` | Builds `companies.json` from GitHub repos + curated list |
-| `classify.py` | ATS detection from URLs |
-| `fetchers.py` | JSON API fetchers for Greenhouse, Lever, Ashby, SmartRecruiters, Personio, Workable |
-| `job_pipeline.py` | Shared, concurrent acquisition layer for the visa, remote, and junior AI scans |
-| `fetcher_custom.py` | Static-first parser plus a single shared Playwright browser for custom career pages |
-| `filter.py` | Keyword matching + dedup (includes `matches_junior_ai`) |
-| `email_sender.py` | Email dispatch via Resend, SendGrid, or Gmail SMTP |
-| `discover_ats.py` | Optional: probes companies to auto-discover their ATS |
-| `companies.json` | Company list with ATS classification |
-| `seen_jobs.json` | State store for deduplication (committed to repo) |
-| `seen_junior_ai_jobs.json` | State store for Junior AI deduplication (committed to repo) |
-| `.github/workflows/daily-jobs.yml` | GitHub Actions cron job for Visa Jobs |
-| `.github/workflows/daily-remote-jobs.yml` | GitHub Actions cron job for Remote Jobs |
-| `.github/workflows/daily-junior-ai-jobs.yml` | GitHub Actions cron job for Junior AI & ML Jobs |
+| `config.yaml` | Central configuration for tracks, keywords, geography, LLM classifier, and email settings |
+| `config_loader.py` | Typed dataclass loader for `config.yaml` with environment variable overrides |
+| `run.py` | Main orchestrator for the AI Internship & Engineer Remote Job Radar |
+| `classify_relevance.py` | LLM relevance scoring, remote scope auditor, and disk cache manager |
+| `fetchers_public_apis.py` | Public job board integrations (RemoteOK, Remotive, Arbeitnow, Himalayas, HN) |
+| `filter.py` | Keyword pre-filter, seniority exclusion, and cross-source fingerprint deduplication |
+| `email_sender.py` | Dual-track HTML email builder and delivery via Resend, SendGrid, or Gmail SMTP |
+| `ai_companies.json` | Curated AI employers and specialized job portals |
+| `build_ai_companies.py` | Generator script for `ai_companies.json` |
+| `companies.json` | Global company target list with ATS classifications |
+| `seen_jobs.json` | State store for deduplication (persisted to repo via CI) |
+| `state/classifier_cache.json`| On-disk cache for LLM classification outputs |
+| `.github/workflows/daily-jobs.yml` | GitHub Actions cron workflow for automated daily execution |
 
 ---
 

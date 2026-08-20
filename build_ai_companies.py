@@ -30,13 +30,34 @@ CURATED_AI = [
     ("Descript", "greenhouse", "descript"),
     ("AssemblyAI", "greenhouse", "assemblyai"),
     ("Imbue", "greenhouse", "imbue"),
+    ("Inflection AI", "greenhouse", "inflectionai"),
+    ("Weights & Biases", "greenhouse", "wandb"),
+    ("DataRobot", "greenhouse", "datarobot"),
 
     # Verified Active AI Companies (Lever API)
     ("Shield AI", "lever", "shieldai"),
     ("Anyscale", "lever", "anyscale"),
+    ("Runway", "lever", "runwayml"),
+    ("Cohere", "lever", "cohere"),
 
     # Verified Active AI Companies (Workable API)
     ("Hugging Face", "workable", "huggingface"),
+
+    # AI Labs (Custom / Direct careers URLs for static + Playwright scraper)
+    ("OpenAI", "custom", "https://openai.com/careers/search/"),
+    ("Mistral AI", "custom", "https://mistral.ai/jobs/"),
+    ("Perplexity", "custom", "https://www.perplexity.ai/careers"),
+    ("xAI", "custom", "https://x.ai/careers"),
+    ("ElevenLabs", "custom", "https://elevenlabs.io/careers"),
+    ("Character.AI", "custom", "https://character.ai/careers"),
+    ("Pinecone", "custom", "https://www.pinecone.io/careers/"),
+    ("Weaviate", "custom", "https://weaviate.io/company/careers"),
+    ("LangChain", "custom", "https://www.langchain.com/careers"),
+    ("Modal", "custom", "https://modal.com/careers"),
+    ("Replicate", "custom", "https://replicate.com/careers"),
+    ("Baseten", "custom", "https://www.baseten.co/careers/"),
+    ("Groq", "custom", "https://groq.com/careers/"),
+    ("Cerebras", "custom", "https://cerebras.ai/careers/"),
 
     # Dedicated AI Job Portals & Niche Aggregators
     ("AI-Jobs.net", "custom", "https://ai-jobs.net"),

@@ -1,0 +1,17 @@
+{
+  "indeed_usa": {
+    "last_success": 1786687009.270485,
+    "domain": "www.indeed.com",
+    "strategy": "deterministic_html"
+  },
+  "indeed_uk": {
+    "last_success": 1786685981.3538072,
+    "domain": "uk.indeed.com",
+    "strategy": "deterministic_html"
+  },
+  "indeed_canada": {
+    "last_success": 1786685985.2630148,
+    "domain": "ca.indeed.com",
+    "strategy": "deterministic_html"
+  }
+}
