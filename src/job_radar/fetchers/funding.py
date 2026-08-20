@@ -17,8 +17,10 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Optional
 from urllib.parse import urljoin
-
-import feedparser
+try:
+    import feedparser
+except ImportError:
+    feedparser = None
 import requests
 from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
@@ -169,6 +171,9 @@ def is_fresh(entry_date_struct: Optional[time.struct_time], max_hours: int = 48)
 
 
 def scrape_rss_feed(source: dict) -> List[Dict]:
+    if feedparser is None:
+        logger.warning("feedparser is not installed; skipping RSS feed %s", source["name"])
+        return []
     logger.info("Scraping RSS feed: %s (%s)", source["name"], source["url"])
     results = []
     try:
