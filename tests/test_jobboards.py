@@ -226,5 +226,21 @@ class CacheManagementTests(unittest.TestCase):
                 os.unlink(temp_cache_path)
 
 
+class CircuitBreakerTests(unittest.TestCase):
+    def test_circuit_breaker_trips_on_consecutive_failures(self):
+        from unittest.mock import patch
+        from job_radar.fetchers.jobboards import fetch_all_jobboard_jobs
+
+        with patch("job_radar.fetchers.jobboards.fetch_indeed_jobs", return_value=[]) as mock_fetch:
+            countries = ["USA", "UK", "Canada", "Germany", "France"]
+            queries = ["Junior AI Engineer", "Junior ML Engineer"]
+            # 5 * 2 = 10 total queries
+            jobs = fetch_all_jobboard_jobs(countries=countries, queries=queries)
+            self.assertEqual(len(jobs), 0)
+            # Circuit breaker should trip after 3 consecutive failures, calling mock_fetch exactly 3 times instead of 10
+            self.assertEqual(mock_fetch.call_count, 3)
+
+
 if __name__ == "__main__":
     unittest.main()
+

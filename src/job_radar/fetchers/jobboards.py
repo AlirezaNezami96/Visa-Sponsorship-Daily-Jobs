@@ -22,6 +22,9 @@ USER_AGENT = (
 
 DEFAULT_CONFIG_PATH = "jobboard_config.json"
 DEFAULT_CACHE_PATH = "state/jobboard_cache.json"
+MAX_CONSECUTIVE_BOT_CHALLENGES = 3
+DEFAULT_PLAYWRIGHT_WORKERS = 4
+PAGE_TIMEOUT_MS = 8000
 
 
 @dataclass
@@ -70,7 +73,7 @@ def load_config(config_path: str = DEFAULT_CONFIG_PATH) -> dict:
             "Graduate Machine Learning",
         ],
         "max_results_per_query": 15,
-        "request_delay_seconds": 2.0,
+        "request_delay_seconds": 1.0,
         "cache_file": DEFAULT_CACHE_PATH,
         "country_domains": {
             "usa": "www.indeed.com",
@@ -120,7 +123,6 @@ def get_indeed_domain(country: str, config: Optional[dict] = None) -> str:
         if re.sub(r"[^a-z0-9]", "", k) == clean_key:
             return v
 
-    logger.info("Unmapped country '%s'; defaulting to www.indeed.com", country)
     return "www.indeed.com"
 
 
@@ -172,6 +174,8 @@ def canonicalize_indeed_url(url: str, base_domain: str = "www.indeed.com") -> st
 
 
 def extract_jobs_from_indeed_html(html: str, base_domain: str = "www.indeed.com") -> List[JobListing]:
+    if not html:
+        return []
     soup = BeautifulSoup(html, "html.parser")
     listings: List[JobListing] = []
     seen_urls: set[str] = set()
@@ -304,7 +308,6 @@ async def _run_browser_use_agent(
     try:
         from browser_use import Agent  # type: ignore
     except ImportError:
-        logger.info("browser-use package not installed; bypassing agentic LLM path")
         return []
 
     llm = None
@@ -386,13 +389,14 @@ async def _run_browser_use_agent(
 async def _fetch_indeed_page_playwright(
     search_url: str,
     base_domain: str,
-    timeout_ms: int = 25000,
-) -> str:
+    timeout_ms: int = PAGE_TIMEOUT_MS,
+) -> tuple[str, bool]:
+    """Returns (html_content, is_bot_challenge)."""
     try:
         from playwright.async_api import async_playwright
     except ImportError:
         logger.warning("Playwright is not installed.")
-        return ""
+        return "", False
 
     proxy_server = os.environ.get("PROXY_URL") or os.environ.get("HTTPS_PROXY") or os.environ.get("HTTP_PROXY")
     proxy_config = {"server": proxy_server} if proxy_server else None
@@ -430,40 +434,40 @@ async def _fetch_indeed_page_playwright(
 
         page = await context.new_page()
         html_content = ""
+        is_bot = False
         try:
             async def intercept_route(route):
-                if route.request.resource_type in {"image", "media", "font"}:
+                if route.request.resource_type in {"image", "media", "font", "stylesheet"}:
                     await route.abort()
                 else:
                     await route.continue_()
 
             await page.route("**/*", intercept_route)
 
-            logger.debug("Navigating to %s", search_url)
             await page.goto(search_url, wait_until="domcontentloaded", timeout=timeout_ms)
 
             try:
                 await page.wait_for_selector(
                     "div.job_seen_beacon, div.cardOutline, #mosaic-provider-jobcards, div[data-jk]",
-                    timeout=6000,
+                    timeout=2500,
                 )
             except Exception:
-                await page.wait_for_timeout(1500)
+                await page.wait_for_timeout(300)
 
             html_content = await page.content()
 
             if "cf-turnstile" in html_content.lower() or "challenge-running" in html_content.lower():
-                logger.warning("Bot challenge detected on Indeed (%s)", base_domain)
+                is_bot = True
                 html_content = ""
 
         except Exception as exc:
-            logger.warning("Playwright navigation error for %s: %s", search_url, exc)
+            logger.debug("Playwright navigation error for %s: %s", search_url, exc)
         finally:
             await page.close()
             await context.close()
             await browser.close()
 
-    return html_content
+    return html_content, is_bot
 
 
 async def fetch_indeed_jobs_async(
@@ -483,9 +487,11 @@ async def fetch_indeed_jobs_async(
 
     logger.info("Fetching Indeed [%s] for query '%s' -> %s", country, query, search_url)
 
-    html = await _fetch_indeed_page_playwright(search_url, domain)
-    listings: List[JobListing] = []
+    html, is_bot = await _fetch_indeed_page_playwright(search_url, domain)
+    if is_bot:
+        logger.warning("Bot challenge detected on Indeed (%s)", domain)
 
+    listings: List[JobListing] = []
     if html:
         listings = extract_jobs_from_indeed_html(html, domain)
 
@@ -499,16 +505,16 @@ async def fetch_indeed_jobs_async(
         save_cache(cache, cache_path)
         return [item.to_dict() for item in listings[:max_results]]
 
-    logger.info("Cached/deterministic path returned 0 results for %s. Triggering agentic reasoning...", country)
-    agent_listings = await _run_browser_use_agent(search_url, country, query, max_results=max_results)
-    if agent_listings:
-        cache[cache_key] = {
-            "last_success": time.time(),
-            "domain": domain,
-            "strategy": "browser_use_agent",
-        }
-        save_cache(cache, cache_path)
-        return [item.to_dict() for item in agent_listings[:max_results]]
+    if not is_bot:
+        agent_listings = await _run_browser_use_agent(search_url, country, query, max_results=max_results)
+        if agent_listings:
+            cache[cache_key] = {
+                "last_success": time.time(),
+                "domain": domain,
+                "strategy": "browser_use_agent",
+            }
+            save_cache(cache, cache_path)
+            return [item.to_dict() for item in agent_listings[:max_results]]
 
     logger.warning("No jobs extracted for Indeed [%s] (query: '%s'). Skipped cleanly.", country, query)
     return []
@@ -545,13 +551,13 @@ def fetch_all_jobboard_jobs(
     target_countries = countries or cfg.get("active_countries", ["USA", "UK", "Canada"])
     target_queries = queries or cfg.get("search_queries", ["Junior AI Engineer"])
     max_results = max_results_override or cfg.get("max_results_per_query", 15)
-    delay = cfg.get("request_delay_seconds", 2.0)
 
     all_jobs: List[Dict[str, Any]] = []
     seen_urls: set[str] = set()
 
     total_tasks = len(target_countries) * len(target_queries)
     completed = 0
+    consecutive_bot_challenges = 0
 
     logger.info(
         "Starting Job-Board scan across %d countries (%s) and %d queries (%d total queries)",
@@ -559,6 +565,15 @@ def fetch_all_jobboard_jobs(
     )
 
     for country in target_countries:
+        if consecutive_bot_challenges >= MAX_CONSECUTIVE_BOT_CHALLENGES:
+            logger.warning(
+                "Indeed bot protection is active (%d consecutive challenges). "
+                "Circuit breaker tripped — skipping remaining %d jobboard queries to avoid timeout. "
+                "Proceeding with Gemini Search-Grounded Discovery and other sources.",
+                consecutive_bot_challenges, total_tasks - completed,
+            )
+            break
+
         for query in target_queries:
             completed += 1
             logger.info("[%d/%d] Fetching '%s' in %s", completed, total_tasks, query, country)
@@ -569,16 +584,21 @@ def fetch_all_jobboard_jobs(
                     max_results=max_results,
                     config=cfg,
                 )
-                for j in jobs:
-                    url = j.get("url", "")
-                    if url and url not in seen_urls:
-                        seen_urls.add(url)
-                        all_jobs.append(j)
+                if jobs:
+                    consecutive_bot_challenges = 0
+                    for j in jobs:
+                        url = j.get("url", "")
+                        if url and url not in seen_urls:
+                            seen_urls.add(url)
+                            all_jobs.append(j)
+                else:
+                    consecutive_bot_challenges += 1
             except Exception as exc:
+                consecutive_bot_challenges += 1
                 logger.warning("Error fetching jobs for %s [%s]: %s", country, query, exc)
 
-            if delay > 0 and completed < total_tasks:
-                time.sleep(delay)
+            if consecutive_bot_challenges >= MAX_CONSECUTIVE_BOT_CHALLENGES:
+                break
 
     logger.info("Job-Board scan complete. Collected %d total candidate jobs.", len(all_jobs))
     return all_jobs
