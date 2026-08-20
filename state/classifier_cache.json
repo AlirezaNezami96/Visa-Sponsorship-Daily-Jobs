@@ -3466,5 +3466,137 @@
     "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
     "_fallback": true,
     "_cached_at": 1787241403
+  },
+  "ed5eaa8a2879e66c6fd0903f2677c60afaafd904df464fa3ca4b0a156186f9c9": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "worldwide",
+    "allowed_regions": [
+      "Worldwide"
+    ],
+    "relevance_score": 75,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787262609
+  },
+  "8ec3a4478e777c170e39aff154b3f8995762e9c6a4065bacfb58d60146f7c0f3": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "worldwide",
+    "allowed_regions": [
+      "Worldwide"
+    ],
+    "relevance_score": 75,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787262609
+  },
+  "8e13fa05cae8ddb57c6a29ff8597b326c66461c0593e9fe05a6a4b1b3c5ba0dd": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      ""
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787262609
+  },
+  "8d117ee8336047d32140d074a0a6b34f9e2fa1cf33c4edb7d06afb882d70340c": {
+    "is_ai_ml_role": true,
+    "track": "internship",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      ""
+    ],
+    "relevance_score": 40,
+    "why": "Internship role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787262609
+  },
+  "54985d9103dbda0081e4f7a037eed69dd58dc757513015aaea0936978c324546": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      ""
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787262609
+  },
+  "6af15588b01bfb3526beb2ed5c723a372c6b0c52b865d9155e05b301ec705460": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      ""
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787262610
+  },
+  "fa1cf61cb97a485f29bcb5155762569a237ccc83cad08dc0fe7ea1399267eaf7": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      ""
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787262610
+  },
+  "c42b83b07e177d52d2a176ebabba0610b8a37dfec643f1eab1d187ac922bb8ce": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      ""
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787262610
+  },
+  "d53fabe277215663b8f4d5d4c537de3e240d224ec2653e670e8f6c25435880e5": {
+    "is_ai_ml_role": true,
+    "track": "internship",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      ""
+    ],
+    "relevance_score": 40,
+    "why": "Internship role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787262610
+  },
+  "09e381150b26f81b8166b8abcfe5182fa2361aace89470d6295ea2fd305e6185": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      ""
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787262610
+  },
+  "b43f46a74bb82161c1bf1c2d0b7f999493391dbb30b7fa17c89017457b9780d0": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      ""
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787262611
   }
 }
