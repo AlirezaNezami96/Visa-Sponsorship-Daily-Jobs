@@ -12,7 +12,8 @@ concurrency:
 
 on:
   schedule:
-    - cron: "30 4 * * *"
+    # 4 runs/day at 03:20, 09:20, 15:20, 21:20 UTC (20 min after remote scanner)
+    - cron: "20 3,9,15,21 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -80,6 +81,8 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             python run.py --dry-run

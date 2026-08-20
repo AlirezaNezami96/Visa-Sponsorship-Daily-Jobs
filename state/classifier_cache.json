@@ -994,5 +994,701 @@
     "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
     "_fallback": true,
     "_cached_at": 1787203371
+  },
+  "4d01d782add201c1e68b535716147baa51425d3ad4a6b378d572db6e49390a74": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "Munich, Germany"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "e7523f630a10b217a9092ddeb056e104bf8938c2f5e7ccaea947ff0f20e66096": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA | New York City, NY | Seattle, WA"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "af60c1cb3e5ae1645db4ad7711c2bcdda43b3c8009adc6969e5ff428bf8983d6": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "76cec288f2b63b942e6ee67e4dbd18a3210d481e9c8a93692e3328373d662f16": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA | New York City, NY"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "e92933457c885712ed1076c9f876f87fd960a519b9e1d8beba6245aa1ee39551": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "New York City, NY; San Francisco, CA | New York City, NY"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "17feab71ac84a6a8006bbd4d8413119a8505b7c2ddf6f259241d645d48636f54": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "New York City, NY | Seattle, WA; San Francisco, CA"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "7a88aaca2c18e3726d98f9171a332efef1b20fe7859429156d91dcb641ab4557": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "New York City, NY; San Francisco, CA | New York City, NY; Washington, DC"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "cb0321ba375c648ffc861f4430f4b8a128d0a9a7c38c159e92ff8c00e0f2b135": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "New York City, NY; San Francisco, CA; Seattle, WA"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "fdbf2641c243e1046f437fbac926f54d0b43e9a58d4b33bf75d3d15b0c539838": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "London, UK"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "e063ca460f99caee0b4f3d9ee0c23baf4c0c49f342af1b9dc089b10ccb94c156": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA | New York City, NY"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "0e2089331d8913f199f49e13c9674ca7ef1b55267ee88973ae7464421660d47c": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA | New York City, NY"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "a74afcf94a3928ad64a52b2af82358f01f1c2190a74b48573aca8fcf64c77204": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA | New York City, NY"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "8d6549fc0898b6c16f1621c13c6f0602eae813658f1a3039a3d7a90f28619b24": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA | New York City, NY | Seattle, WA"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "6dc26f7476cb3aa4888e32ad511bc3df1e418c977f9605ebb3ce2c74fc12c70d": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA | New York City, NY"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "fdeac3d2ce50e9045fd44a2ac793afd814f28278c874e16418bb62c27a1c6aad": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "a28c2cf3c0345d6664688b87b50c140c59c217795f0309483a5ff9e291a75991": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA | New York City, NY | Seattle, WA"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "58d679cb01097c8a54943df1229446040dcab765735b071545dccc5cc3e06390": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "992956a20631bf53d4b9b9d34c4bd3f661b43ea493c1644a2968bfbded537c4c": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "a483d82093df3f14f0f3b9e8ed643cc8264834eafac63d4c29eca42da315b468": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "worldwide",
+    "allowed_regions": [
+      "Worldwide"
+    ],
+    "relevance_score": 75,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "2918f356ec9262968f3d6f9263abcd762052fc4e71cb2e0ad32796401b8ab888": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "e5cca2f88b71580e03232b517a30d322003f3fcfe8e6ba347c31797d015c8078": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "London, UK"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "4c55ff344489c9b12056f10fbb9c8db0538c679b88805ab75ec75039f3b84e39": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA | New York City, NY"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "e4955ef59596d1b7c0e2a37ed242e9e01720b4089e43b7cc006b75e85e6f31b4": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "London, UK"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "b199ed0db80deca09bada78f7aef4317d3b15179d9f3afcbc56fc5bc1a1793cb": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "worldwide",
+    "allowed_regions": [
+      "Worldwide"
+    ],
+    "relevance_score": 75,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "95ac29fa4b900a79d15f797afcac5e87a944f0633ae53cd68dfdef130ab50905": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "worldwide",
+    "allowed_regions": [
+      "Worldwide"
+    ],
+    "relevance_score": 75,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "2d28e14f7c0d4cb5abbad33933d089ecbf3b58d03402a58f59052a08c5c20e66": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "c924e6fa3ffe9f310d5e280d5708f61f7c28b2f57c0eafd92bbaf2a81c69a0be": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "London, UK"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "91159e775e7bd44658a8d6441c5d0037c53b62506d39fff8c1bd9c9a913a1386": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "38ad8726fe1cba640320d046c3646c352d3e92e5aab0dc2fb553ca5bc6ed9d8b": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "London, UK"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "d27c03a82158891a1183bae312664fad15db302e9282584e3ee1d32704314e05": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "Z\u00fcrich, CH"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "0fb23848585f074ba9009de6626271f3b16e9f1173e2a03b70dfc82c609c85bf": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA | New York City, NY | Seattle, WA"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "83b47c96c771224d5ab17ba5462d4c9a67be745f62094ade1aa120700f6bb2fc": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "Z\u00fcrich, CH"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "aeffc58e457e927290cc02f9d7e9f83509394365addee40c32b6c20d88f296d6": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "worldwide",
+    "allowed_regions": [
+      "Worldwide"
+    ],
+    "relevance_score": 75,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "e733054f1e7d53fe8d4f7dac10cc61f4fde687aa5c9c64ad9509be06c9491d6d": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "New York City, NY; New York City, NY | Seattle, WA; San Francisco, CA"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "816194a247df4930ca9f5bc4f30770d9fae08ae5439014efdffea0a4d6071196": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA | New York City, NY | Seattle, WA"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "d99bc069378571c5bb0a30c3e8bbf93da695eac1e17f40ba8fb3b568f170c624": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "London, UK"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "f488de42e4eefdfc57cbc79925e48f11cdd19fb09e62f5976526dcaec612672b": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "6f53f9b2ea5a5fc1590214f5bf89dd62233e89ec73661e0f57bffd466c9ff150": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "a97d63d141bc33c2500819a1bb98ffccc8030cac6356ffc2c7bb8d65cb318a7b": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "worldwide",
+    "allowed_regions": [
+      "Worldwide"
+    ],
+    "relevance_score": 75,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "563811b02a8604136404db9b6b683f8a5fa0da75a2eaeb378039b60b5e3846cf": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "New York City, NY; San Francisco, CA; Seattle, WA"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "f13b6414558180aa89ed7d147cda32b8d9a8ab1a80fd13ccd9cf8c77404d8047": {
+    "is_ai_ml_role": true,
+    "track": "internship",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA"
+    ],
+    "relevance_score": 40,
+    "why": "Internship role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "e1864b1e187f0dd0de5d9e546187987f6672ad6276b444d01cf44562da41780a": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "Doha, Qatar; London, UK"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "a40384fb9546f4e53d00b579ce4e8326fb420d2151b026a800687bbd6624c200": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "Doha, Qatar; London, UK"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "0d3910eb9abef3c8abba7b71999737ffa251d83d06bd94d974bf4c014980cf95": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "London, UK"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "f4b2d5d9590ec4b8a2062934c915799ef61f3564fe7196176b97b567d475ed02": {
+    "is_ai_ml_role": true,
+    "track": "internship",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "Canada"
+    ],
+    "relevance_score": 40,
+    "why": "Internship role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "a006bdbc0cf6c3a5bf27123b425fe4a38d293044e546b30f0b05c1474b0fe0a2": {
+    "is_ai_ml_role": true,
+    "track": "internship",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "United Kingdom"
+    ],
+    "relevance_score": 40,
+    "why": "Internship role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "61b9db2b9219780fbbf894bef267a48cfac823321a6db77500eafc874aa2e4df": {
+    "is_ai_ml_role": true,
+    "track": "internship",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "United States"
+    ],
+    "relevance_score": 40,
+    "why": "Internship role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "056e3ad37f4c4f035e5794db320d6c6de5b981129aa0f1a1ffd14e9647dde545": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA; New York, NY"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "dab6dc7f0545d72998ce598c4fa551a0b7ed78922cc8ef42eebc55ca8d82253d": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA; New York, NY"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "c095092be51a578ca3f5ac5f531e6cd9ba911f635ba8a26fad442837d9db7504": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA; New York, NY"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "50a506242d2eb946678d7125a68d170f45ea35e2712d21929084306e08b66754": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, CA; Seattle, WA; New York, NY"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "2e489da96405ad9cf219c1fc55d8089dd3efda2013832c767e59f4a608431f81": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "Seoul, South Korea"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "084b1b307c81813ab18448ea2aeae14643a7e25c77de61818a2c3c9d5d2cb351": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "United States"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "fc313129c71cd2c86647cc838932c7d6af47c3d894f40acc81cac4ff35300b36": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "worldwide",
+    "allowed_regions": [
+      "Worldwide"
+    ],
+    "relevance_score": 75,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "aafee12e09238ba229854978724d529670f8f883b05c555105b2f70d1e4f97b3": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "Tokyo, Japan"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "125961b6b96627d0e555b973b2c956ec31328ced5681b3248aa46d9ba66ef2f2": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "United States"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "f8e5aba8f3c7d3447be6f2b779d0ce8b969bce7ce3316a57ade55b1b0594ca4b": {
+    "is_ai_ml_role": true,
+    "track": "internship",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "San Francisco, California"
+    ],
+    "relevance_score": 40,
+    "why": "Internship role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
+  },
+  "e278c3e8213aa51278099df15df430641766ac790145690287c2a997470294e8": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "Berlin, Berlin"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787209967
   }
 }

@@ -1,4 +1,5 @@
 """Filters subpackage for job_radar."""
+from job_radar.filters.freshness import filter_fresh_jobs, is_fresh_enough
 from job_radar.filters.dedupe import (
     SEEN_FILE,
     SEEN_MAX_AGE,
@@ -43,6 +44,8 @@ from job_radar.filters.matching import (
 )
 
 __all__ = [
+    "is_fresh_enough",
+    "filter_fresh_jobs",
     "KEYWORDS_INCLUDE",
     "KEYWORDS_EXCLUDE",
     "KEYWORDS_INCLUDE_COMPILED",

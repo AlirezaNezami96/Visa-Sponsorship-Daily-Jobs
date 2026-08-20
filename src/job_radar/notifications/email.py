@@ -95,15 +95,25 @@ def send_email(report: list, provider: str = None):
 
 
 def send_junior_ai_email(report: list, provider: str = None):
-    """Send legacy junior ai digest."""
+    """Send junior AI job digest, sorted by ATS score where available."""
     provider = (provider or os.environ.get("EMAIL_PROVIDER", "resend")).lower()
     if not report:
         logger.info("No new Junior AI jobs — skipping email.")
         return
 
-    total_jobs = sum(len(jobs) for _, jobs in report)
-    html_content = build_legacy_html(report, total_jobs)
-    subject = f"🤖 Junior AI & ML Job Digest — {len(report)} companies, {total_jobs} jobs"
+    # Sort each company's jobs by ATS score descending (None → 0 for sorting)
+    sorted_report = []
+    for company, jobs in report:
+        sorted_jobs = sorted(
+            jobs,
+            key=lambda j: (j.get("resume_match") or {}).get("ats_score") or 0,
+            reverse=True,
+        )
+        sorted_report.append((company, sorted_jobs))
+
+    total_jobs = sum(len(jobs) for _, jobs in sorted_report)
+    html_content = build_legacy_html(sorted_report, total_jobs)
+    subject = f"🤖 Junior AI & ML Job Digest — {len(sorted_report)} companies, {total_jobs} jobs"
 
     if provider == "resend":
         _send_via_resend(subject, html_content)

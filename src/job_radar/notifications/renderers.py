@@ -3,10 +3,78 @@ from __future__ import annotations
 
 import datetime
 import html as html_lib
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
-def _render_job_card(j: dict, accent_color: str = "#6366F1", show_visa_tag: bool = True) -> str:
+def _render_ats_block(resume_match: Optional[dict]) -> str:
+    """Render the ATS match block for a job card.
+
+    Returns an empty string if resume_match is None or missing required fields.
+    The editing prompt is wrapped in a <details> block so it's hidden by default
+    and selectable when expanded (compatible with Gmail's renderer).
+    """
+    if not resume_match or not isinstance(resume_match, dict):
+        return ""
+
+    ats_score = resume_match.get("ats_score")
+    if ats_score is None:
+        return ""
+
+    keywords_to_add = resume_match.get("keywords_to_add", []) or []
+    editing_prompt = resume_match.get("resume_editing_prompt", "") or ""
+    score_rationale = resume_match.get("score_rationale", "") or ""
+
+    # Color-code the score: green ≥ 70, amber 50–69, red < 50
+    if ats_score >= 70:
+        score_bg = "#F0FDF4"
+        score_color = "#166534"
+        score_border = "#4ADE80"
+    elif ats_score >= 50:
+        score_bg = "#FFFBEB"
+        score_color = "#92400E"
+        score_border = "#FCD34D"
+    else:
+        score_bg = "#FEF2F2"
+        score_color = "#991B1B"
+        score_border = "#FCA5A5"
+
+    parts = [
+        f'<div style="margin-top:10px;padding:10px 12px;background:{score_bg};border-left:3px solid {score_border};border-radius:0 6px 6px 0;">',
+        f'<div style="font-size:12px;font-weight:700;color:{score_color};margin-bottom:4px;">📊 ATS Match: {ats_score}%</div>',
+    ]
+
+    if score_rationale:
+        escaped_rationale = html_lib.escape(score_rationale)
+        parts.append(
+            f'<div style="font-size:12px;color:#475569;margin-bottom:6px;">{escaped_rationale}</div>'
+        )
+
+    if keywords_to_add:
+        kw_display = html_lib.escape(", ".join(keywords_to_add[:8]))
+        parts.append(
+            f'<div style="font-size:11px;color:#64748B;margin-bottom:6px;">'
+            f'<strong>Keywords to add:</strong> {kw_display}</div>'
+        )
+
+    if editing_prompt:
+        escaped_prompt = html_lib.escape(editing_prompt)
+        parts.append(
+            '<details style="margin-top:4px;">'
+            '<summary style="font-size:11px;color:#6366F1;cursor:pointer;font-weight:600;">✏️ View resume editing prompt</summary>'
+            f'<pre style="font-size:11px;color:#334155;white-space:pre-wrap;word-break:break-word;margin:6px 0 0 0;padding:8px;background:#F8FAFC;border-radius:4px;font-family:ui-monospace,monospace;">{escaped_prompt}</pre>'
+            '</details>'
+        )
+
+    parts.append('</div>')
+    return "\n".join(parts)
+
+
+def _render_job_card(
+    j: dict,
+    accent_color: str = "#6366F1",
+    show_visa_tag: bool = True,
+    resume_match: Optional[dict] = None,
+) -> str:
     """Render a clean, responsive job card for HTML email."""
     title = html_lib.escape(j.get("title", "Untitled Role"))
     company = html_lib.escape(j.get("company", "Company"))
@@ -17,6 +85,10 @@ def _render_job_card(j: dict, accent_color: str = "#6366F1", show_visa_tag: bool
     source = html_lib.escape(j.get("source", "Direct ATS"))
     salary = html_lib.escape(j.get("salary")) if j.get("salary") else None
     has_visa = j.get("visa_sponsorship") is True
+
+    # Fall back to resume_match embedded in the job dict itself
+    if resume_match is None:
+        resume_match = j.get("resume_match")
 
     remote_scope = j.get("remote_scope", "worldwide")
     allowed_regs = j.get("allowed_regions", [])
@@ -46,6 +118,8 @@ def _render_job_card(j: dict, accent_color: str = "#6366F1", show_visa_tag: bool
             f'</div>'
         )
 
+    ats_block = _render_ats_block(resume_match)
+
     return f"""
     <div style="margin-bottom:16px;padding:16px;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
@@ -60,6 +134,7 @@ def _render_job_card(j: dict, accent_color: str = "#6366F1", show_visa_tag: bool
         {' '.join(badges)}
       </div>
       {why_block}
+      {ats_block}
       <div style="margin-top:12px;text-align:right;">
         <a href="{url}" target="_blank" style="display:inline-block;background:{accent_color};color:#FFFFFF;padding:6px 14px;font-size:13px;font-weight:600;text-decoration:none;border-radius:6px;">Apply Directly →</a>
       </div>
@@ -85,7 +160,7 @@ def build_radar_html(
         '<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>',
         '<body style="margin:0;padding:20px 0;background-color:#F8FAFC;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif;">',
         '<div style="max-width:640px;margin:0 auto;background:#FFFFFF;border-radius:12px;overflow:hidden;border:1px solid #E2E8F0;">',
-        
+
         # Header Banner
         '<div style="background:linear-gradient(135deg, #0F172A 0%, #1E1B4B 40%, #4338CA 100%);padding:28px 24px;color:#FFFFFF;text-align:center;">',
         '<h1 style="margin:0;font-size:22px;font-weight:800;letter-spacing:-0.5px;">🧠 AI & ML Remote Job Radar</h1>',
@@ -159,7 +234,12 @@ def build_legacy_html(report: list, total_jobs: int) -> str:
         html_parts.append('<ul style="margin: 0; padding-left: 20px;">')
         for j in jobs:
             loc = j.get("location", "")
-            html_parts.append(f'<li style="margin: 6px 0;"><a href="{j["url"]}">{j["title"]}</a> {loc}</li>')
+            # Include ATS score if available
+            ats_score = ""
+            rm = j.get("resume_match")
+            if rm and isinstance(rm, dict) and rm.get("ats_score") is not None:
+                ats_score = f' <span style="color:#6366F1;font-size:12px;">({rm["ats_score"]}% ATS)</span>'
+            html_parts.append(f'<li style="margin: 6px 0;"><a href="{j["url"]}">{j["title"]}</a> {loc}{ats_score}</li>')
         html_parts.append('</ul>')
     html_parts.append('</div></div>')
     return "\n".join(html_parts)

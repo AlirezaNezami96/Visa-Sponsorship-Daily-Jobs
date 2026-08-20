@@ -53,9 +53,42 @@ class SourcesConfig:
 
 
 @dataclass
+class ResumeConfig:
+    """Configuration for resume fetching."""
+    doc_id: str = "1a0qvUX6B2hqSdTT2EoKJF1e3L_m5ee4LxIZaMbU5FNA"
+    access_method: str = "link_shared"  # "link_shared" or "service_account"
+
+
+@dataclass
+class FreshnessConfig:
+    """Configuration for job freshness filtering."""
+    max_age_days: int = 5
+
+
+@dataclass
+class SupabaseConfig:
+    """Configuration for Supabase dedup store."""
+    table_name: str = "sent_jobs"
+    enabled: bool = True  # Falls back to JSON seen-stores if SUPABASE_URL/KEY not set
+
+
+@dataclass
+class ResumeMatcherConfig:
+    """Configuration for Gemini-powered resume matching."""
+    enabled: bool = True
+    model: str = "gemini-3.7-flash"
+    fallback_model: str = "gemini-3.6-flash"
+    cache_file: str = "state/resume_match_cache.json"
+
+
+@dataclass
 class RadarConfig:
     tracks: TrackConfig = field(default_factory=TrackConfig)
     geography: GeographyConfig = field(default_factory=GeographyConfig)
     classifier: ClassifierConfig = field(default_factory=ClassifierConfig)
     email: EmailConfig = field(default_factory=EmailConfig)
     sources: SourcesConfig = field(default_factory=SourcesConfig)
+    resume: ResumeConfig = field(default_factory=ResumeConfig)
+    freshness: FreshnessConfig = field(default_factory=FreshnessConfig)
+    supabase: SupabaseConfig = field(default_factory=SupabaseConfig)
+    resume_matcher: ResumeMatcherConfig = field(default_factory=ResumeMatcherConfig)

@@ -76,17 +76,13 @@ EXCLUDED_KEYWORDS = {
 }
 
 def is_allowed_region(text: str) -> bool:
-    """Return True if text matches Europe, Turkey, Canada, Australia, or NZ."""
-    if not text:
-        return True
-    lower = text.lower()
-    for exc in EXCLUDED_KEYWORDS:
-        if exc in lower:
-            # If text explicitly mentions both excluded and allowed (e.g., "London, UK / New York, US"), allow it
-            if any(kw in lower for kw in ["uk", "canada", "australia", "germany", "netherlands", "europe", "turkey", "new zealand"]):
-                continue
-            return False
-    return any(kw in lower for kw in ALLOWED_KEYWORDS)
+    """All regions allowed — country filter removed per 2025-08 update.
+
+    Previously restricted to Europe, Turkey, Canada, Australia, and New Zealand.
+    Now returns True for all regions to maximize job discovery. Use the
+    freshness filter and Gemini classifier for quality control instead.
+    """
+    return True
 
 
 # ------------------------------------------------------------------ #

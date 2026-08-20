@@ -124,3 +124,30 @@ sources:
     arbeitnow: true
     himalayas: true
     hn_hiring: true
+
+# --- Resume ATS Matching ---
+resume:
+  # Google Doc ID — the last segment of the docs.google.com URL
+  # Doc must be shared "Anyone with the link → Viewer" for link_shared access
+  doc_id: "1a0qvUX6B2hqSdTT2EoKJF1e3L_m5ee4LxIZaMbU5FNA"
+  # "link_shared" (default) uses export URL; "service_account" uses Google Docs API + GOOGLE_SERVICE_ACCOUNT_JSON secret
+  access_method: "link_shared"
+
+resume_matcher:
+  enabled: true
+  model: "gemini-3.7-flash"         # GA Aug 13, 2026 — falls back to gemini-3.6-flash on model-not-found
+  fallback_model: "gemini-3.6-flash"
+  cache_file: "state/resume_match_cache.json"
+
+# --- Freshness Filter ---
+freshness:
+  # Drop jobs older than this many days (fail-open: missing/unparseable dates are kept)
+  max_age_days: 5
+
+# --- Supabase Dedup Store ---
+supabase:
+  # One shared table across all three tracks (visa, remote, ai_intern)
+  table_name: "sent_jobs"
+  # Set false to fall back to JSON seen-store files (for local dev without Supabase)
+  enabled: true
+  # URL and key from env vars: SUPABASE_URL and SUPABASE_KEY (service role)

@@ -12,9 +12,13 @@ import yaml
 from job_radar.config.models import (
     ClassifierConfig,
     EmailConfig,
+    FreshnessConfig,
     GeographyConfig,
     RadarConfig,
+    ResumeConfig,
+    ResumeMatcherConfig,
     SourcesConfig,
+    SupabaseConfig,
     TrackConfig,
 )
 
@@ -104,12 +108,45 @@ def load_radar_config(config_path: Optional[str] = None) -> RadarConfig:
         }),
     )
 
+    # 6. Resume fetch config
+    resume_raw = data.get("resume", {})
+    resume = ResumeConfig(
+        doc_id=os.environ.get("RESUME_DOC_ID", resume_raw.get("doc_id", "1a0qvUX6B2hqSdTT2EoKJF1e3L_m5ee4LxIZaMbU5FNA")),
+        access_method=resume_raw.get("access_method", "link_shared"),
+    )
+
+    # 7. Freshness filter config
+    freshness_raw = data.get("freshness", {})
+    freshness = FreshnessConfig(
+        max_age_days=int(freshness_raw.get("max_age_days", 5)),
+    )
+
+    # 8. Supabase dedup config
+    supabase_raw = data.get("supabase", {})
+    supabase = SupabaseConfig(
+        table_name=supabase_raw.get("table_name", "sent_jobs"),
+        enabled=bool(supabase_raw.get("enabled", True)),
+    )
+
+    # 9. Resume matcher config
+    rm_raw = data.get("resume_matcher", {})
+    resume_matcher = ResumeMatcherConfig(
+        enabled=bool(rm_raw.get("enabled", True)),
+        model=os.environ.get("RESUME_MATCHER_MODEL", rm_raw.get("model", "gemini-3.7-flash")),
+        fallback_model=rm_raw.get("fallback_model", "gemini-3.6-flash"),
+        cache_file=rm_raw.get("cache_file", "state/resume_match_cache.json"),
+    )
+
     return RadarConfig(
         tracks=tracks,
         geography=geography,
         classifier=classifier,
         email=email,
         sources=sources,
+        resume=resume,
+        freshness=freshness,
+        supabase=supabase,
+        resume_matcher=resume_matcher,
     )
 
 

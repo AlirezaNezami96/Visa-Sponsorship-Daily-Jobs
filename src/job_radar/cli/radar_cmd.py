@@ -10,10 +10,14 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from job_radar.classifiers.relevance import classify_and_filter_jobs
 from job_radar.config.loader import get_config
+from job_radar.dedup.store import bulk_mark_sent, is_already_sent, is_available as supabase_available
 from job_radar.fetchers.pipeline import fetch_companies
 from job_radar.fetchers.public_apis import fetch_all_public_apis
 from job_radar.filters.dedupe import _load_seen, _save_seen, dedupe_radar_jobs
+from job_radar.filters.freshness import filter_fresh_jobs
 from job_radar.notifications.email import send_radar_digest
+from job_radar.resume.fetch import fetch_resume_text
+from job_radar.resume.matcher import match_resume_batch
 
 logger = logging.getLogger("job_radar")
 SEEN_FILE = "seen_jobs.json"
@@ -64,6 +68,9 @@ def run(
     logger.info("=" * 60)
     logger.info("🚀 Launching AI Internship & Engineer Remote Job Radar")
     logger.info("LLM Classifier: %s (model: %s, min_score: %d)", "Enabled" if cfg.classifier.enabled else "Disabled (Rule-based)", cfg.classifier.model, cfg.classifier.min_relevance_score)
+    logger.info("Freshness filter: max_age=%d days", cfg.freshness.max_age_days)
+    logger.info("Resume matcher: %s (model: %s)", "Enabled" if cfg.resume_matcher.enabled else "Disabled", cfg.resume_matcher.model)
+    logger.info("Supabase dedup: %s", "Connected" if supabase_available() else "Fallback → JSON seen-store")
     logger.info("=" * 60)
 
     seen = _load_seen(SEEN_FILE)
@@ -101,10 +108,40 @@ def run(
 
     logger.info("Total raw candidate pool: %d listings", len(raw_jobs))
 
+    # Freshness filter — drop stale jobs before dedupe
+    raw_jobs = filter_fresh_jobs(raw_jobs, max_age_days=cfg.freshness.max_age_days)
+    logger.info("After freshness filter: %d listings", len(raw_jobs))
+
     candidate_jobs = dedupe_radar_jobs(raw_jobs, seen, config=cfg)
     logger.info("Surviving keyword pre-filter candidates: %d jobs", len(candidate_jobs))
 
+    # Supabase cross-track dedup (skip jobs already sent in any track)
+    if supabase_available():
+        before = len(candidate_jobs)
+        candidate_jobs = [
+            j for j in candidate_jobs
+            if not is_already_sent(j.get("_fingerprint", j.get("url", "")))
+        ]
+        logger.info("After Supabase cross-track dedup: %d jobs (dropped %d)", len(candidate_jobs), before - len(candidate_jobs))
+
     qualified_jobs, _ = classify_and_filter_jobs(candidate_jobs, config=cfg)
+
+    # Resume matching — in-memory, fail-open
+    if cfg.resume_matcher.enabled and os.environ.get("GEMINI_API_KEY"):
+        resume_text = None
+        try:
+            resume_text = fetch_resume_text(
+                doc_id=cfg.resume.doc_id,
+                access_method=cfg.resume.access_method,
+            )
+        except Exception as exc:
+            logger.warning("Resume fetch failed: %s — skipping ATS scoring for this run", exc)
+        if resume_text:
+            logger.info("Running resume matching for %d qualified jobs...", len(qualified_jobs))
+            match_resume_batch(qualified_jobs, resume_text, config=cfg)
+    else:
+        if not os.environ.get("GEMINI_API_KEY"):
+            logger.debug("GEMINI_API_KEY not set — skipping resume matching")
 
     internships = [j for j in qualified_jobs if j.get("classified_track") == "internship"]
     engineers = [j for j in qualified_jobs if j.get("classified_track") == "engineer"]
@@ -112,8 +149,12 @@ def run(
     if not dry_run:
         _save_seen(seen, SEEN_FILE)
         logger.info("Persisted updated seen store: %d entries", len(seen))
+        # Mark sent jobs in Supabase
+        if supabase_available() and qualified_jobs:
+            bulk_mark_sent(internships, track="visa_intern")
+            bulk_mark_sent(engineers, track="visa_engineer")
     else:
-        logger.info("[DRY RUN] Seen store left unmodified")
+        logger.info("[DRY RUN] Seen store and Supabase left unmodified")
 
     total_found = len(internships) + len(engineers)
     logger.info("\n" + "=" * 60)

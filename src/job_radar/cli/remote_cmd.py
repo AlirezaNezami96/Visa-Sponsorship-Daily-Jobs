@@ -11,11 +11,15 @@ from typing import List
 
 from job_radar.fetchers.pipeline import fetch_companies
 from job_radar.filters.dedupe import _load_seen, _save_seen, dedupe
+from job_radar.filters.freshness import filter_fresh_jobs
+from job_radar.dedup.store import bulk_mark_sent, is_already_sent, is_available as supabase_available
 from job_radar.notifications.email import (
     _send_via_gmail_smtp,
     _send_via_resend,
     _send_via_sendgrid,
 )
+from job_radar.resume.fetch import fetch_resume_text
+from job_radar.resume.matcher import match_resume_batch
 
 logger = logging.getLogger("job_radar.remote")
 REMOTE_SEEN_FILE = "seen_remote_jobs.json"
@@ -23,6 +27,13 @@ REMOTE_COMPANIES_FILE = "remote_companies.json"
 
 
 def _build_remote_html(report: list, total_jobs: int) -> str:
+    # Import the ATS block renderer from the shared renderers module
+    try:
+        from job_radar.notifications.renderers import _render_ats_block
+    except ImportError:
+        def _render_ats_block(rm):  # type: ignore[misc]
+            return ""
+
     html_parts = [
         '<div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 680px; margin: 0 auto; color: #1a1a1a;">',
         '<div style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); padding: 24px 28px; border-radius: 12px 12px 0 0;">',
@@ -34,18 +45,21 @@ def _build_remote_html(report: list, total_jobs: int) -> str:
 
     for company, jobs in report:
         html_parts.append(f'<h2 style="margin: 20px 0 8px; font-size: 17px; color: #333;">{company} <span style="font-size:12px;color:#11998e;font-weight:normal;">🌍 Remote</span></h2>')
-        html_parts.append('<ul style="margin: 0; padding-left: 20px;">')
         for j in jobs:
             loc = j.get("location", "Remote")
             dept = j.get("department", "")
             meta = " · ".join(filter(None, [loc, dept]))
+            ats_block = _render_ats_block(j.get("resume_match"))
             html_parts.append(
-                f'<li style="margin: 6px 0; line-height: 1.5;">'
-                f'<a href="{j["url"]}" style="color: #11998e; text-decoration: none; font-weight: 500;">{j["title"]}</a>'
-                f'{"<span style=\"color: #888; font-size: 13px;\"> " + meta + "</span>" if meta else ""}'
-                f'</li>'
+                f'<div style="margin: 8px 0; padding: 10px 12px; background: #F9FAFB; border-radius: 6px; border: 1px solid #E5E7EB;">'
+                f'<a href="{j["url"]}" style="color: #11998e; text-decoration: none; font-weight: 600; font-size: 14px;">{j["title"]}</a>'
+                f'{"<span style=\"color: #888; font-size: 12px; margin-left: 8px;\"> · " + meta + "</span>" if meta else ""}'
+                f'{ats_block}'
+                f'<div style="margin-top:8px;text-align:right;">'
+                f'<a href="{j["url"]}" target="_blank" style="font-size:12px;color:#fff;background:#11998e;padding:4px 10px;border-radius:4px;text-decoration:none;font-weight:600;">Apply →</a>'
+                f'</div>'
+                f'</div>'
             )
-        html_parts.append('</ul>')
 
     html_parts.extend([
         '</div>',
@@ -105,11 +119,36 @@ def run(dry_run: bool = False):
 
     seen = _load_seen(REMOTE_SEEN_FILE)
     logger.info("Seen store (remote): %d entries", len(seen))
+    logger.info("Supabase dedup: %s", "Connected" if supabase_available() else "Fallback → JSON seen-store")
+
+    # Fetch resume once per run (fail-open)
+    resume_text = None
+    gemini_key = os.environ.get("GEMINI_API_KEY")
+    if gemini_key:
+        try:
+            from job_radar.config.loader import get_config
+            cfg = get_config()
+            if cfg.resume_matcher.enabled:
+                resume_text = fetch_resume_text(
+                    doc_id=cfg.resume.doc_id,
+                    access_method=cfg.resume.access_method,
+                )
+        except Exception as exc:
+            logger.warning("Resume fetch failed: %s — skipping ATS scoring", exc)
 
     report = []
+    all_new_jobs = []
     total_fetched = 0
     total_matching = 0
     errors = 0
+
+    # Load freshness config
+    try:
+        from job_radar.config.loader import get_config
+        cfg = get_config()
+        max_age_days = cfg.freshness.max_age_days
+    except Exception:
+        max_age_days = 5
 
     for i, result in enumerate(fetch_companies(companies)):
         company = result.company
@@ -120,16 +159,39 @@ def run(dry_run: bool = False):
 
         jobs = result.jobs
         total_fetched += len(jobs)
+
+        # Apply freshness filter per company batch
+        jobs = filter_fresh_jobs(jobs, max_age_days=max_age_days)
+
         new = dedupe(name, jobs, seen)
+
+        # Supabase cross-track dedup
+        if supabase_available() and new:
+            new = [j for j in new if not is_already_sent(j.get("url", ""))]
+
         if new:
             total_matching += len(new)
+            all_new_jobs.extend(new)
             report.append((name, new))
+
+    # Resume matching for all new remote jobs in one batch
+    if resume_text and all_new_jobs:
+        logger.info("Running resume matching for %d remote jobs...", len(all_new_jobs))
+        try:
+            from job_radar.config.loader import get_config
+            match_cfg = get_config()
+        except Exception:
+            match_cfg = None
+        match_resume_batch(all_new_jobs, resume_text, config=match_cfg)
 
     if not dry_run:
         _save_seen(seen, REMOTE_SEEN_FILE)
         logger.info("Updated remote seen store: %d entries", len(seen))
+        # Mark sent in Supabase
+        if supabase_available() and all_new_jobs:
+            bulk_mark_sent(all_new_jobs, track="remote")
     else:
-        logger.info("[DRY RUN] Remote seen store left unchanged")
+        logger.info("[DRY RUN] Remote seen store and Supabase left unchanged")
 
     logger.info("TOTALS: %d jobs fetched, %d new remote matches, %d errors", total_fetched, total_matching, errors)
 

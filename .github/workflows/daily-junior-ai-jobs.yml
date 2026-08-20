@@ -10,7 +10,8 @@ concurrency:
 
 on:
   schedule:
-    - cron: "15 5 * * *"
+    # 4 runs/day at 03:40, 09:40, 15:40, 21:40 UTC (40 min after remote scanner)
+    - cron: "40 3,9,15,21 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -84,6 +85,8 @@ jobs:
           BROWSER_USE_API_KEY: ${{ secrets.BROWSER_USE_API_KEY }}
           BROWSERBASE_API_KEY: ${{ secrets.BROWSERBASE_API_KEY }}
           PROXY_URL: ${{ secrets.PROXY_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             python run_junior_ai.py --dry-run
