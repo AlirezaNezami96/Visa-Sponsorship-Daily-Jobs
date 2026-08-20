@@ -1,13 +1,20 @@
-# Python
+# Python & Packaging
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.egg-info/
+build/
+dist/
+.eggs/
+*.egg
 .pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # Node.js / Cloudflare Worker
 node_modules/
-dist/
 .wrangler/
 
 # Environment & Credentials
@@ -18,8 +25,7 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Temporary test images (preserve state/.gitkeep)
-*.jpg
-*.jpeg
-*.png
+# Temporary artifacts (preserve state/.gitkeep)
+state/pending_post.json
+state/cover_image.jpg
 !state/.gitkeep

@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "job-radar"
+version = "2.0.0"
+description = "Autonomous AI Internship & Early-Career Engineer Remote Job Radar with LLM classification and multi-source scraping."
+readme = "README.md"
+authors = [
+    { name = "Alireza Nezami", email = "alirezanezami@users.noreply.github.com" }
+]
+license = { text = "MIT" }
+requires-python = ">=3.9"
+keywords = [
+    "job-scraper",
+    "ai-jobs",
+    "internships",
+    "remote-jobs",
+    "gemini",
+    "greenhouse",
+    "lever",
+    "ashby",
+    "workable"
+]
+dependencies = [
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12.0",
+    "playwright>=1.40.0",
+    "pyyaml>=6.0",
+    "google-genai>=1.0.0",
+    "Pillow>=10.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+
+[project.scripts]
+job-radar = "job_radar.cli.radar_cmd:main"
+job-radar-remote = "job_radar.cli.remote_cmd:main"
+job-radar-junior-ai = "job_radar.cli.junior_ai_cmd:main"
+job-radar-funding = "job_radar.cli.funding_cmd:main"
+job-radar-social = "job_radar.cli.post_cmd:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+job_radar = ["py.typed"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra -q --import-mode=importlib"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    "node_modules",
+    "worker",
+    ".venv",
+]

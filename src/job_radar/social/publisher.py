@@ -1,0 +1,312 @@
+"""LinkedIn Publisher and Telegram Approval Handler."""
+from __future__ import annotations
+
+import html
+import json
+import logging
+import os
+import sys
+from typing import Tuple
+import requests
+
+from job_radar.social.images import create_professional_cover_image
+
+logger = logging.getLogger(__name__)
+
+STATE_DIR = "state"
+PENDING_FILE = os.path.join(STATE_DIR, "pending_post.json")
+COVER_FILE = os.path.join(STATE_DIR, "cover_image.jpg")
+
+
+def trigger_generate_workflow() -> bool:
+    repo = os.environ.get("GITHUB_REPOSITORY")
+    token = os.environ.get("GH_PAT") or os.environ.get("GITHUB_TOKEN")
+    if not repo or not token:
+        logger.warning("GITHUB_REPOSITORY or GITHUB_TOKEN not set. Cannot auto-trigger generate.yml workflow.")
+        return False
+
+    url = f"https://api.github.com/repos/{repo}/actions/workflows/generate.yml/dispatches"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28"
+    }
+    payload = {"ref": "main"}
+    try:
+        res = requests.post(url, headers=headers, json=payload, timeout=15)
+        return res.status_code in (204, 201, 200)
+    except Exception as e:
+        logger.warning("Exception while triggering generate.yml: %s", e)
+        return False
+
+
+def answer_callback_query(bot_token: str, callback_query_id: str, text: str = "") -> None:
+    url = f"https://api.telegram.org/bot{bot_token}/answerCallbackQuery"
+    payload = {"callback_query_id": callback_query_id, "text": text}
+    try:
+        requests.post(url, json=payload, timeout=10)
+    except Exception as e:
+        logger.warning("Failed to answer callback query: %s", e)
+
+
+def send_telegram_message(bot_token: str, chat_id: str, text: str, parse_mode: str = "HTML") -> None:
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    payload = {"chat_id": chat_id, "text": text, "parse_mode": parse_mode}
+    try:
+        resp = requests.post(url, json=payload, timeout=15)
+        resp.raise_for_status()
+    except Exception as e:
+        logger.error("Failed to send Telegram message: %s", e)
+
+
+def edit_telegram_message(bot_token: str, chat_id: str, message_id: int, text: str, parse_mode: str = "HTML", keep_keyboard: bool = False) -> None:
+    url = f"https://api.telegram.org/bot{bot_token}/editMessageText"
+    payload = {"chat_id": chat_id, "message_id": message_id, "text": text, "parse_mode": parse_mode}
+    if keep_keyboard:
+        payload["reply_markup"] = {
+            "inline_keyboard": [
+                [{"text": "✅ Accept", "callback_data": "approve"}],
+                [
+                    {"text": "❌ Reject", "callback_data": "reject"},
+                    {"text": "🔄 Reject & Regenerate", "callback_data": "reject_regen"}
+                ]
+            ]
+        }
+    else:
+        payload["reply_markup"] = {"inline_keyboard": []}
+
+    try:
+        resp = requests.post(url, json=payload, timeout=15)
+        resp.raise_for_status()
+    except Exception as e:
+        logger.warning("Failed to edit Telegram message_id=%s: %s", message_id, e)
+
+
+def get_linkedin_api_version() -> str:
+    raw = os.environ.get("LINKEDIN_API_VERSION", "202604").strip()
+    if len(raw) == 8 and raw.isdigit():
+        return raw[:6]
+    return raw if raw else "202604"
+
+
+def upload_image_to_linkedin(access_token: str, person_urn: str, image_bytes: bytes) -> str:
+    init_url = "https://api.linkedin.com/rest/images?action=initializeUpload"
+    linkedin_version = get_linkedin_api_version()
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "LinkedIn-Version": linkedin_version,
+        "X-Restli-Protocol-Version": "2.0.0",
+        "Content-Type": "application/json"
+    }
+    init_body = {"initializeUploadRequest": {"owner": person_urn}}
+    try:
+        init_res = requests.post(init_url, headers=headers, json=init_body, timeout=20)
+        if init_res.status_code != 200:
+            return ""
+
+        val = init_res.json().get("value", {})
+        upload_url = val.get("uploadUrl")
+        image_urn = val.get("image")
+
+        if not upload_url or not image_urn:
+            return ""
+
+        put_headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "image/jpeg"
+        }
+        put_res = requests.put(upload_url, headers=put_headers, data=image_bytes, timeout=30)
+        if 200 <= put_res.status_code < 300:
+            return image_urn
+    except Exception:
+        pass
+    return ""
+
+
+def publish_to_linkedin(access_token: str, person_urn: str, text: str, cover_bytes: bytes = None) -> Tuple[bool, int, str, str]:
+    url = "https://api.linkedin.com/rest/posts"
+    linkedin_version = get_linkedin_api_version()
+
+    if not person_urn.startswith("urn:li:person:"):
+        person_urn = f"urn:li:person:{person_urn}"
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "LinkedIn-Version": linkedin_version,
+        "X-Restli-Protocol-Version": "2.0.0",
+        "Content-Type": "application/json"
+    }
+
+    body = {
+        "author": person_urn,
+        "commentary": text,
+        "visibility": "PUBLIC",
+        "distribution": {"feedDistribution": "MAIN_FEED"},
+        "lifecycleState": "PUBLISHED",
+        "isReshareDisabledByAuthor": False
+    }
+
+    if cover_bytes and len(cover_bytes) > 1000:
+        image_urn = upload_image_to_linkedin(access_token, person_urn, cover_bytes)
+        if image_urn:
+            body["content"] = {
+                "media": {
+                    "id": image_urn,
+                    "altText": "Technology Article Illustration"
+                }
+            }
+
+    try:
+        resp = requests.post(url, headers=headers, json=body, timeout=30)
+        status_code = resp.status_code
+        res_text = resp.text
+        if 200 <= status_code < 300:
+            post_urn = resp.headers.get("x-restli-id") or resp.headers.get("X-RestLi-Id") or ""
+            return True, status_code, post_urn, res_text
+        else:
+            return False, status_code, "", res_text
+    except Exception as err:
+        return False, 0, "", str(err)
+
+
+def cleanup_state_files():
+    for f in (PENDING_FILE, COVER_FILE):
+        if os.path.exists(f):
+            try:
+                os.remove(f)
+            except Exception:
+                pass
+
+
+def check_and_publish_post():
+    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    chat_id_env = os.environ.get("TELEGRAM_CHAT_ID")
+    authorized_user_id = os.environ.get("TELEGRAM_AUTHORIZED_USER_ID")
+    linkedin_access_token = os.environ.get("LINKEDIN_ACCESS_TOKEN")
+    linkedin_person_urn = os.environ.get("LINKEDIN_PERSON_URN", "urn:li:person:aAOQrAt7pG")
+    gemini_api_key = os.environ.get("GEMINI_API_KEY")
+
+    missing = []
+    if not bot_token:
+        missing.append("TELEGRAM_BOT_TOKEN")
+    if not chat_id_env:
+        missing.append("TELEGRAM_CHAT_ID")
+    if not authorized_user_id:
+        missing.append("TELEGRAM_AUTHORIZED_USER_ID")
+    if not linkedin_access_token:
+        missing.append("LINKEDIN_ACCESS_TOKEN")
+
+    if missing:
+        logger.error("Missing required environment variables: %s", ', '.join(missing))
+        sys.exit(1)
+
+    os.makedirs(STATE_DIR, exist_ok=True)
+
+    raw_payload = os.environ.get("CLIENT_PAYLOAD")
+    payload = {}
+    if raw_payload:
+        try:
+            parsed = json.loads(raw_payload)
+            if isinstance(parsed, dict):
+                payload = parsed
+        except Exception as e:
+            logger.warning("Could not parse CLIENT_PAYLOAD JSON: %s", e)
+
+    action = payload.get("action")
+    chat_id = payload.get("chat_id") or chat_id_env
+    msg_id = payload.get("message_id")
+    user_id = payload.get("user_id")
+
+    if user_id and authorized_user_id:
+        u_str = str(user_id).strip()
+        auth_str = str(authorized_user_id).strip()
+        if u_str != auth_str:
+            logger.warning("Unauthorized user_id='%s' in client_payload. Expected '%s'. Terminating.", u_str, auth_str)
+            sys.exit(0)
+
+    if not action:
+        if not os.path.exists(PENDING_FILE):
+            logger.info("No pending post. Exiting.")
+            sys.exit(0)
+        else:
+            logger.info("Pending post draft exists. Waiting for user decision via Cloudflare Worker relay.")
+            sys.exit(0)
+
+    if not os.path.exists(PENDING_FILE):
+        if action in ("reject_regen", "reject_all", "regen_text"):
+            cleanup_state_files()
+            if msg_id:
+                edit_telegram_message(bot_token, chat_id, msg_id, "🔄 <b>Draft Rejected — Generating New Draft...</b>")
+            send_telegram_message(bot_token, chat_id, "🔄 <b>Generating a brand new post draft now...</b>")
+            trigger_generate_workflow()
+            sys.exit(0)
+        elif action in ("reject", "reject_only"):
+            cleanup_state_files()
+            if msg_id:
+                edit_telegram_message(bot_token, chat_id, msg_id, "❌ <b>Draft Rejected & Discarded</b>")
+            send_telegram_message(bot_token, chat_id, "🗑️ <b>Draft Rejected.</b> No new post will be generated.")
+            sys.exit(0)
+        else:
+            if msg_id:
+                edit_telegram_message(bot_token, chat_id, msg_id, "⚠️ <i>This post draft was already processed or is no longer pending.</i>")
+            sys.exit(0)
+
+    try:
+        with open(PENDING_FILE, "r", encoding="utf-8") as f:
+            pending_data = json.load(f)
+    except Exception as e:
+        logger.error("Failed to read %s: %s", PENDING_FILE, e)
+        sys.exit(1)
+
+    post_text = pending_data.get("text", "")
+    image_title = pending_data.get("image_title", "AI PRODUCTIVITY")
+    category = pending_data.get("category", "AI TOOLS")
+    bg_prompt = pending_data.get("bg_prompt", "")
+    if not msg_id:
+        msg_id = pending_data.get("message_id")
+
+    cover_bytes = None
+    if os.path.exists(COVER_FILE):
+        try:
+            with open(COVER_FILE, "rb") as f:
+                cover_bytes = f.read()
+        except Exception:
+            pass
+
+    if action in ("approve", "approve_all", "accept"):
+        success, status_code, post_urn, res_text = publish_to_linkedin(
+            linkedin_access_token, linkedin_person_urn, post_text, cover_bytes
+        )
+        if success:
+            cleanup_state_files()
+            if msg_id:
+                edit_telegram_message(bot_token, chat_id, msg_id, f"✅ <b>Posted to LinkedIn</b>\n\n{html.escape(post_text)}")
+            post_url = f"https://www.linkedin.com/feed/update/{post_urn}/" if post_urn else ""
+            followup_text = f"🎉 <b>LinkedIn Post Published Successfully!</b>\n\n<b>Post URN:</b> <code>{html.escape(post_urn)}</code>"
+            if post_url:
+                followup_text += f"\n<b>Link:</b> {post_url}"
+            send_telegram_message(bot_token, chat_id, followup_text)
+        else:
+            cleanup_state_files()
+            if msg_id:
+                edit_telegram_message(bot_token, chat_id, msg_id, f"⚠️ <b>LinkedIn Publication Failed (HTTP {status_code})</b>\n\nDraft discarded. Re-triggering new post generation...")
+            alert_text = (
+                f"⚠️ <b>LinkedIn Posting Failed (HTTP {status_code})</b>\n\n"
+                f"<b>Response:</b> <code>{html.escape(res_text)}</code>\n\n"
+                f"<i>The failed draft has been discarded and a new post generation workflow has been triggered automatically.</i>"
+            )
+            send_telegram_message(bot_token, chat_id, alert_text)
+            trigger_generate_workflow()
+
+    elif action in ("reject", "reject_only"):
+        cleanup_state_files()
+        if msg_id:
+            edit_telegram_message(bot_token, chat_id, msg_id, f"❌ <b>Draft Rejected & Discarded</b>\n\n<s>{html.escape(post_text)}</s>")
+        send_telegram_message(bot_token, chat_id, "🗑️ <b>Draft Rejected.</b> No new post will be generated.")
+
+    elif action in ("reject_regen", "reject_all"):
+        cleanup_state_files()
+        if msg_id:
+            edit_telegram_message(bot_token, chat_id, msg_id, f"🔄 <b>Draft Rejected — Generating New Draft...</b>\n\n<s>{html.escape(post_text)}</s>")
+        send_telegram_message(bot_token, chat_id, "🗑️ <b>Draft Rejected & Discarded.</b> Generating a brand new post draft now...")
+        trigger_generate_workflow()

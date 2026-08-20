@@ -1,0 +1,7399 @@
+{
+  "scrapable": [
+    {
+      "name": "10X Banking",
+      "careers_url": "https://apply.workable.com/10x-banking",
+      "ats": "workable",
+      "slug": "10x-banking",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Atom Bank",
+      "careers_url": "https://apply.workable.com/atom-bank",
+      "ats": "workable",
+      "slug": "atom-bank",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Brainly",
+      "careers_url": "https://apply.workable.com/brainly",
+      "ats": "workable",
+      "slug": "brainly",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Bunq",
+      "careers_url": "https://apply.workable.com/bunq",
+      "ats": "workable",
+      "slug": "bunq",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Clearbank",
+      "careers_url": "https://apply.workable.com/clearbank",
+      "ats": "workable",
+      "slug": "clearbank",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Clevertech",
+      "careers_url": "https://apply.workable.com/clevertech",
+      "ats": "workable",
+      "slug": "clevertech",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Form3",
+      "careers_url": "https://apply.workable.com/form3",
+      "ats": "workable",
+      "slug": "form3",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Griffin",
+      "careers_url": "https://apply.workable.com/griffin",
+      "ats": "workable",
+      "slug": "griffin",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Habitat Learn",
+      "careers_url": "https://apply.workable.com/habitat-learn",
+      "ats": "workable",
+      "slug": "habitat-learn",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Klarna",
+      "careers_url": "https://apply.workable.com/klarna",
+      "ats": "workable",
+      "slug": "klarna",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Kroo",
+      "careers_url": "https://apply.workable.com/kroo",
+      "ats": "workable",
+      "slug": "kroo",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Mambu",
+      "careers_url": "https://apply.workable.com/mambu",
+      "ats": "workable",
+      "slug": "mambu",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Modulr",
+      "careers_url": "https://apply.workable.com/modulr",
+      "ats": "workable",
+      "slug": "modulr",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Monzo",
+      "careers_url": "https://apply.workable.com/monzo",
+      "ats": "workable",
+      "slug": "monzo",
+      "source": "curated_remote"
+    },
+    {
+      "name": "N26",
+      "careers_url": "https://apply.workable.com/n26",
+      "ats": "workable",
+      "slug": "n26",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Oaknorth",
+      "careers_url": "https://apply.workable.com/oaknorth",
+      "ats": "workable",
+      "slug": "oaknorth",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Plaid",
+      "careers_url": "https://apply.workable.com/plaid",
+      "ats": "workable",
+      "slug": "plaid",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Plentific",
+      "careers_url": "https://apply.workable.com/plentific",
+      "ats": "workable",
+      "slug": "plentific",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Revolut",
+      "careers_url": "https://apply.workable.com/revolut",
+      "ats": "workable",
+      "slug": "revolut",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Starling Bank",
+      "careers_url": "https://apply.workable.com/starling-bank",
+      "ats": "workable",
+      "slug": "starling-bank",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Tandem",
+      "careers_url": "https://apply.workable.com/tandem",
+      "ats": "workable",
+      "slug": "tandem",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Thought Machine",
+      "careers_url": "https://apply.workable.com/thought-machine",
+      "ats": "workable",
+      "slug": "thought-machine",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Tink",
+      "careers_url": "https://apply.workable.com/tink",
+      "ats": "workable",
+      "slug": "tink",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Together Software",
+      "careers_url": "https://apply.workable.com/together-software",
+      "ats": "workable",
+      "slug": "together-software",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Token",
+      "careers_url": "https://apply.workable.com/token",
+      "ats": "workable",
+      "slug": "token",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Toptal",
+      "careers_url": "https://apply.workable.com/toptal",
+      "ats": "workable",
+      "slug": "toptal",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Transferwise",
+      "careers_url": "https://apply.workable.com/transferwise",
+      "ats": "workable",
+      "slug": "transferwise",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Truelayer",
+      "careers_url": "https://apply.workable.com/truelayer",
+      "ats": "workable",
+      "slug": "truelayer",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Yapily",
+      "careers_url": "https://apply.workable.com/yapily",
+      "ats": "workable",
+      "slug": "yapily",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Zopa",
+      "careers_url": "https://apply.workable.com/zopa",
+      "ats": "workable",
+      "slug": "zopa",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Appdynamics",
+      "careers_url": "https://boards.greenhouse.io/appdynamics",
+      "ats": "greenhouse",
+      "slug": "appdynamics",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Armory",
+      "careers_url": "https://boards.greenhouse.io/armory",
+      "ats": "greenhouse",
+      "slug": "armory",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Codecov",
+      "careers_url": "https://boards.greenhouse.io/codecov",
+      "ats": "greenhouse",
+      "slug": "codecov",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Coveralls",
+      "careers_url": "https://boards.greenhouse.io/coveralls",
+      "ats": "greenhouse",
+      "slug": "coveralls",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Docker",
+      "careers_url": "https://boards.greenhouse.io/docker",
+      "ats": "greenhouse",
+      "slug": "docker",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Flyio",
+      "careers_url": "https://boards.greenhouse.io/flyio",
+      "ats": "greenhouse",
+      "slug": "flyio",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Grafana",
+      "careers_url": "https://boards.greenhouse.io/grafana",
+      "ats": "greenhouse",
+      "slug": "grafana",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Launchdarkly",
+      "careers_url": "https://boards.greenhouse.io/launchdarkly",
+      "ats": "greenhouse",
+      "slug": "launchdarkly",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Mozilla",
+      "careers_url": "https://boards.greenhouse.io/mozilla",
+      "ats": "greenhouse",
+      "slug": "mozilla",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Newrelic",
+      "careers_url": "https://boards.greenhouse.io/newrelic",
+      "ats": "greenhouse",
+      "slug": "newrelic",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Npm",
+      "careers_url": "https://boards.greenhouse.io/npm",
+      "ats": "greenhouse",
+      "slug": "npm",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Okta",
+      "careers_url": "https://boards.greenhouse.io/okta",
+      "ats": "greenhouse",
+      "slug": "okta",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Planetscale",
+      "careers_url": "https://boards.greenhouse.io/planetscale",
+      "ats": "greenhouse",
+      "slug": "planetscale",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Postman",
+      "careers_url": "https://boards.greenhouse.io/postman",
+      "ats": "greenhouse",
+      "slug": "postman",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Render",
+      "careers_url": "https://boards.greenhouse.io/render",
+      "ats": "greenhouse",
+      "slug": "render",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Snyk",
+      "careers_url": "https://boards.greenhouse.io/snyk",
+      "ats": "greenhouse",
+      "slug": "snyk",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Split",
+      "careers_url": "https://boards.greenhouse.io/split",
+      "ats": "greenhouse",
+      "slug": "split",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Splunk",
+      "careers_url": "https://boards.greenhouse.io/splunk",
+      "ats": "greenhouse",
+      "slug": "splunk",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Sumologic",
+      "careers_url": "https://boards.greenhouse.io/sumologic",
+      "ats": "greenhouse",
+      "slug": "sumologic",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Vercel",
+      "careers_url": "https://boards.greenhouse.io/vercel",
+      "ats": "greenhouse",
+      "slug": "vercel",
+      "source": "curated_remote"
+    },
+    {
+      "name": "15Five",
+      "careers_url": "https://15five.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "15five",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Bamboohr",
+      "careers_url": "https://bamboohr.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "bamboohr",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Betterworks",
+      "careers_url": "https://betterworks.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "betterworks",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Brex",
+      "careers_url": "https://brex.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "brex",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Catalyst",
+      "careers_url": "https://catalyst.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "catalyst",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Charliehr",
+      "careers_url": "https://charliehr.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "charliehr",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Check",
+      "careers_url": "https://check.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "check",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Churnzero",
+      "careers_url": "https://churnzero.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "churnzero",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Client Success",
+      "careers_url": "https://client-success.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "client-success",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Column",
+      "careers_url": "https://column.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "column",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Cultureamp",
+      "careers_url": "https://cultureamp.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "cultureamp",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Custify",
+      "careers_url": "https://custify.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "custify",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Deel",
+      "careers_url": "https://deel.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "deel",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Factorial",
+      "careers_url": "https://factorial.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "factorial",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Gainsight",
+      "careers_url": "https://gainsight.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "gainsight",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Glint",
+      "careers_url": "https://glint.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "glint",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Gusto",
+      "careers_url": "https://gusto.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "gusto",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hibob",
+      "careers_url": "https://hiBob.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "hiBob",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Humaans",
+      "careers_url": "https://humaans.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "humaans",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Increase",
+      "careers_url": "https://increase.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "increase",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Justworks",
+      "careers_url": "https://justworks.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "justworks",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Lattice",
+      "careers_url": "https://lattice.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "lattice",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Lithic",
+      "careers_url": "https://lithic.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "lithic",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Medallia",
+      "careers_url": "https://medallia.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "medallia",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Mercury",
+      "careers_url": "https://mercury.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "mercury",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Modern Treasury",
+      "careers_url": "https://modern-treasury.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "modern-treasury",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Officevibe",
+      "careers_url": "https://officevibe.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "officevibe",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Payfit",
+      "careers_url": "https://payfit.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "payfit",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Peakon",
+      "careers_url": "https://peakon.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "peakon",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Personio",
+      "careers_url": "https://personio.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "personio",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Planhat",
+      "careers_url": "https://planhat.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "planhat",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Qualtrics",
+      "careers_url": "https://qualtrics.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "qualtrics",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Rampn",
+      "careers_url": "https://rampn.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "rampn",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Reflektive",
+      "careers_url": "https://reflektive.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "reflektive",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Replit",
+      "careers_url": "https://replit.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "replit",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Retool",
+      "careers_url": "https://retool.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "retool",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Rippling",
+      "careers_url": "https://rippling.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "rippling",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Small Improvements",
+      "careers_url": "https://small-improvements.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "small-improvements",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Strikedeck",
+      "careers_url": "https://strikedeck.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "strikedeck",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Stripe",
+      "careers_url": "https://stripe.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "stripe",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Synapse",
+      "careers_url": "https://synapse.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "synapse",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Tinypulse",
+      "careers_url": "https://tinypulse.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "tinypulse",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Totango",
+      "careers_url": "https://totango.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "totango",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Treasury Prime",
+      "careers_url": "https://treasury-prime.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "treasury-prime",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Unit",
+      "careers_url": "https://unit.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "unit",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Vanta",
+      "careers_url": "https://vanta.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "vanta",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Vitally",
+      "careers_url": "https://vitally.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "vitally",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Zenefits",
+      "careers_url": "https://zenefits.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "zenefits",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Balsamiq",
+      "careers_url": "https://jobs.lever.co/balsamiq",
+      "ats": "lever",
+      "slug": "balsamiq",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Bandsintown",
+      "careers_url": "https://jobs.lever.co/bandsintown",
+      "ats": "lever",
+      "slug": "bandsintown",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Bizzabo",
+      "careers_url": "https://jobs.lever.co/bizzabo",
+      "ats": "lever",
+      "slug": "bizzabo",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Canva",
+      "careers_url": "https://jobs.lever.co/canva",
+      "ats": "lever",
+      "slug": "canva",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Crowdcast",
+      "careers_url": "https://jobs.lever.co/crowdcast",
+      "ats": "lever",
+      "slug": "crowdcast",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Cvent",
+      "careers_url": "https://jobs.lever.co/cvent",
+      "ats": "lever",
+      "slug": "cvent",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Descript",
+      "careers_url": "https://jobs.lever.co/descript",
+      "ats": "lever",
+      "slug": "descript",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Discogs",
+      "careers_url": "https://jobs.lever.co/discogs",
+      "ats": "lever",
+      "slug": "discogs",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Eventbrite",
+      "careers_url": "https://jobs.lever.co/eventbrite",
+      "ats": "lever",
+      "slug": "eventbrite",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Framer",
+      "careers_url": "https://jobs.lever.co/framer",
+      "ats": "lever",
+      "slug": "framer",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Gametime",
+      "careers_url": "https://jobs.lever.co/gametime",
+      "ats": "lever",
+      "slug": "gametime",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Genius",
+      "careers_url": "https://jobs.lever.co/genius",
+      "ats": "lever",
+      "slug": "genius",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Giphy",
+      "careers_url": "https://jobs.lever.co/giphy",
+      "ats": "lever",
+      "slug": "giphy",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hopin",
+      "careers_url": "https://jobs.lever.co/hopin",
+      "ats": "lever",
+      "slug": "hopin",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Invision",
+      "careers_url": "https://jobs.lever.co/invision",
+      "ats": "lever",
+      "slug": "invision",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Lastfm",
+      "careers_url": "https://jobs.lever.co/lastfm",
+      "ats": "lever",
+      "slug": "lastfm",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Loom",
+      "careers_url": "https://jobs.lever.co/loom",
+      "ats": "lever",
+      "slug": "loom",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Miro",
+      "careers_url": "https://jobs.lever.co/miro",
+      "ats": "lever",
+      "slug": "miro",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Mural",
+      "careers_url": "https://jobs.lever.co/mural",
+      "ats": "lever",
+      "slug": "mural",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Musixmatch",
+      "careers_url": "https://jobs.lever.co/musixmatch",
+      "ats": "lever",
+      "slug": "musixmatch",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Otterai",
+      "careers_url": "https://jobs.lever.co/otterai",
+      "ats": "lever",
+      "slug": "otterai",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Penpot",
+      "careers_url": "https://jobs.lever.co/penpot",
+      "ats": "lever",
+      "slug": "penpot",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Pitch",
+      "careers_url": "https://jobs.lever.co/pitch",
+      "ats": "lever",
+      "slug": "pitch",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Residentadvisor",
+      "careers_url": "https://jobs.lever.co/residentadvisor",
+      "ats": "lever",
+      "slug": "residentadvisor",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Restream",
+      "careers_url": "https://jobs.lever.co/restream",
+      "ats": "lever",
+      "slug": "restream",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Runworld",
+      "careers_url": "https://jobs.lever.co/runworld",
+      "ats": "lever",
+      "slug": "runworld",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Seatgeek",
+      "careers_url": "https://jobs.lever.co/seatgeek",
+      "ats": "lever",
+      "slug": "seatgeek",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Seventeenhats",
+      "careers_url": "https://jobs.lever.co/seventeenhats",
+      "ats": "lever",
+      "slug": "seventeenhats",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Shazam",
+      "careers_url": "https://jobs.lever.co/shazam",
+      "ats": "lever",
+      "slug": "shazam",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Shutterstock",
+      "careers_url": "https://jobs.lever.co/shutterstock",
+      "ats": "lever",
+      "slug": "shutterstock",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Sketch",
+      "careers_url": "https://jobs.lever.co/sketch",
+      "ats": "lever",
+      "slug": "sketch",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Songkick",
+      "careers_url": "https://jobs.lever.co/songkick",
+      "ats": "lever",
+      "slug": "songkick",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Soundhound",
+      "careers_url": "https://jobs.lever.co/soundhound",
+      "ats": "lever",
+      "slug": "soundhound",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Splash",
+      "careers_url": "https://jobs.lever.co/splash",
+      "ats": "lever",
+      "slug": "splash",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Streamyard",
+      "careers_url": "https://jobs.lever.co/streamyard",
+      "ats": "lever",
+      "slug": "streamyard",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Stubhub",
+      "careers_url": "https://jobs.lever.co/stubhub",
+      "ats": "lever",
+      "slug": "stubhub",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Taxjar",
+      "careers_url": "https://jobs.lever.co/taxjar",
+      "ats": "lever",
+      "slug": "taxjar",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Ticketek",
+      "careers_url": "https://jobs.lever.co/ticketek",
+      "ats": "lever",
+      "slug": "ticketek",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Ticketmaster",
+      "careers_url": "https://jobs.lever.co/ticketmaster",
+      "ats": "lever",
+      "slug": "ticketmaster",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Tickpick",
+      "careers_url": "https://jobs.lever.co/tickpick",
+      "ats": "lever",
+      "slug": "tickpick",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Unsplash",
+      "careers_url": "https://jobs.lever.co/unsplash",
+      "ats": "lever",
+      "slug": "unsplash",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Viagogo",
+      "careers_url": "https://jobs.lever.co/viagogo",
+      "ats": "lever",
+      "slug": "viagogo",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Vimeo",
+      "careers_url": "https://jobs.lever.co/vimeo",
+      "ats": "lever",
+      "slug": "vimeo",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Vividseats",
+      "careers_url": "https://jobs.lever.co/vividseats",
+      "ats": "lever",
+      "slug": "vividseats",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Sourcegraph",
+      "careers_url": "https://boards.greenhouse.io/sourcegraph91",
+      "ats": "greenhouse",
+      "slug": "sourcegraph91",
+      "source": "yanirs"
+    },
+    {
+      "name": "GitLab",
+      "careers_url": "https://boards.greenhouse.io/gitlab",
+      "ats": "greenhouse",
+      "slug": "gitlab",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Grafana Labs",
+      "careers_url": "https://boards.greenhouse.io/grafanalabs",
+      "ats": "greenhouse",
+      "slug": "grafanalabs",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remote.com",
+      "careers_url": "https://boards.greenhouse.io/remote",
+      "ats": "greenhouse",
+      "slug": "remote",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Oyster HR",
+      "careers_url": "https://boards.greenhouse.io/oysterhr",
+      "ats": "greenhouse",
+      "slug": "oysterhr",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Linear",
+      "careers_url": "https://linear.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "linear",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Neon",
+      "careers_url": "https://boards.greenhouse.io/neon",
+      "ats": "greenhouse",
+      "slug": "neon",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Turso",
+      "careers_url": "https://jobs.lever.co/turso",
+      "ats": "lever",
+      "slug": "turso",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Railway",
+      "careers_url": "https://jobs.lever.co/railway",
+      "ats": "lever",
+      "slug": "railway",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Fly.io",
+      "careers_url": "https://jobs.lever.co/flyio",
+      "ats": "lever",
+      "slug": "flyio",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Temporal",
+      "careers_url": "https://boards.greenhouse.io/temporal",
+      "ats": "greenhouse",
+      "slug": "temporal",
+      "source": "curated_remote"
+    },
+    {
+      "name": "1Password",
+      "careers_url": "https://jobs.lever.co/1password",
+      "ats": "lever",
+      "slug": "1password",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Bitwarden",
+      "careers_url": "https://boards.greenhouse.io/bitwarden",
+      "ats": "greenhouse",
+      "slug": "bitwarden",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Mullvad VPN",
+      "careers_url": "https://jobs.lever.co/mullvad",
+      "ats": "lever",
+      "slug": "mullvad",
+      "source": "curated_remote"
+    },
+    {
+      "name": "ProtonMail",
+      "careers_url": "https://boards.greenhouse.io/proton",
+      "ats": "greenhouse",
+      "slug": "proton",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Datadog",
+      "careers_url": "https://boards.greenhouse.io/datadog",
+      "ats": "greenhouse",
+      "slug": "datadog",
+      "source": "curated_remote"
+    },
+    {
+      "name": "New Relic",
+      "careers_url": "https://boards.greenhouse.io/newrelic",
+      "ats": "greenhouse",
+      "slug": "newrelic",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Semgrep",
+      "careers_url": "https://boards.greenhouse.io/semgrep",
+      "ats": "greenhouse",
+      "slug": "semgrep",
+      "source": "curated_remote"
+    },
+    {
+      "name": "PostHog",
+      "careers_url": "https://jobs.lever.co/posthog",
+      "ats": "lever",
+      "slug": "posthog",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Mixpanel",
+      "careers_url": "https://boards.greenhouse.io/mixpanel",
+      "ats": "greenhouse",
+      "slug": "mixpanel",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Amplitude",
+      "careers_url": "https://boards.greenhouse.io/amplitude",
+      "ats": "greenhouse",
+      "slug": "amplitude",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Heap",
+      "careers_url": "https://boards.greenhouse.io/heap",
+      "ats": "greenhouse",
+      "slug": "heap",
+      "source": "curated_remote"
+    },
+    {
+      "name": "FullStory",
+      "careers_url": "https://boards.greenhouse.io/fullstory",
+      "ats": "greenhouse",
+      "slug": "fullstory",
+      "source": "curated_remote"
+    },
+    {
+      "name": "LogRocket",
+      "careers_url": "https://boards.greenhouse.io/logrocket",
+      "ats": "greenhouse",
+      "slug": "logrocket",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Segment",
+      "careers_url": "https://boards.greenhouse.io/segment",
+      "ats": "greenhouse",
+      "slug": "segment",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Braze",
+      "careers_url": "https://boards.greenhouse.io/braze",
+      "ats": "greenhouse",
+      "slug": "braze",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Customer.io",
+      "careers_url": "https://jobs.lever.co/customerio",
+      "ats": "lever",
+      "slug": "customerio",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Klaviyo",
+      "careers_url": "https://boards.greenhouse.io/klaviyo",
+      "ats": "greenhouse",
+      "slug": "klaviyo",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Sendbird",
+      "careers_url": "https://boards.greenhouse.io/sendbird",
+      "ats": "greenhouse",
+      "slug": "sendbird",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Intercom",
+      "careers_url": "https://jobs.lever.co/intercom",
+      "ats": "lever",
+      "slug": "intercom",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Zendesk",
+      "careers_url": "https://boards.greenhouse.io/zendesk",
+      "ats": "greenhouse",
+      "slug": "zendesk",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Help Scout",
+      "careers_url": "https://jobs.lever.co/helpscout",
+      "ats": "lever",
+      "slug": "helpscout",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Freshworks",
+      "careers_url": "https://boards.greenhouse.io/freshworks",
+      "ats": "greenhouse",
+      "slug": "freshworks",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hubspot",
+      "careers_url": "https://boards.greenhouse.io/hubspot",
+      "ats": "greenhouse",
+      "slug": "hubspot",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Pipedrive",
+      "careers_url": "https://boards.greenhouse.io/pipedrive",
+      "ats": "greenhouse",
+      "slug": "pipedrive",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Close",
+      "careers_url": "https://jobs.lever.co/close",
+      "ats": "lever",
+      "slug": "close",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Copper",
+      "careers_url": "https://jobs.lever.co/copper",
+      "ats": "lever",
+      "slug": "copper",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Attio",
+      "careers_url": "https://attio.ashbyhq.com",
+      "ats": "ashby",
+      "slug": "attio",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Folk",
+      "careers_url": "https://jobs.lever.co/folk",
+      "ats": "lever",
+      "slug": "folk",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Monday.com",
+      "careers_url": "https://boards.greenhouse.io/mondaycom",
+      "ats": "greenhouse",
+      "slug": "mondaycom",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Asana",
+      "careers_url": "https://boards.greenhouse.io/asana",
+      "ats": "greenhouse",
+      "slug": "asana",
+      "source": "curated_remote"
+    },
+    {
+      "name": "ClickUp",
+      "careers_url": "https://boards.greenhouse.io/clickup",
+      "ats": "greenhouse",
+      "slug": "clickup",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Todoist",
+      "careers_url": "https://jobs.lever.co/doist",
+      "ats": "lever",
+      "slug": "doist",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Height",
+      "careers_url": "https://jobs.lever.co/height",
+      "ats": "lever",
+      "slug": "height",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Shortcut",
+      "careers_url": "https://boards.greenhouse.io/shortcut",
+      "ats": "greenhouse",
+      "slug": "shortcut",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Plane",
+      "careers_url": "https://jobs.lever.co/plane",
+      "ats": "lever",
+      "slug": "plane",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Bubble",
+      "careers_url": "https://boards.greenhouse.io/bubble",
+      "ats": "greenhouse",
+      "slug": "bubble",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Squarespace",
+      "careers_url": "https://boards.greenhouse.io/squarespace",
+      "ats": "greenhouse",
+      "slug": "squarespace",
+      "source": "curated_remote"
+    },
+    {
+      "name": "ConvertKit",
+      "careers_url": "https://boards.greenhouse.io/convertkit",
+      "ats": "greenhouse",
+      "slug": "convertkit",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Beehiiv",
+      "careers_url": "https://boards.greenhouse.io/beehiiv",
+      "ats": "greenhouse",
+      "slug": "beehiiv",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Substack",
+      "careers_url": "https://jobs.lever.co/substack",
+      "ats": "lever",
+      "slug": "substack",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Medium",
+      "careers_url": "https://boards.greenhouse.io/medium",
+      "ats": "greenhouse",
+      "slug": "medium",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Dev.to",
+      "careers_url": "https://jobs.lever.co/devto",
+      "ats": "lever",
+      "slug": "devto",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hashnode",
+      "careers_url": "https://jobs.lever.co/hashnode",
+      "ats": "lever",
+      "slug": "hashnode",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Draftbit",
+      "careers_url": "https://jobs.lever.co/draftbit",
+      "ats": "lever",
+      "slug": "draftbit",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Expo",
+      "careers_url": "https://boards.greenhouse.io/expo",
+      "ats": "greenhouse",
+      "slug": "expo",
+      "source": "curated_remote"
+    },
+    {
+      "name": "React Native",
+      "careers_url": "https://boards.greenhouse.io/reactnative",
+      "ats": "greenhouse",
+      "slug": "reactnative",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Tailwind",
+      "careers_url": "https://jobs.lever.co/tailwind",
+      "ats": "lever",
+      "slug": "tailwind",
+      "source": "curated_remote"
+    },
+    {
+      "name": "tRPC",
+      "careers_url": "https://jobs.lever.co/trpc",
+      "ats": "lever",
+      "slug": "trpc",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Turbo",
+      "careers_url": "https://jobs.lever.co/turbo",
+      "ats": "lever",
+      "slug": "turbo",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Nx",
+      "careers_url": "https://boards.greenhouse.io/nrwl",
+      "ats": "greenhouse",
+      "slug": "nrwl",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Nx (Nrwl)",
+      "careers_url": "https://boards.greenhouse.io/nrwl",
+      "ats": "greenhouse",
+      "slug": "nrwl",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Weights & Biases",
+      "careers_url": "https://boards.greenhouse.io/wandb",
+      "ats": "greenhouse",
+      "slug": "wandb",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hugging Face",
+      "careers_url": "https://boards.greenhouse.io/huggingface",
+      "ats": "greenhouse",
+      "slug": "huggingface",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Mistral AI",
+      "careers_url": "https://boards.greenhouse.io/mistralai",
+      "ats": "greenhouse",
+      "slug": "mistralai",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Cohere",
+      "careers_url": "https://boards.greenhouse.io/cohere",
+      "ats": "greenhouse",
+      "slug": "cohere",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Scale AI",
+      "careers_url": "https://boards.greenhouse.io/scaleai",
+      "ats": "greenhouse",
+      "slug": "scaleai",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Labelbox",
+      "careers_url": "https://boards.greenhouse.io/labelbox",
+      "ats": "greenhouse",
+      "slug": "labelbox",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Roboflow",
+      "careers_url": "https://jobs.lever.co/roboflow",
+      "ats": "lever",
+      "slug": "roboflow",
+      "source": "curated_remote"
+    },
+    {
+      "name": "LangChain",
+      "careers_url": "https://boards.greenhouse.io/langchain",
+      "ats": "greenhouse",
+      "slug": "langchain",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Weaviate",
+      "careers_url": "https://boards.greenhouse.io/weaviate",
+      "ats": "greenhouse",
+      "slug": "weaviate",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Pinecone",
+      "careers_url": "https://boards.greenhouse.io/pinecone",
+      "ats": "greenhouse",
+      "slug": "pinecone",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Chroma",
+      "careers_url": "https://jobs.lever.co/chroma",
+      "ats": "lever",
+      "slug": "chroma",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Qdrant",
+      "careers_url": "https://jobs.lever.co/qdrant",
+      "ats": "lever",
+      "slug": "qdrant",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Milvus / Zilliz",
+      "careers_url": "https://jobs.lever.co/zilliz",
+      "ats": "lever",
+      "slug": "zilliz",
+      "source": "curated_remote"
+    },
+    {
+      "name": "dbt Labs",
+      "careers_url": "https://jobs.lever.co/dbtlabs",
+      "ats": "lever",
+      "slug": "dbtlabs",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Airbyte",
+      "careers_url": "https://boards.greenhouse.io/airbyte",
+      "ats": "greenhouse",
+      "slug": "airbyte",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Fivetran",
+      "careers_url": "https://boards.greenhouse.io/fivetran",
+      "ats": "greenhouse",
+      "slug": "fivetran",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Dagster",
+      "careers_url": "https://jobs.lever.co/dagster",
+      "ats": "lever",
+      "slug": "dagster",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Prefect",
+      "careers_url": "https://boards.greenhouse.io/prefect",
+      "ats": "greenhouse",
+      "slug": "prefect",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Monte Carlo",
+      "careers_url": "https://boards.greenhouse.io/montecarlo",
+      "ats": "greenhouse",
+      "slug": "montecarlo",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Great Expectations",
+      "careers_url": "https://boards.greenhouse.io/superconductive",
+      "ats": "greenhouse",
+      "slug": "superconductive",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Census",
+      "careers_url": "https://jobs.lever.co/censushq",
+      "ats": "lever",
+      "slug": "censushq",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hightouch",
+      "careers_url": "https://jobs.lever.co/hightouch",
+      "ats": "lever",
+      "slug": "hightouch",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Reverse ETL",
+      "careers_url": "https://jobs.lever.co/hightouch",
+      "ats": "lever",
+      "slug": "hightouch",
+      "source": "curated_remote"
+    },
+    {
+      "name": "DoltHub",
+      "careers_url": "https://jobs.lever.co/dolthub",
+      "ats": "lever",
+      "slug": "dolthub",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Motherduck",
+      "careers_url": "https://jobs.lever.co/motherduck",
+      "ats": "lever",
+      "slug": "motherduck",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Cube Dev",
+      "careers_url": "https://boards.greenhouse.io/cube",
+      "ats": "greenhouse",
+      "slug": "cube",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Lightdash",
+      "careers_url": "https://boards.greenhouse.io/lightdash",
+      "ats": "greenhouse",
+      "slug": "lightdash",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Evidence",
+      "careers_url": "https://jobs.lever.co/evidence",
+      "ats": "lever",
+      "slug": "evidence",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Metabase",
+      "careers_url": "https://boards.greenhouse.io/metabase",
+      "ats": "greenhouse",
+      "slug": "metabase",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Redash",
+      "careers_url": "https://jobs.lever.co/redash",
+      "ats": "lever",
+      "slug": "redash",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Mode Analytics",
+      "careers_url": "https://boards.greenhouse.io/mode",
+      "ats": "greenhouse",
+      "slug": "mode",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hex",
+      "careers_url": "https://boards.greenhouse.io/hex",
+      "ats": "greenhouse",
+      "slug": "hex",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Deepnote",
+      "careers_url": "https://jobs.lever.co/deepnote",
+      "ats": "lever",
+      "slug": "deepnote",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Observable",
+      "careers_url": "https://boards.greenhouse.io/observable",
+      "ats": "greenhouse",
+      "slug": "observable",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Streamlit",
+      "careers_url": "https://boards.greenhouse.io/streamlit",
+      "ats": "greenhouse",
+      "slug": "streamlit",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Gradio",
+      "careers_url": "https://jobs.lever.co/gradio",
+      "ats": "lever",
+      "slug": "gradio",
+      "source": "curated_remote"
+    },
+    {
+      "name": "FastAPI",
+      "careers_url": "https://jobs.lever.co/fastapi",
+      "ats": "lever",
+      "slug": "fastapi",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Pydantic",
+      "careers_url": "https://jobs.lever.co/pydantic",
+      "ats": "lever",
+      "slug": "pydantic",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Shopify",
+      "careers_url": "https://boards.greenhouse.io/shopify",
+      "ats": "greenhouse",
+      "slug": "shopify",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Paddle",
+      "careers_url": "https://jobs.lever.co/paddle",
+      "ats": "lever",
+      "slug": "paddle",
+      "source": "curated_remote"
+    },
+    {
+      "name": "LemonSqueezy",
+      "careers_url": "https://jobs.lever.co/lemonsqueezy",
+      "ats": "lever",
+      "slug": "lemonsqueezy",
+      "source": "curated_remote"
+    },
+    {
+      "name": "RevenueCat",
+      "careers_url": "https://boards.greenhouse.io/revenuecat",
+      "ats": "greenhouse",
+      "slug": "revenuecat",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Superwall",
+      "careers_url": "https://jobs.lever.co/superwall",
+      "ats": "lever",
+      "slug": "superwall",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Adapty",
+      "careers_url": "https://jobs.lever.co/adapty",
+      "ats": "lever",
+      "slug": "adapty",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Adjust",
+      "careers_url": "https://boards.greenhouse.io/adjust",
+      "ats": "greenhouse",
+      "slug": "adjust",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Branch",
+      "careers_url": "https://boards.greenhouse.io/branch",
+      "ats": "greenhouse",
+      "slug": "branch",
+      "source": "curated_remote"
+    },
+    {
+      "name": "AppsFlyer",
+      "careers_url": "https://boards.greenhouse.io/appsflyer",
+      "ats": "greenhouse",
+      "slug": "appsflyer",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Kochava",
+      "careers_url": "https://boards.greenhouse.io/kochava",
+      "ats": "greenhouse",
+      "slug": "kochava",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Singular",
+      "careers_url": "https://boards.greenhouse.io/singular",
+      "ats": "greenhouse",
+      "slug": "singular",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Firebase",
+      "careers_url": "https://boards.greenhouse.io/firebase",
+      "ats": "greenhouse",
+      "slug": "firebase",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Appwrite",
+      "careers_url": "https://jobs.lever.co/appwrite",
+      "ats": "lever",
+      "slug": "appwrite",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Nhost",
+      "careers_url": "https://jobs.lever.co/nhost",
+      "ats": "lever",
+      "slug": "nhost",
+      "source": "curated_remote"
+    },
+    {
+      "name": "PocketBase",
+      "careers_url": "https://jobs.lever.co/pocketbase",
+      "ats": "lever",
+      "slug": "pocketbase",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Directus",
+      "careers_url": "https://jobs.lever.co/directus",
+      "ats": "lever",
+      "slug": "directus",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Strapi",
+      "careers_url": "https://jobs.lever.co/strapi",
+      "ats": "lever",
+      "slug": "strapi",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Sanity",
+      "careers_url": "https://boards.greenhouse.io/sanity",
+      "ats": "greenhouse",
+      "slug": "sanity",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Contentful",
+      "careers_url": "https://boards.greenhouse.io/contentful",
+      "ats": "greenhouse",
+      "slug": "contentful",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Storyblok",
+      "careers_url": "https://boards.greenhouse.io/storyblok",
+      "ats": "greenhouse",
+      "slug": "storyblok",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Prismic",
+      "careers_url": "https://jobs.lever.co/prismic",
+      "ats": "lever",
+      "slug": "prismic",
+      "source": "curated_remote"
+    },
+    {
+      "name": "DatoCMS",
+      "careers_url": "https://jobs.lever.co/datocms",
+      "ats": "lever",
+      "slug": "datocms",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Contentstack",
+      "careers_url": "https://boards.greenhouse.io/contentstack",
+      "ats": "greenhouse",
+      "slug": "contentstack",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hygraph",
+      "careers_url": "https://jobs.lever.co/hygraph",
+      "ats": "lever",
+      "slug": "hygraph",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Kontent.ai",
+      "careers_url": "https://jobs.lever.co/kentico",
+      "ats": "lever",
+      "slug": "kentico",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Storybook",
+      "careers_url": "https://jobs.lever.co/storybook",
+      "ats": "lever",
+      "slug": "storybook",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Chromatic",
+      "careers_url": "https://jobs.lever.co/chromatic",
+      "ats": "lever",
+      "slug": "chromatic",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Playwright",
+      "careers_url": "https://boards.greenhouse.io/playwright",
+      "ats": "greenhouse",
+      "slug": "playwright",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Cypress",
+      "careers_url": "https://boards.greenhouse.io/cypress",
+      "ats": "greenhouse",
+      "slug": "cypress",
+      "source": "curated_remote"
+    },
+    {
+      "name": "TestRail",
+      "careers_url": "https://boards.greenhouse.io/testrail",
+      "ats": "greenhouse",
+      "slug": "testrail",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Semaphore CI",
+      "careers_url": "https://boards.greenhouse.io/rendered",
+      "ats": "greenhouse",
+      "slug": "rendered",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Travis CI",
+      "careers_url": "https://jobs.lever.co/travis",
+      "ats": "lever",
+      "slug": "travis",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Buildkite",
+      "careers_url": "https://jobs.lever.co/buildkite",
+      "ats": "lever",
+      "slug": "buildkite",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Pulumi",
+      "careers_url": "https://boards.greenhouse.io/pulumi",
+      "ats": "greenhouse",
+      "slug": "pulumi",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Crossplane",
+      "careers_url": "https://jobs.lever.co/crossplane",
+      "ats": "lever",
+      "slug": "crossplane",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Argo",
+      "careers_url": "https://jobs.lever.co/argo",
+      "ats": "lever",
+      "slug": "argo",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Flux",
+      "careers_url": "https://jobs.lever.co/flux",
+      "ats": "lever",
+      "slug": "flux",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Teleport",
+      "careers_url": "https://boards.greenhouse.io/teleport",
+      "ats": "greenhouse",
+      "slug": "teleport",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Tailscale",
+      "careers_url": "https://jobs.lever.co/tailscale",
+      "ats": "lever",
+      "slug": "tailscale",
+      "source": "curated_remote"
+    },
+    {
+      "name": "WireGuard",
+      "careers_url": "https://jobs.lever.co/wireguard",
+      "ats": "lever",
+      "slug": "wireguard",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Tor Project",
+      "careers_url": "https://jobs.lever.co/torproject",
+      "ats": "lever",
+      "slug": "torproject",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Signal",
+      "careers_url": "https://jobs.lever.co/signal",
+      "ats": "lever",
+      "slug": "signal",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Matrix / Element",
+      "careers_url": "https://jobs.lever.co/element",
+      "ats": "lever",
+      "slug": "element",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Mattermost",
+      "careers_url": "https://jobs.lever.co/mattermost",
+      "ats": "lever",
+      "slug": "mattermost",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Rocket.Chat",
+      "careers_url": "https://jobs.lever.co/rocketchat",
+      "ats": "lever",
+      "slug": "rocketchat",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Zulip",
+      "careers_url": "https://jobs.lever.co/zulip",
+      "ats": "lever",
+      "slug": "zulip",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Jitsi",
+      "careers_url": "https://jobs.lever.co/jitsi",
+      "ats": "lever",
+      "slug": "jitsi",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Whereby",
+      "careers_url": "https://jobs.lever.co/whereby",
+      "ats": "lever",
+      "slug": "whereby",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Around",
+      "careers_url": "https://jobs.lever.co/around",
+      "ats": "lever",
+      "slug": "around",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Gather",
+      "careers_url": "https://jobs.lever.co/gather",
+      "ats": "lever",
+      "slug": "gather",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Tuple",
+      "careers_url": "https://jobs.lever.co/tuple",
+      "ats": "lever",
+      "slug": "tuple",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Levels.fyi",
+      "careers_url": "https://jobs.lever.co/levelsfyi",
+      "ats": "lever",
+      "slug": "levelsfyi",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Blind",
+      "careers_url": "https://jobs.lever.co/teamblind",
+      "ats": "lever",
+      "slug": "teamblind",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remote OK",
+      "careers_url": "https://jobs.lever.co/remoteok",
+      "ats": "lever",
+      "slug": "remoteok",
+      "source": "curated_remote"
+    },
+    {
+      "name": "We Work Remotely",
+      "careers_url": "https://jobs.lever.co/weworkremotely",
+      "ats": "lever",
+      "slug": "weworkremotely",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remote.co",
+      "careers_url": "https://jobs.lever.co/remoteco",
+      "ats": "lever",
+      "slug": "remoteco",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Working Nomads",
+      "careers_url": "https://jobs.lever.co/workingnomads",
+      "ats": "lever",
+      "slug": "workingnomads",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Arc.dev",
+      "careers_url": "https://jobs.lever.co/arc",
+      "ats": "lever",
+      "slug": "arc",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Otta",
+      "careers_url": "https://boards.greenhouse.io/otta",
+      "ats": "greenhouse",
+      "slug": "otta",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Built In",
+      "careers_url": "https://boards.greenhouse.io/builtin",
+      "ats": "greenhouse",
+      "slug": "builtin",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Trello",
+      "careers_url": "https://boards.greenhouse.io/trello",
+      "ats": "greenhouse",
+      "slug": "trello",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Atlassian",
+      "careers_url": "https://boards.greenhouse.io/atlassian",
+      "ats": "greenhouse",
+      "slug": "atlassian",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Jira",
+      "careers_url": "https://boards.greenhouse.io/atlassian",
+      "ats": "greenhouse",
+      "slug": "atlassian",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Confluence",
+      "careers_url": "https://boards.greenhouse.io/atlassian",
+      "ats": "greenhouse",
+      "slug": "atlassian",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Twist",
+      "careers_url": "https://jobs.lever.co/doist",
+      "ats": "lever",
+      "slug": "doist",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Slack",
+      "careers_url": "https://boards.greenhouse.io/slack",
+      "ats": "greenhouse",
+      "slug": "slack",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Discord",
+      "careers_url": "https://boards.greenhouse.io/discord",
+      "ats": "greenhouse",
+      "slug": "discord",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Zoom",
+      "careers_url": "https://boards.greenhouse.io/zoom",
+      "ats": "greenhouse",
+      "slug": "zoom",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Calendly",
+      "careers_url": "https://boards.greenhouse.io/calendly",
+      "ats": "greenhouse",
+      "slug": "calendly",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Cal.com",
+      "careers_url": "https://jobs.lever.co/calcom",
+      "ats": "lever",
+      "slug": "calcom",
+      "source": "curated_remote"
+    },
+    {
+      "name": "SavvyCal",
+      "careers_url": "https://jobs.lever.co/savvycal",
+      "ats": "lever",
+      "slug": "savvycal",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Doodle",
+      "careers_url": "https://boards.greenhouse.io/doodle",
+      "ats": "greenhouse",
+      "slug": "doodle",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Clockwise",
+      "careers_url": "https://boards.greenhouse.io/clockwise",
+      "ats": "greenhouse",
+      "slug": "clockwise",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Reclaim",
+      "careers_url": "https://jobs.lever.co/reclaimai",
+      "ats": "lever",
+      "slug": "reclaimai",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Motion",
+      "careers_url": "https://jobs.lever.co/usemotion",
+      "ats": "lever",
+      "slug": "usemotion",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Akiflow",
+      "careers_url": "https://jobs.lever.co/akiflow",
+      "ats": "lever",
+      "slug": "akiflow",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Sunsama",
+      "careers_url": "https://jobs.lever.co/sunsama",
+      "ats": "lever",
+      "slug": "sunsama",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Craft",
+      "careers_url": "https://jobs.lever.co/craft",
+      "ats": "lever",
+      "slug": "craft",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Obsidian",
+      "careers_url": "https://jobs.lever.co/obsidian",
+      "ats": "lever",
+      "slug": "obsidian",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Roam Research",
+      "careers_url": "https://jobs.lever.co/roamresearch",
+      "ats": "lever",
+      "slug": "roamresearch",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Logseq",
+      "careers_url": "https://jobs.lever.co/logseq",
+      "ats": "lever",
+      "slug": "logseq",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Mem",
+      "careers_url": "https://jobs.lever.co/mem",
+      "ats": "lever",
+      "slug": "mem",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Capacities",
+      "careers_url": "https://jobs.lever.co/capacities",
+      "ats": "lever",
+      "slug": "capacities",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Napkin AI",
+      "careers_url": "https://jobs.lever.co/napkinai",
+      "ats": "lever",
+      "slug": "napkinai",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Gamma",
+      "careers_url": "https://jobs.lever.co/gamma",
+      "ats": "lever",
+      "slug": "gamma",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Beautiful.ai",
+      "careers_url": "https://jobs.lever.co/beautifulai",
+      "ats": "lever",
+      "slug": "beautifulai",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Adobe",
+      "careers_url": "https://boards.greenhouse.io/adobe",
+      "ats": "greenhouse",
+      "slug": "adobe",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Affinity",
+      "careers_url": "https://jobs.lever.co/affinity",
+      "ats": "lever",
+      "slug": "affinity",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Pixelmator",
+      "careers_url": "https://jobs.lever.co/pixelmator",
+      "ats": "lever",
+      "slug": "pixelmator",
+      "source": "curated_remote"
+    },
+    {
+      "name": "GIMP",
+      "careers_url": "https://jobs.lever.co/gimp",
+      "ats": "lever",
+      "slug": "gimp",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Inkscape",
+      "careers_url": "https://jobs.lever.co/inkscape",
+      "ats": "lever",
+      "slug": "inkscape",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Blender",
+      "careers_url": "https://jobs.lever.co/blender",
+      "ats": "lever",
+      "slug": "blender",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Godot Engine",
+      "careers_url": "https://jobs.lever.co/godot",
+      "ats": "lever",
+      "slug": "godot",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Unity",
+      "careers_url": "https://boards.greenhouse.io/unity",
+      "ats": "greenhouse",
+      "slug": "unity",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Unreal Engine",
+      "careers_url": "https://jobs.lever.co/epicgames",
+      "ats": "lever",
+      "slug": "epicgames",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Bevy Engine",
+      "careers_url": "https://jobs.lever.co/bevyengine",
+      "ats": "lever",
+      "slug": "bevyengine",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Roblox",
+      "careers_url": "https://boards.greenhouse.io/roblox",
+      "ats": "greenhouse",
+      "slug": "roblox",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Rec Room",
+      "careers_url": "https://jobs.lever.co/recroom",
+      "ats": "lever",
+      "slug": "recroom",
+      "source": "curated_remote"
+    },
+    {
+      "name": "VRChat",
+      "careers_url": "https://jobs.lever.co/vrchat",
+      "ats": "lever",
+      "slug": "vrchat",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Decentraland",
+      "careers_url": "https://jobs.lever.co/decentraland",
+      "ats": "lever",
+      "slug": "decentraland",
+      "source": "curated_remote"
+    },
+    {
+      "name": "OpenSea",
+      "careers_url": "https://boards.greenhouse.io/opensea",
+      "ats": "greenhouse",
+      "slug": "opensea",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Coinbase",
+      "careers_url": "https://boards.greenhouse.io/coinbase",
+      "ats": "greenhouse",
+      "slug": "coinbase",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Binance",
+      "careers_url": "https://jobs.lever.co/binance",
+      "ats": "lever",
+      "slug": "binance",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Kraken",
+      "careers_url": "https://boards.greenhouse.io/kraken",
+      "ats": "greenhouse",
+      "slug": "kraken",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Ledger",
+      "careers_url": "https://jobs.lever.co/ledger",
+      "ats": "lever",
+      "slug": "ledger",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Trezor",
+      "careers_url": "https://jobs.lever.co/trezor",
+      "ats": "lever",
+      "slug": "trezor",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Chainlink",
+      "careers_url": "https://jobs.lever.co/chainlink",
+      "ats": "lever",
+      "slug": "chainlink",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Uniswap",
+      "careers_url": "https://jobs.lever.co/uniswap",
+      "ats": "lever",
+      "slug": "uniswap",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Alchemy",
+      "careers_url": "https://boards.greenhouse.io/alchemy",
+      "ats": "greenhouse",
+      "slug": "alchemy",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Infura",
+      "careers_url": "https://boards.greenhouse.io/infura",
+      "ats": "greenhouse",
+      "slug": "infura",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Moralis",
+      "careers_url": "https://jobs.lever.co/moralis",
+      "ats": "lever",
+      "slug": "moralis",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Thirdweb",
+      "careers_url": "https://jobs.lever.co/thirdweb",
+      "ats": "lever",
+      "slug": "thirdweb",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Fleek",
+      "careers_url": "https://jobs.lever.co/fleek",
+      "ats": "lever",
+      "slug": "fleek",
+      "source": "curated_remote"
+    },
+    {
+      "name": "IPFS / Protocol Labs",
+      "careers_url": "https://boards.greenhouse.io/protocollabs",
+      "ats": "greenhouse",
+      "slug": "protocollabs",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Filecoin",
+      "careers_url": "https://boards.greenhouse.io/protocollabs",
+      "ats": "greenhouse",
+      "slug": "protocollabs",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Ethereum Foundation",
+      "careers_url": "https://jobs.lever.co/ethereumfoundation",
+      "ats": "lever",
+      "slug": "ethereumfoundation",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Solana Labs",
+      "careers_url": "https://boards.greenhouse.io/solanalabs",
+      "ats": "greenhouse",
+      "slug": "solanalabs",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Near Protocol",
+      "careers_url": "https://jobs.lever.co/nearprotocol",
+      "ats": "lever",
+      "slug": "nearprotocol",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Aptos Labs",
+      "careers_url": "https://boards.greenhouse.io/aptos",
+      "ats": "greenhouse",
+      "slug": "aptos",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Sui",
+      "careers_url": "https://boards.greenhouse.io/mysten",
+      "ats": "greenhouse",
+      "slug": "mysten",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Starkware",
+      "careers_url": "https://boards.greenhouse.io/starkware",
+      "ats": "greenhouse",
+      "slug": "starkware",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Polygon",
+      "careers_url": "https://boards.greenhouse.io/polygon",
+      "ats": "greenhouse",
+      "slug": "polygon",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Arbitrum",
+      "careers_url": "https://boards.greenhouse.io/arbitrum",
+      "ats": "greenhouse",
+      "slug": "arbitrum",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Optimism",
+      "careers_url": "https://boards.greenhouse.io/optimism",
+      "ats": "greenhouse",
+      "slug": "optimism",
+      "source": "curated_remote"
+    },
+    {
+      "name": "zkSync",
+      "careers_url": "https://jobs.lever.co/zksync",
+      "ats": "lever",
+      "slug": "zksync",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Base",
+      "careers_url": "https://boards.greenhouse.io/base",
+      "ats": "greenhouse",
+      "slug": "base",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Avalanche",
+      "careers_url": "https://boards.greenhouse.io/ava",
+      "ats": "greenhouse",
+      "slug": "ava",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Stellar",
+      "careers_url": "https://boards.greenhouse.io/stellar",
+      "ats": "greenhouse",
+      "slug": "stellar",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Ripple",
+      "careers_url": "https://boards.greenhouse.io/ripple",
+      "ats": "greenhouse",
+      "slug": "ripple",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Phantom",
+      "careers_url": "https://jobs.lever.co/phantom",
+      "ats": "lever",
+      "slug": "phantom",
+      "source": "curated_remote"
+    },
+    {
+      "name": "MetaMask",
+      "careers_url": "https://boards.greenhouse.io/metamask",
+      "ats": "greenhouse",
+      "slug": "metamask",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Rainbow Wallet",
+      "careers_url": "https://jobs.lever.co/rainbow",
+      "ats": "lever",
+      "slug": "rainbow",
+      "source": "curated_remote"
+    },
+    {
+      "name": "WalletConnect",
+      "careers_url": "https://jobs.lever.co/walletconnect",
+      "ats": "lever",
+      "slug": "walletconnect",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Safe",
+      "careers_url": "https://jobs.lever.co/safe",
+      "ats": "lever",
+      "slug": "safe",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Gnosis Chain",
+      "careers_url": "https://jobs.lever.co/gnosis",
+      "ats": "lever",
+      "slug": "gnosis",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Consensys",
+      "careers_url": "https://boards.greenhouse.io/consensys",
+      "ats": "greenhouse",
+      "slug": "consensys",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hardhat",
+      "careers_url": "https://jobs.lever.co/hardhat",
+      "ats": "lever",
+      "slug": "hardhat",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Foundry",
+      "careers_url": "https://jobs.lever.co/foundry",
+      "ats": "lever",
+      "slug": "foundry",
+      "source": "curated_remote"
+    },
+    {
+      "name": "OpenZeppelin",
+      "careers_url": "https://jobs.lever.co/openzeppelin",
+      "ats": "lever",
+      "slug": "openzeppelin",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Chainalysis",
+      "careers_url": "https://boards.greenhouse.io/chainalysis",
+      "ats": "greenhouse",
+      "slug": "chainalysis",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Elliptic",
+      "careers_url": "https://boards.greenhouse.io/elliptic",
+      "ats": "greenhouse",
+      "slug": "elliptic",
+      "source": "curated_remote"
+    },
+    {
+      "name": "TRM Labs",
+      "careers_url": "https://boards.greenhouse.io/trmlabs",
+      "ats": "greenhouse",
+      "slug": "trmlabs",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Nansen",
+      "careers_url": "https://jobs.lever.co/nansen",
+      "ats": "lever",
+      "slug": "nansen",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Dune Analytics",
+      "careers_url": "https://jobs.lever.co/dune",
+      "ats": "lever",
+      "slug": "dune",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Messari",
+      "careers_url": "https://boards.greenhouse.io/messari",
+      "ats": "greenhouse",
+      "slug": "messari",
+      "source": "curated_remote"
+    },
+    {
+      "name": "CoinGecko",
+      "careers_url": "https://jobs.lever.co/coingecko",
+      "ats": "lever",
+      "slug": "coingecko",
+      "source": "curated_remote"
+    },
+    {
+      "name": "CoinMarketCap",
+      "careers_url": "https://boards.greenhouse.io/coinmarketcap",
+      "ats": "greenhouse",
+      "slug": "coinmarketcap",
+      "source": "curated_remote"
+    },
+    {
+      "name": "The Block",
+      "careers_url": "https://jobs.lever.co/theblock",
+      "ats": "lever",
+      "slug": "theblock",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Blockworks",
+      "careers_url": "https://jobs.lever.co/blockworks",
+      "ats": "lever",
+      "slug": "blockworks",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Decrypt",
+      "careers_url": "https://jobs.lever.co/decrypt",
+      "ats": "lever",
+      "slug": "decrypt",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Bankless",
+      "careers_url": "https://jobs.lever.co/bankless",
+      "ats": "lever",
+      "slug": "bankless",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Milk Road",
+      "careers_url": "https://jobs.lever.co/milkroad",
+      "ats": "lever",
+      "slug": "milkroad",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Morning Brew",
+      "careers_url": "https://boards.greenhouse.io/morningbrew",
+      "ats": "greenhouse",
+      "slug": "morningbrew",
+      "source": "curated_remote"
+    },
+    {
+      "name": "The Hustle",
+      "careers_url": "https://boards.greenhouse.io/thehustle",
+      "ats": "greenhouse",
+      "slug": "thehustle",
+      "source": "curated_remote"
+    },
+    {
+      "name": "TLDR",
+      "careers_url": "https://jobs.lever.co/tldr",
+      "ats": "lever",
+      "slug": "tldr",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Mailchimp",
+      "careers_url": "https://boards.greenhouse.io/mailchimp",
+      "ats": "greenhouse",
+      "slug": "mailchimp",
+      "source": "curated_remote"
+    },
+    {
+      "name": "ActiveCampaign",
+      "careers_url": "https://boards.greenhouse.io/activecampaign",
+      "ats": "greenhouse",
+      "slug": "activecampaign",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Drip",
+      "careers_url": "https://jobs.lever.co/drip",
+      "ats": "lever",
+      "slug": "drip",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Omnisend",
+      "careers_url": "https://jobs.lever.co/omnisend",
+      "ats": "lever",
+      "slug": "omnisend",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Sendgrid",
+      "careers_url": "https://boards.greenhouse.io/sendgrid",
+      "ats": "greenhouse",
+      "slug": "sendgrid",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Mailgun",
+      "careers_url": "https://boards.greenhouse.io/mailgun",
+      "ats": "greenhouse",
+      "slug": "mailgun",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Postmark",
+      "careers_url": "https://jobs.lever.co/postmark",
+      "ats": "lever",
+      "slug": "postmark",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Resend",
+      "careers_url": "https://jobs.lever.co/resend",
+      "ats": "lever",
+      "slug": "resend",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Loops",
+      "careers_url": "https://jobs.lever.co/loops",
+      "ats": "lever",
+      "slug": "loops",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Buttondown",
+      "careers_url": "https://jobs.lever.co/buttondown",
+      "ats": "lever",
+      "slug": "buttondown",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Listmonk",
+      "careers_url": "https://jobs.lever.co/listmonk",
+      "ats": "lever",
+      "slug": "listmonk",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Mailtrap",
+      "careers_url": "https://jobs.lever.co/mailtrap",
+      "ats": "lever",
+      "slug": "mailtrap",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Vonage",
+      "careers_url": "https://boards.greenhouse.io/vonage",
+      "ats": "greenhouse",
+      "slug": "vonage",
+      "source": "curated_remote"
+    },
+    {
+      "name": "MessageBird",
+      "careers_url": "https://boards.greenhouse.io/messagebird",
+      "ats": "greenhouse",
+      "slug": "messagebird",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Bandwidth",
+      "careers_url": "https://boards.greenhouse.io/bandwidth",
+      "ats": "greenhouse",
+      "slug": "bandwidth",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Telnyx",
+      "careers_url": "https://boards.greenhouse.io/telnyx",
+      "ats": "greenhouse",
+      "slug": "telnyx",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Plivo",
+      "careers_url": "https://jobs.lever.co/plivo",
+      "ats": "lever",
+      "slug": "plivo",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Sinch",
+      "careers_url": "https://boards.greenhouse.io/sinch",
+      "ats": "greenhouse",
+      "slug": "sinch",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Nexmo",
+      "careers_url": "https://boards.greenhouse.io/vonage",
+      "ats": "greenhouse",
+      "slug": "vonage",
+      "source": "curated_remote"
+    },
+    {
+      "name": "LiveKit",
+      "careers_url": "https://jobs.lever.co/livekit",
+      "ats": "lever",
+      "slug": "livekit",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Agora",
+      "careers_url": "https://boards.greenhouse.io/agora",
+      "ats": "greenhouse",
+      "slug": "agora",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Daily.co",
+      "careers_url": "https://jobs.lever.co/daily",
+      "ats": "lever",
+      "slug": "daily",
+      "source": "curated_remote"
+    },
+    {
+      "name": "100ms",
+      "careers_url": "https://jobs.lever.co/100ms",
+      "ats": "lever",
+      "slug": "100ms",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Stream",
+      "careers_url": "https://boards.greenhouse.io/stream",
+      "ats": "greenhouse",
+      "slug": "stream",
+      "source": "curated_remote"
+    },
+    {
+      "name": "PubNub",
+      "careers_url": "https://boards.greenhouse.io/pubnub",
+      "ats": "greenhouse",
+      "slug": "pubnub",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Ably",
+      "careers_url": "https://jobs.lever.co/ably",
+      "ats": "lever",
+      "slug": "ably",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Pusher",
+      "careers_url": "https://boards.greenhouse.io/pusher",
+      "ats": "greenhouse",
+      "slug": "pusher",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Socket.io",
+      "careers_url": "https://jobs.lever.co/socketio",
+      "ats": "lever",
+      "slug": "socketio",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Cloudinary",
+      "careers_url": "https://boards.greenhouse.io/cloudinary",
+      "ats": "greenhouse",
+      "slug": "cloudinary",
+      "source": "curated_remote"
+    },
+    {
+      "name": "imgix",
+      "careers_url": "https://boards.greenhouse.io/imgix",
+      "ats": "greenhouse",
+      "slug": "imgix",
+      "source": "curated_remote"
+    },
+    {
+      "name": "ImageKit",
+      "careers_url": "https://jobs.lever.co/imagekit",
+      "ats": "lever",
+      "slug": "imagekit",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Uploadcare",
+      "careers_url": "https://jobs.lever.co/uploadcare",
+      "ats": "lever",
+      "slug": "uploadcare",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Mux",
+      "careers_url": "https://boards.greenhouse.io/mux",
+      "ats": "greenhouse",
+      "slug": "mux",
+      "source": "curated_remote"
+    },
+    {
+      "name": "JW Player",
+      "careers_url": "https://boards.greenhouse.io/jwplayer",
+      "ats": "greenhouse",
+      "slug": "jwplayer",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Wistia",
+      "careers_url": "https://boards.greenhouse.io/wistia",
+      "ats": "greenhouse",
+      "slug": "wistia",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Grain",
+      "careers_url": "https://jobs.lever.co/grain",
+      "ats": "lever",
+      "slug": "grain",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Gong",
+      "careers_url": "https://boards.greenhouse.io/gong",
+      "ats": "greenhouse",
+      "slug": "gong",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Chorus.ai",
+      "careers_url": "https://boards.greenhouse.io/chorus",
+      "ats": "greenhouse",
+      "slug": "chorus",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Clari",
+      "careers_url": "https://boards.greenhouse.io/clari",
+      "ats": "greenhouse",
+      "slug": "clari",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Outreach",
+      "careers_url": "https://boards.greenhouse.io/outreach",
+      "ats": "greenhouse",
+      "slug": "outreach",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Salesloft",
+      "careers_url": "https://boards.greenhouse.io/salesloft",
+      "ats": "greenhouse",
+      "slug": "salesloft",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Apollo",
+      "careers_url": "https://boards.greenhouse.io/apollo",
+      "ats": "greenhouse",
+      "slug": "apollo",
+      "source": "curated_remote"
+    },
+    {
+      "name": "ZoomInfo",
+      "careers_url": "https://boards.greenhouse.io/zoominfo",
+      "ats": "greenhouse",
+      "slug": "zoominfo",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Clearbit",
+      "careers_url": "https://boards.greenhouse.io/clearbit",
+      "ats": "greenhouse",
+      "slug": "clearbit",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Lusha",
+      "careers_url": "https://boards.greenhouse.io/lusha",
+      "ats": "greenhouse",
+      "slug": "lusha",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hunter.io",
+      "careers_url": "https://jobs.lever.co/hunterio",
+      "ats": "lever",
+      "slug": "hunterio",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Phantombuster",
+      "careers_url": "https://jobs.lever.co/phantombuster",
+      "ats": "lever",
+      "slug": "phantombuster",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Make (Integromat)",
+      "careers_url": "https://boards.greenhouse.io/make",
+      "ats": "greenhouse",
+      "slug": "make",
+      "source": "curated_remote"
+    },
+    {
+      "name": "n8n",
+      "careers_url": "https://jobs.lever.co/n8n",
+      "ats": "lever",
+      "slug": "n8n",
+      "source": "curated_remote"
+    },
+    {
+      "name": "IFTTT",
+      "careers_url": "https://boards.greenhouse.io/ifttt",
+      "ats": "greenhouse",
+      "slug": "ifttt",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Automate.io",
+      "careers_url": "https://jobs.lever.co/automateio",
+      "ats": "lever",
+      "slug": "automateio",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Workato",
+      "careers_url": "https://boards.greenhouse.io/workato",
+      "ats": "greenhouse",
+      "slug": "workato",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Tray.io",
+      "careers_url": "https://boards.greenhouse.io/tray",
+      "ats": "greenhouse",
+      "slug": "tray",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Boomi",
+      "careers_url": "https://boards.greenhouse.io/boomi",
+      "ats": "greenhouse",
+      "slug": "boomi",
+      "source": "curated_remote"
+    },
+    {
+      "name": "MuleSoft",
+      "careers_url": "https://boards.greenhouse.io/mulesoft",
+      "ats": "greenhouse",
+      "slug": "mulesoft",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Celigo",
+      "careers_url": "https://boards.greenhouse.io/celigo",
+      "ats": "greenhouse",
+      "slug": "celigo",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Jitterbit",
+      "careers_url": "https://boards.greenhouse.io/jitterbit",
+      "ats": "greenhouse",
+      "slug": "jitterbit",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Informatica",
+      "careers_url": "https://boards.greenhouse.io/informatica",
+      "ats": "greenhouse",
+      "slug": "informatica",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Talend",
+      "careers_url": "https://boards.greenhouse.io/talend",
+      "ats": "greenhouse",
+      "slug": "talend",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Stitch",
+      "careers_url": "https://boards.greenhouse.io/stitch",
+      "ats": "greenhouse",
+      "slug": "stitch",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Matillion",
+      "careers_url": "https://boards.greenhouse.io/matillion",
+      "ats": "greenhouse",
+      "slug": "matillion",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Rivery",
+      "careers_url": "https://jobs.lever.co/rivery",
+      "ats": "lever",
+      "slug": "rivery",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hevo",
+      "careers_url": "https://boards.greenhouse.io/hevo",
+      "ats": "greenhouse",
+      "slug": "hevo",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Singer",
+      "careers_url": "https://jobs.lever.co/singer",
+      "ats": "lever",
+      "slug": "singer",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Meltano",
+      "careers_url": "https://boards.greenhouse.io/meltano",
+      "ats": "greenhouse",
+      "slug": "meltano",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Keboola",
+      "careers_url": "https://jobs.lever.co/keboola",
+      "ats": "lever",
+      "slug": "keboola",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Xplenty",
+      "careers_url": "https://jobs.lever.co/xplenty",
+      "ats": "lever",
+      "slug": "xplenty",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Alooma",
+      "careers_url": "https://jobs.lever.co/alooma",
+      "ats": "lever",
+      "slug": "alooma",
+      "source": "curated_remote"
+    },
+    {
+      "name": "RudderStack",
+      "careers_url": "https://jobs.lever.co/rudderstack",
+      "ats": "lever",
+      "slug": "rudderstack",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Snowplow",
+      "careers_url": "https://boards.greenhouse.io/snowplow",
+      "ats": "greenhouse",
+      "slug": "snowplow",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Microsoft",
+      "careers_url": "https://boards.greenhouse.io/microsoft",
+      "ats": "greenhouse",
+      "slug": "microsoft",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Google",
+      "careers_url": "https://boards.greenhouse.io/google",
+      "ats": "greenhouse",
+      "slug": "google",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Amazon",
+      "careers_url": "https://boards.greenhouse.io/amazon",
+      "ats": "greenhouse",
+      "slug": "amazon",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Meta",
+      "careers_url": "https://boards.greenhouse.io/facebook",
+      "ats": "greenhouse",
+      "slug": "facebook",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Apple",
+      "careers_url": "https://boards.greenhouse.io/apple",
+      "ats": "greenhouse",
+      "slug": "apple",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Netflix",
+      "careers_url": "https://boards.greenhouse.io/netflix",
+      "ats": "greenhouse",
+      "slug": "netflix",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Spotify",
+      "careers_url": "https://boards.greenhouse.io/spotify",
+      "ats": "greenhouse",
+      "slug": "spotify",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Twitter / X",
+      "careers_url": "https://boards.greenhouse.io/twitter",
+      "ats": "greenhouse",
+      "slug": "twitter",
+      "source": "curated_remote"
+    },
+    {
+      "name": "LinkedIn",
+      "careers_url": "https://boards.greenhouse.io/linkedin",
+      "ats": "greenhouse",
+      "slug": "linkedin",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Salesforce",
+      "careers_url": "https://boards.greenhouse.io/salesforce",
+      "ats": "greenhouse",
+      "slug": "salesforce",
+      "source": "curated_remote"
+    },
+    {
+      "name": "SAP",
+      "careers_url": "https://boards.greenhouse.io/sap",
+      "ats": "greenhouse",
+      "slug": "sap",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Oracle",
+      "careers_url": "https://boards.greenhouse.io/oracle",
+      "ats": "greenhouse",
+      "slug": "oracle",
+      "source": "curated_remote"
+    },
+    {
+      "name": "IBM",
+      "careers_url": "https://boards.greenhouse.io/ibm",
+      "ats": "greenhouse",
+      "slug": "ibm",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Cisco",
+      "careers_url": "https://boards.greenhouse.io/cisco",
+      "ats": "greenhouse",
+      "slug": "cisco",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Dell",
+      "careers_url": "https://boards.greenhouse.io/dell",
+      "ats": "greenhouse",
+      "slug": "dell",
+      "source": "curated_remote"
+    },
+    {
+      "name": "HP",
+      "careers_url": "https://boards.greenhouse.io/hp",
+      "ats": "greenhouse",
+      "slug": "hp",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Intel",
+      "careers_url": "https://boards.greenhouse.io/intel",
+      "ats": "greenhouse",
+      "slug": "intel",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Nvidia",
+      "careers_url": "https://boards.greenhouse.io/nvidia",
+      "ats": "greenhouse",
+      "slug": "nvidia",
+      "source": "curated_remote"
+    },
+    {
+      "name": "AMD",
+      "careers_url": "https://boards.greenhouse.io/amd",
+      "ats": "greenhouse",
+      "slug": "amd",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Qualcomm",
+      "careers_url": "https://boards.greenhouse.io/qualcomm",
+      "ats": "greenhouse",
+      "slug": "qualcomm",
+      "source": "curated_remote"
+    },
+    {
+      "name": "ARM",
+      "careers_url": "https://boards.greenhouse.io/arm",
+      "ats": "greenhouse",
+      "slug": "arm",
+      "source": "curated_remote"
+    },
+    {
+      "name": "TSMC",
+      "careers_url": "https://boards.greenhouse.io/tsmc",
+      "ats": "greenhouse",
+      "slug": "tsmc",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Palantir",
+      "careers_url": "https://boards.greenhouse.io/palantir",
+      "ats": "greenhouse",
+      "slug": "palantir",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Databricks",
+      "careers_url": "https://boards.greenhouse.io/databricks",
+      "ats": "greenhouse",
+      "slug": "databricks",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Astronomer",
+      "careers_url": "https://boards.greenhouse.io/astronomer",
+      "ats": "greenhouse",
+      "slug": "astronomer",
+      "source": "curated_remote"
+    },
+    {
+      "name": "OpenLineage",
+      "careers_url": "https://jobs.lever.co/openlineage",
+      "ats": "lever",
+      "slug": "openlineage",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Apache Spark",
+      "careers_url": "https://boards.greenhouse.io/apachespark",
+      "ats": "greenhouse",
+      "slug": "apachespark",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Flink",
+      "careers_url": "https://boards.greenhouse.io/apacheflink",
+      "ats": "greenhouse",
+      "slug": "apacheflink",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Kafka",
+      "careers_url": "https://boards.greenhouse.io/confluent",
+      "ats": "greenhouse",
+      "slug": "confluent",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Pulsar",
+      "careers_url": "https://boards.greenhouse.io/streamnative",
+      "ats": "greenhouse",
+      "slug": "streamnative",
+      "source": "curated_remote"
+    },
+    {
+      "name": "RabbitMQ",
+      "careers_url": "https://boards.greenhouse.io/cloudamqp",
+      "ats": "greenhouse",
+      "slug": "cloudamqp",
+      "source": "curated_remote"
+    },
+    {
+      "name": "NATS",
+      "careers_url": "https://jobs.lever.co/nats",
+      "ats": "lever",
+      "slug": "nats",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Redis",
+      "careers_url": "https://boards.greenhouse.io/redis",
+      "ats": "greenhouse",
+      "slug": "redis",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Memcached",
+      "careers_url": "https://boards.greenhouse.io/memcached",
+      "ats": "greenhouse",
+      "slug": "memcached",
+      "source": "curated_remote"
+    },
+    {
+      "name": "ScyllaDB",
+      "careers_url": "https://boards.greenhouse.io/scylladb",
+      "ats": "greenhouse",
+      "slug": "scylladb",
+      "source": "curated_remote"
+    },
+    {
+      "name": "YugabyteDB",
+      "careers_url": "https://boards.greenhouse.io/yugabyte",
+      "ats": "greenhouse",
+      "slug": "yugabyte",
+      "source": "curated_remote"
+    },
+    {
+      "name": "CockroachDB",
+      "careers_url": "https://boards.greenhouse.io/cockroachlabs",
+      "ats": "greenhouse",
+      "slug": "cockroachlabs",
+      "source": "curated_remote"
+    },
+    {
+      "name": "TiDB",
+      "careers_url": "https://boards.greenhouse.io/pingcap",
+      "ats": "greenhouse",
+      "slug": "pingcap",
+      "source": "curated_remote"
+    },
+    {
+      "name": "ClickHouse",
+      "careers_url": "https://boards.greenhouse.io/clickhouse",
+      "ats": "greenhouse",
+      "slug": "clickhouse",
+      "source": "curated_remote"
+    },
+    {
+      "name": "StarRocks",
+      "careers_url": "https://boards.greenhouse.io/starrocks",
+      "ats": "greenhouse",
+      "slug": "starrocks",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Doris",
+      "careers_url": "https://boards.greenhouse.io/doris",
+      "ats": "greenhouse",
+      "slug": "doris",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Druid",
+      "careers_url": "https://boards.greenhouse.io/druid",
+      "ats": "greenhouse",
+      "slug": "druid",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Pinot",
+      "careers_url": "https://boards.greenhouse.io/pinot",
+      "ats": "greenhouse",
+      "slug": "pinot",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Trino",
+      "careers_url": "https://boards.greenhouse.io/trino",
+      "ats": "greenhouse",
+      "slug": "trino",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Presto",
+      "careers_url": "https://boards.greenhouse.io/presto",
+      "ats": "greenhouse",
+      "slug": "presto",
+      "source": "curated_remote"
+    },
+    {
+      "name": "duckdb",
+      "careers_url": "https://jobs.lever.co/duckdblabs",
+      "ats": "lever",
+      "slug": "duckdblabs",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hive",
+      "careers_url": "https://boards.greenhouse.io/hive",
+      "ats": "greenhouse",
+      "slug": "hive",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Impala",
+      "careers_url": "https://boards.greenhouse.io/impala",
+      "ats": "greenhouse",
+      "slug": "impala",
+      "source": "curated_remote"
+    },
+    {
+      "name": "Kylin",
+      "careers_url": "https://boards.greenhouse.io/kylin",
+      "ats": "greenhouse",
+      "slug": "kylin",
+      "source": "curated_remote"
+    },
+    {
+      "name": "AvantStay",
+      "careers_url": "https://apply.workable.com/avantstay/",
+      "ats": "workable",
+      "slug": "avantstay",
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Intuition Machines, Inc.",
+      "careers_url": "https://apply.workable.com/imachines/",
+      "ats": "workable",
+      "slug": "imachines",
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Patients Know Best",
+      "careers_url": "https://apply.workable.com/patients/",
+      "ats": "workable",
+      "slug": "patients",
+      "source": "lukasz_awesome"
+    }
+  ],
+  "custom_ats": [
+    {
+      "name": "100Telecommutejobs",
+      "careers_url": "https://100telecommutejobs.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "10Up",
+      "careers_url": "https://10up.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "A2Hosting",
+      "careers_url": "https://a2hosting.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "About",
+      "careers_url": "https://about.gitlab.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Adhocteam",
+      "careers_url": "https://adhocteam.us/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Adzuna",
+      "careers_url": "https://adzuna.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Aether",
+      "careers_url": "https://aether.app/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Ai Jobs",
+      "careers_url": "https://ai-jobs.net",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Aiga",
+      "careers_url": "https://aiga.org/design-jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Airtable",
+      "careers_url": "https://airtable.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Akamai",
+      "careers_url": "https://akamai.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Arc",
+      "careers_url": "https://arc.dev",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Articulate",
+      "careers_url": "https://articulate.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Auth0",
+      "careers_url": "https://auth0.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Authenticjobs",
+      "careers_url": "https://authenticjobs.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Automattic",
+      "careers_url": "https://automattic.com/work-with-us",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Basecamp",
+      "careers_url": "https://basecamp.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Bayt",
+      "careers_url": "https://bayt.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Behance",
+      "careers_url": "https://behance.net/joblist",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Blacktechpipeline",
+      "careers_url": "https://blacktechpipeline.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Blockchain",
+      "careers_url": "https://blockchain.works-hub.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Bluehost",
+      "careers_url": "https://bluehost.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Buffer",
+      "careers_url": "https://buffer.com/journey",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Builtin",
+      "careers_url": "https://builtin.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Canonical",
+      "careers_url": "https://canonical.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Careerbuilder",
+      "careers_url": "https://careerbuilder.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Careerjet",
+      "careers_url": "https://careerjet.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Careerone",
+      "careers_url": "https://careerone.com.au",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Carrerajob",
+      "careers_url": "https://carrerajob.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Catho",
+      "careers_url": "https://catho.com.br",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Checkpoint",
+      "careers_url": "https://checkpoint.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Circleci",
+      "careers_url": "https://circleci.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Cloudflare",
+      "careers_url": "https://cloudflare.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Coda",
+      "careers_url": "https://coda.io/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Confluent",
+      "careers_url": "https://confluent.io/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Coroflot",
+      "careers_url": "https://coroflot.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Crossover",
+      "careers_url": "https://crossover.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Crowdstrike",
+      "careers_url": "https://crowdstrike.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Crypto",
+      "careers_url": "https://crypto.jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Cryptocurrencyjobs",
+      "careers_url": "https://cryptocurrencyjobs.co",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Cv Library",
+      "careers_url": "https://cv-library.co.uk",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Cybereason",
+      "careers_url": "https://cybereason.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Dailyremote",
+      "careers_url": "https://dailyremote.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Darktrace",
+      "careers_url": "https://darktrace.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Datadoghq",
+      "careers_url": "https://datadoghq.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Datasciencejobs",
+      "careers_url": "https://datasciencejobs.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Devitjobs",
+      "careers_url": "https://devitjobs.de",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Dice",
+      "careers_url": "https://dice.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Digitalocean",
+      "careers_url": "https://digitalocean.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Diversity",
+      "careers_url": "https://diversity.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Doist",
+      "careers_url": "https://doist.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Dribbble",
+      "careers_url": "https://dribbble.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Duckduckgo",
+      "careers_url": "https://duckduckgo.com/hire",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Dynamitejobs",
+      "careers_url": "https://dynamitejobs.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Dynatrace",
+      "careers_url": "https://dynatrace.com/company/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Elastic",
+      "careers_url": "https://elastic.co/about/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Eluta",
+      "careers_url": "https://eluta.ca",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Eu Remotejobs",
+      "careers_url": "https://eu-remotejobs.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Europe Remotely",
+      "careers_url": "https://europe-remotely.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Fastly",
+      "careers_url": "https://fastly.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Figma",
+      "careers_url": "https://figma.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Fireeye",
+      "careers_url": "https://fireeye.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Flexjobs",
+      "careers_url": "https://flexjobs.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Fly",
+      "careers_url": "https://fly.io/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Flywheel",
+      "careers_url": "https://flywheel.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Fortinet",
+      "careers_url": "https://fortinet.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Foundit",
+      "careers_url": "https://foundit.in",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Freelancewritinggigs",
+      "careers_url": "https://freelancewritinggigs.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Functional",
+      "careers_url": "https://functional.works-hub.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Germantechjobs",
+      "careers_url": "https://germantechjobs.de",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Ghost",
+      "careers_url": "https://ghost.org/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Glassdoor",
+      "careers_url": "https://glassdoor.co.uk",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Godaddy",
+      "careers_url": "https://godaddy.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Golang",
+      "careers_url": "https://golang.cafe",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Growthhackers",
+      "careers_url": "https://growthhackers.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Gulftalent",
+      "careers_url": "https://gulftalent.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hacker News",
+      "careers_url": "https://hacker-news.firebaseio.com/v0/item/whoishiring",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Harness",
+      "careers_url": "https://harness.io/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hashicorp",
+      "careers_url": "https://hashicorp.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hetzner",
+      "careers_url": "https://hetzner.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Himalayas",
+      "careers_url": "https://himalayas.app",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hireblacknow",
+      "careers_url": "https://hireblacknow.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hitmarker",
+      "careers_url": "https://hitmarker.net",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hostgator",
+      "careers_url": "https://hostgator.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hostinger",
+      "careers_url": "https://hostinger.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Hotjar",
+      "careers_url": "https://hotjar.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Idealist",
+      "careers_url": "https://idealist.org",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Imperva",
+      "careers_url": "https://imperva.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Inbound",
+      "careers_url": "https://inbound.org/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Inclusively",
+      "careers_url": "https://inclusively.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Indeed",
+      "careers_url": "https://indeed.co.uk",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Invisionapp",
+      "careers_url": "https://invisionapp.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Italiaremote",
+      "careers_url": "https://italiaremote.it",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Jaabz",
+      "careers_url": "https://jaabz.com/jobs/programming/remote",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Jobberde",
+      "careers_url": "https://jobberde.de",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Joblist",
+      "careers_url": "https://joblist.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Jobrack",
+      "careers_url": "https://jobrack.eu",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Jobs",
+      "careers_url": "https://jobs.ch",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Jobsdb",
+      "careers_url": "https://jobsdb.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Jobsite",
+      "careers_url": "https://jobsite.co.uk",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Jobspresso",
+      "careers_url": "https://jobspresso.co",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Jobstreet",
+      "careers_url": "https://jobstreet.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Jobup",
+      "careers_url": "https://jobup.ch",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Jooble",
+      "careers_url": "https://jooble.org",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Journalismjobs",
+      "careers_url": "https://journalismjobs.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Justremote",
+      "careers_url": "https://justremote.co",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Keyvalues",
+      "careers_url": "https://keyvalues.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Kinsta",
+      "careers_url": "https://kinsta.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Knack",
+      "careers_url": "https://knack.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Krop",
+      "careers_url": "https://krop.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Landing",
+      "careers_url": "https://landing.jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Larajobs",
+      "careers_url": "https://larajobs.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Lensa",
+      "careers_url": "https://lensa.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Limelight",
+      "careers_url": "https://limelight.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Linode",
+      "careers_url": "https://linode.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Mandiant",
+      "careers_url": "https://mandiant.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Mediabistro",
+      "careers_url": "https://mediabistro.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Mimescast",
+      "careers_url": "https://mimescast.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Mindtheproduct",
+      "careers_url": "https://mindtheproduct.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Mongodb",
+      "careers_url": "https://mongodb.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Monster",
+      "careers_url": "https://monster.ca",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Namecheap",
+      "careers_url": "https://namecheap.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Naukri",
+      "careers_url": "https://naukri.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Naukrime",
+      "careers_url": "https://naukrime.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Netlify",
+      "careers_url": "https://netlify.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Netskope",
+      "careers_url": "https://netskope.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "News",
+      "careers_url": "https://news.ycombinator.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Nodesk",
+      "careers_url": "https://nodesk.co",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Nordictechjobs",
+      "careers_url": "https://nordictechjobs.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Notion",
+      "careers_url": "https://notion.so/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Outintech",
+      "careers_url": "https://outintech.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Outsourcely",
+      "careers_url": "https://outsourcely.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Ovhcloud",
+      "careers_url": "https://ovhcloud.com/en/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Pagerduty",
+      "careers_url": "https://pagerduty.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Paloaltonetworks",
+      "careers_url": "https://paloaltonetworks.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Pangian",
+      "careers_url": "https://pangian.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Pantheon",
+      "careers_url": "https://pantheon.io/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Powertofly",
+      "careers_url": "https://powertofly.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Prisma",
+      "careers_url": "https://prisma.io/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Problogger",
+      "careers_url": "https://problogger.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Producthunt",
+      "careers_url": "https://producthunt.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Proofpoint",
+      "careers_url": "https://proofpoint.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Python",
+      "careers_url": "https://python.org/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Qualys",
+      "careers_url": "https://qualys.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Rapid7",
+      "careers_url": "https://rapid7.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Realwaystoearnmoneyonline",
+      "careers_url": "https://realwaystoearnmoneyonline.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Reed",
+      "careers_url": "https://reed.co.uk",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remote Game Jobs",
+      "careers_url": "https://remote-game-jobs.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remote Job",
+      "careers_url": "https://remote-job.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remote Jobs",
+      "careers_url": "https://remote-jobs.ie",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remote",
+      "careers_url": "https://remote.co",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remoteafrica",
+      "careers_url": "https://remoteafrica.io",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remotebase",
+      "careers_url": "https://remotebase.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remotees",
+      "careers_url": "https://remotees.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remotehub",
+      "careers_url": "https://remotehub.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remoteify",
+      "careers_url": "https://remoteify.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remoteive",
+      "careers_url": "https://remoteive.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remotejobs",
+      "careers_url": "https://remotejobs.asia",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remotejobscanada",
+      "careers_url": "https://remotejobscanada.ca",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remoteking",
+      "careers_url": "https://remoteking.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remoteleaf",
+      "careers_url": "https://remoteleaf.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remotely",
+      "careers_url": "https://remotely.io",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remoteok",
+      "careers_url": "https://remoteok.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remotesouthamerica",
+      "careers_url": "https://remotesouthamerica.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remotetechjobs",
+      "careers_url": "https://remotetechjobs.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remoteur",
+      "careers_url": "https://remoteur.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remotewlb",
+      "careers_url": "https://remotewlb.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remotework",
+      "careers_url": "https://remotework.es",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Remotive",
+      "careers_url": "https://remotive.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Repvue",
+      "careers_url": "https://repvue.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Rubyonrails",
+      "careers_url": "https://rubyonrails.org/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Salesops",
+      "careers_url": "https://salesops.io/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Scaleway",
+      "careers_url": "https://scaleway.com/en/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Scrapinghub",
+      "careers_url": "https://scrapinghub.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Seek",
+      "careers_url": "https://seek.com.au",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Sentinelone",
+      "careers_url": "https://sentinelone.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Sentry",
+      "careers_url": "https://sentry.io/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Shine",
+      "careers_url": "https://shine.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Simplyhired",
+      "careers_url": "https://simplyhired.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Siteground",
+      "careers_url": "https://siteground.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Skipthedrive",
+      "careers_url": "https://skipthedrive.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Smashingmagazine",
+      "careers_url": "https://smashingmagazine.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Snagajob",
+      "careers_url": "https://snagajob.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Snowflake",
+      "careers_url": "https://snowflake.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Stackoverrun",
+      "careers_url": "https://stackoverrun.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Stepstone",
+      "careers_url": "https://stepstone.de",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Supabase",
+      "careers_url": "https://supabase.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Superpath",
+      "careers_url": "https://superpath.co/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Supportdriven",
+      "careers_url": "https://supportdriven.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Swissdevjobs",
+      "careers_url": "https://swissdevjobs.ch",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Tanium",
+      "careers_url": "https://tanium.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Techladies",
+      "careers_url": "https://techladies.co",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Tenable",
+      "careers_url": "https://tenable.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Toggl",
+      "careers_url": "https://toggl.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Totaljobs",
+      "careers_url": "https://totaljobs.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Turing",
+      "careers_url": "https://turing.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Twilio",
+      "careers_url": "https://twilio.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Uktechjobs",
+      "careers_url": "https://uktechjobs.co.uk",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Upcloud",
+      "careers_url": "https://upcloud.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Usajobs",
+      "careers_url": "https://usajobs.gov",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Uxdesign",
+      "careers_url": "https://uxdesign.cc/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Varonis",
+      "careers_url": "https://varonis.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Virtualvocations",
+      "careers_url": "https://virtualvocations.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Vultr",
+      "careers_url": "https://vultr.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Web3",
+      "careers_url": "https://web3.career",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Webflow",
+      "careers_url": "https://webflow.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Wellfound",
+      "careers_url": "https://wellfound.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Weworkremotely",
+      "careers_url": "https://weworkremotely.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Wfh",
+      "careers_url": "https://wfh.io",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Wfhjobs",
+      "careers_url": "https://wfhjobs.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Womenintech",
+      "careers_url": "https://womenintech.net",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Workfromhomejobs",
+      "careers_url": "https://workfromhomejobs.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Workingnomads",
+      "careers_url": "https://workingnomads.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Workopolis",
+      "careers_url": "https://workopolis.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Wp Engine",
+      "careers_url": "https://wp-engine.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "X Team",
+      "careers_url": "https://x-team.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Xing",
+      "careers_url": "https://xing.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Zapier",
+      "careers_url": "https://zapier.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Ziprecruiter",
+      "careers_url": "https://ziprecruiter.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "Zscaler",
+      "careers_url": "https://zscaler.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_remote"
+    },
+    {
+      "name": "37signals",
+      "careers_url": "https://37signals.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "AwesomeMotive",
+      "careers_url": "https://awesomemotive.com/careers/#positions",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "BairesDev",
+      "careers_url": "https://jobs.bairesdev.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Bandcamp",
+      "careers_url": "https://bandcamp.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "BandLab",
+      "careers_url": "https://bandlab.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Bunny.net",
+      "careers_url": "https://bunnynet.teamtailor.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Chef",
+      "careers_url": "https://www.chef.io/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "chess.com",
+      "careers_url": "https://www.chess.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Cloudbeds",
+      "careers_url": "https://www.cloudbeds.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Cloudbees",
+      "careers_url": "https://www.cloudbees.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Codelathe",
+      "careers_url": "https://www.getfilecloud.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "DataRobot",
+      "careers_url": "http://www.datarobot.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "End Point Dev",
+      "careers_url": "https://www.endpointdev.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Envato",
+      "careers_url": "https://envato.com/about/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Eyeo",
+      "careers_url": "https://eyeo.com/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Fireflies.ai",
+      "careers_url": "https://jobs.gem.com/fireflies",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Gatsby",
+      "careers_url": "https://www.gatsbyjs.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Genuitec",
+      "careers_url": "http://www.genuitec.com/company/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Gradle",
+      "careers_url": "https://gradle.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Hubstaff",
+      "careers_url": "https://hubstaff.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Igalia",
+      "careers_url": "https://www.igalia.com/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Jackson River",
+      "careers_url": "https://www.jacksonriver.com/about/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Jitbit Software",
+      "careers_url": "https://www.jitbit.com/company/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Kentik",
+      "careers_url": "https://kentik.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Lullabot",
+      "careers_url": "https://www.lullabot.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "madewithlove",
+      "careers_url": "https://madewithlove.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "MailerLite",
+      "careers_url": "https://www.mailerlite.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "MarsBased",
+      "careers_url": "https://marsbased.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Mobile Jazz",
+      "careers_url": "https://mobilejazz.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Olark",
+      "careers_url": "https://www.olark.com/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Original Eight",
+      "careers_url": "https://www.o8.agency/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Percona",
+      "careers_url": "https://www.percona.com/about-percona/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Platform.sh",
+      "careers_url": "https://platform.sh/company/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Pythian",
+      "careers_url": "https://www.pythian.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "RedHat",
+      "careers_url": "https://www.redhat.com/en/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Redox",
+      "careers_url": "https://www.redoxengine.com/company/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "SaasGroup",
+      "careers_url": "https://saas.group/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Shogun",
+      "careers_url": "https://getshogun.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Sonatype",
+      "careers_url": "https://www.sonatype.com/careers-sonatype",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Square",
+      "careers_url": "https://careers.squareup.com/us/en/jobs?location%5B%5D=Remote",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Superside",
+      "careers_url": "https://careers.superside.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Time Doctor",
+      "careers_url": "https://www.timedoctor.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Upwork",
+      "careers_url": "https://www.upwork.com/careers/contract-roles/explore",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Wikimedia",
+      "careers_url": "https://wikimediafoundation.org/wiki/Work_with_us",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "X-team",
+      "careers_url": "https://jobs.x-team.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Xapo",
+      "careers_url": "https://xapo.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "XWP",
+      "careers_url": "https://xwp.co/about/careers/#open-positions",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "You Need A Budget",
+      "careers_url": "https://www.youneedabudget.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "Zyte",
+      "careers_url": "https://zyte.com/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "yanirs"
+    },
+    {
+      "name": "zapier.com/jobs",
+      "careers_url": "https://zapier.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "adherb"
+    },
+    {
+      "name": "hotjar.com/careers",
+      "careers_url": "https://www.hotjar.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "adherb"
+    },
+    {
+      "name": "about.gitlab.com/jobs",
+      "careers_url": "https://about.gitlab.com/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "adherb"
+    },
+    {
+      "name": "buffer.com/careers",
+      "careers_url": "https://buffer.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "adherb"
+    },
+    {
+      "name": "automattic.com/work-with-us",
+      "careers_url": "https://automattic.com/work-with-us",
+      "ats": "custom",
+      "slug": null,
+      "source": "adherb"
+    },
+    {
+      "name": "toptal.com/careers",
+      "careers_url": "https://www.toptal.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "adherb"
+    },
+    {
+      "name": "remote.com/careers",
+      "careers_url": "https://www.remote.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "adherb"
+    },
+    {
+      "name": "doist.com/jobs",
+      "careers_url": "https://doist.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "adherb"
+    },
+    {
+      "name": "shopify.com/careers",
+      "careers_url": "https://www.shopify.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "adherb"
+    },
+    {
+      "name": "toggl.com/jobs",
+      "careers_url": "https://toggl.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "adherb"
+    },
+    {
+      "name": "basecamp.com/about/jobs",
+      "careers_url": "https://basecamp.com/about/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "adherb"
+    },
+    {
+      "name": "invisionapp.com/company#careers",
+      "careers_url": "https://www.invisionapp.com/company#careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "adherb"
+    },
+    {
+      "name": "helpscout.com/company/careers",
+      "careers_url": "https://www.helpscout.com/company/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "adherb"
+    },
+    {
+      "name": "webflow.com/careers",
+      "careers_url": "https://webflow.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "adherb"
+    },
+    {
+      "name": "miro.com/careers",
+      "careers_url": "https://miro.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "adherb"
+    },
+    {
+      "name": "canonical.com/careers",
+      "careers_url": "https://canonical.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "adherb"
+    },
+    {
+      "name": "linear.app/careers",
+      "careers_url": "https://linear.app/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "adherb"
+    },
+    {
+      "name": "convertkit.com/careers",
+      "careers_url": "https://convertkit.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "adherb"
+    },
+    {
+      "name": "remoteonly.io",
+      "careers_url": "https://remoteonly.io",
+      "ats": "custom",
+      "slug": null,
+      "source": "adherb"
+    },
+    {
+      "name": "Adeva",
+      "careers_url": "https://adevait.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "AgentFire",
+      "careers_url": "https://agentfire.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Affirm",
+      "careers_url": "https://www.affirm.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Aha!",
+      "careers_url": "https://www.aha.io/company/careers/current-openings",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "AirTreks",
+      "careers_url": "https://airtreks.com/about/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Alley",
+      "careers_url": "https://alley.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "amazee.io",
+      "careers_url": "https://www.amazee.io/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Arkency",
+      "careers_url": "https://arkency.com/join-our-team/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Array.com",
+      "careers_url": "https://array.com/company/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "AT&T",
+      "careers_url": "https://www.att.jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Aurora Solar",
+      "careers_url": "https://aurorasolar.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Authentic F & F",
+      "careers_url": "https://authenticff.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Aurity",
+      "careers_url": "https://aurity.co/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "AssemblyAI",
+      "careers_url": "https://www.assemblyai.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Avallain",
+      "careers_url": "https://www.avallain.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Axelerant",
+      "careers_url": "https://www.axelerant.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Baremetrics",
+      "careers_url": "https://baremetrics.com/about",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Baselayer",
+      "careers_url": "https://www.baselayer.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "BeBanjo",
+      "careers_url": "https://www.bebanjo.com/company/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Bilsteingroup",
+      "careers_url": "https://bilsteingroup.com/en/career/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Binti",
+      "careers_url": "https://binti.com/current-openings/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Bluespark Labs",
+      "careers_url": "https://www.bluespark.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Blend",
+      "careers_url": "https://blend.com/company/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "BookingSync",
+      "careers_url": "https://www.smily.com/company/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Brave",
+      "careers_url": "https://brave.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Bugfender",
+      "careers_url": "https://bugfender.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "ButterCloud",
+      "careers_url": "https://www.buttercloud.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Calm",
+      "careers_url": "https://www.calm.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Cadasta",
+      "careers_url": "https://cadasta.org/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Ceros",
+      "careers_url": "https://labs.ceros.com/jobs/#/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Ciao Bambino",
+      "careers_url": "https://ciaobambino.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Circonus",
+      "careers_url": "https://www.apica.io",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Codeship",
+      "careers_url": "https://www.cloudbees.com/products/codeship",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "CodeWeavers",
+      "careers_url": "https://www.codeweavers.com/about/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Collabora",
+      "careers_url": "https://www.collabora.com/careers.html",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Continu",
+      "careers_url": "https://www.continu.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Coursera",
+      "careers_url": "https://careers.coursera.com/jobs/search",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "CRO Metrics",
+      "careers_url": "https://crometrics.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Crosscan",
+      "careers_url": "https://crosscan.com/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "DataCose",
+      "careers_url": "https://www.datacose.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "DataStax",
+      "careers_url": "https://www.datastax.com/company/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Deeson",
+      "careers_url": "https://manifesto.co.uk/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Discourse",
+      "careers_url": "https://www.discourse.org/team",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "DNSimple",
+      "careers_url": "https://dnsimple.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "DoIT",
+      "careers_url": "https://careers.doit.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Dotnetos",
+      "careers_url": "https://dotnetos.org/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Doximity",
+      "careers_url": "https://workat.doximity.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Drupal Association",
+      "careers_url": "https://assoc.drupal.org/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "EasyCommunicationTechnology",
+      "careers_url": "https://www.easycomtec.com/homeoffice/developer",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Eloquentix",
+      "careers_url": "https://www.eloquentix.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Ergeon",
+      "careers_url": "https://www.ergeon.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Etsy",
+      "careers_url": "https://careers.etsy.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "ExportData",
+      "careers_url": "https://www.exportdata.io/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Feeld",
+      "careers_url": "https://feeld.co/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Findify",
+      "careers_url": "https://findify.io/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "General Assembly",
+      "careers_url": "https://generalassemb.ly/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Giant Swarm",
+      "careers_url": "https://www.giantswarm.io/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Gigster",
+      "careers_url": "https://gigster.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "TestGrid",
+      "careers_url": "https://testgrid.io/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "HeadSpin",
+      "careers_url": "https://www.headspin.io/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Gitbook",
+      "careers_url": "https://gitbook.gitbook.io/join-gitbook",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "GitHub",
+      "careers_url": "https://www.github.careers/careers-home",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Gitee",
+      "careers_url": "https://gitee.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "GrooveHQ",
+      "careers_url": "https://www.groovehq.com/about",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "GoGuardian",
+      "careers_url": "https://www.goguardian.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Harvest",
+      "careers_url": "https://www.getharvest.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Hatica",
+      "careers_url": "https://www.hatica.io",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Heetch",
+      "careers_url": "https://www.heetch.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Heroku",
+      "careers_url": "https://www.heroku.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Honeybadger",
+      "careers_url": "https://www.honeybadger.io/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Incsub",
+      "careers_url": "https://incsub.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Inpsyde GmbH",
+      "careers_url": "https://syde.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Institute for Nonprofit News",
+      "careers_url": "https://inn.users.membersuite.com/community/career-center/browse-jobs/allJobs/allCities/allStates",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Instructure",
+      "careers_url": "https://www.instructure.com/about/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Intellum",
+      "careers_url": "https://www.intellum.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Intevity",
+      "careers_url": "https://www.intevity.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Innostax Tech LLC",
+      "careers_url": "https://innostax.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Iterative",
+      "careers_url": "https://iterative.notion.site/Iterative-ai-is-Hiring-852cb978129645e1906e2c9a878a4d22",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "iRonin.IT",
+      "careers_url": "https://careers.ironin.it",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Isos Technology",
+      "careers_url": "https://careers.isostech.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Jibble Group",
+      "careers_url": "https://careers.jibblegroup.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "journy.io",
+      "careers_url": "https://www.journy.io/about-us",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Judge.me",
+      "careers_url": "https://judge.me/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Keepsafe",
+      "careers_url": "https://www.getkeepsafe.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Khan Academy",
+      "careers_url": "https://www.khanacademy.org/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "LaunchPotato",
+      "careers_url": "https://launchpotato.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Librato",
+      "careers_url": "https://jobs.solarwinds.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Linaro",
+      "careers_url": "https://www.linaro.org/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Lincoln Loop",
+      "careers_url": "https://lincolnloop.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "LiveChat",
+      "careers_url": "https://www.livechat.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "LivingSocial",
+      "careers_url": "https://www.grouponcareers.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "log.dog",
+      "careers_url": "https://log.dog",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Logit.io",
+      "careers_url": "https://logit.io/about-us/#careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Maintainer Mountaineer",
+      "careers_url": "https://maintainer.io",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "MariaDB",
+      "careers_url": "https://mariadb.com/about-us/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Mapbox",
+      "careers_url": "https://www.mapbox.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Maxim",
+      "careers_url": "https://www.getmaxim.ai",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "MeetEdgar",
+      "careers_url": "https://meetedgar.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Merico",
+      "careers_url": "https://www.devinsight.ai/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Mixmax",
+      "careers_url": "https://www.mixmax.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Modern Tribe",
+      "careers_url": "https://tri.be/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "MODLR",
+      "careers_url": "https://modlr.co/au/home",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Modus Create",
+      "careers_url": "https://moduscreate.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Mode Analytic",
+      "careers_url": "https://www.thoughtspot.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Mosalingua",
+      "careers_url": "https://www.mosalingua.com/en/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "NearForm",
+      "careers_url": "https://www.nearform.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Netlandish",
+      "careers_url": "https://www.netlandish.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Netsparker",
+      "careers_url": "https://www.invicti.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "NinjaCat",
+      "careers_url": "https://www.ninjacat.io/company/about-us",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Niteo",
+      "careers_url": "https://niteo.co/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "NodeSource",
+      "careers_url": "https://nodesource.com/about",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Nozbe",
+      "careers_url": "https://nozbe.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Neon Postgres Database",
+      "careers_url": "https://neon.tech/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "onTheGo Systems",
+      "careers_url": "https://onthegosystems.com:443/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "OpenCraft",
+      "careers_url": "https://opencraft.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Parknav",
+      "careers_url": "https://parknav.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Parsely",
+      "careers_url": "https://www.parse.ly/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Particular Software (NServiceBus)",
+      "careers_url": "https://particular.net/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Paylocity",
+      "careers_url": "https://www.paylocity.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Peakforce",
+      "careers_url": "https://www.peakforce.dev",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Pilot",
+      "careers_url": "https://plane.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Pleo",
+      "careers_url": "https://www.pleo.io/en/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Precision Nutrition",
+      "careers_url": "https://www.precisionnutrition.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "PreviousNext",
+      "careers_url": "https://www.previousnext.com.au",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Prezly",
+      "careers_url": "https://www.prezly.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Prodperfect",
+      "careers_url": "https://prodperfect.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "ProFinda",
+      "careers_url": "https://www.profinda.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Prosopo",
+      "careers_url": "https://prosopo.io/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Recurly",
+      "careers_url": "https://recurly.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Red Hat",
+      "careers_url": "https://www.redhat.com/en/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Relevant Bits",
+      "careers_url": "https://relevantbits.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "RenoFi",
+      "careers_url": "https://www.renofi.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Riak",
+      "careers_url": "https://riak.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "RightScale",
+      "careers_url": "https://www.flexera.com/about-us/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Sangoma",
+      "careers_url": "https://sangoma.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "SearchApi",
+      "careers_url": "https://www.searchapi.io/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "SerpApi",
+      "careers_url": "https://serpapi.com/team",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "ServiceNow",
+      "careers_url": "https://www.jobvite.com/support/job-seeker-support/?invalid=1",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "ShakaCode",
+      "careers_url": "https://www.shakacode.com/career/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Shiphero",
+      "careers_url": "https://shiphero.breezy.hr/?&remote=remote#positions",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "SoftwareMill",
+      "careers_url": "https://softwaremill.com/join-us/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Soshace",
+      "careers_url": "https://soshace.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Songspace",
+      "careers_url": "https://songspace.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Spreaker",
+      "careers_url": "https://careers.spreaker.com/opportunities/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "StackExchange",
+      "careers_url": "https://stackoverflow.co/company/work-here/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Stream Native",
+      "careers_url": "https://streamnative.io",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "StyleSeat",
+      "careers_url": "http://static.styleseat.com/jobs/index.html",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "SuperOrbital",
+      "careers_url": "https://superorbital.io/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Surevine",
+      "careers_url": "https://surevine.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Surge",
+      "careers_url": "https://catalyte.wd1.myworkdayjobs.com/catalyte",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Svix",
+      "careers_url": "https://www.svix.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Sysdig Cloud",
+      "careers_url": "https://sysdig.com/careers/open-positions/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Taskade",
+      "careers_url": "https://www.taskade.com/contact",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Teamed.io",
+      "careers_url": "https://www.teamed.io/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "TeamSnap",
+      "careers_url": "https://www.teamsnap.com/company/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "TED",
+      "careers_url": "https://www.ted.com/about/our-organization/jobs-at-ted",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Tesera",
+      "careers_url": "https://www.tesera.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "The Grid",
+      "careers_url": "https://thegrid.io/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Thermeon",
+      "careers_url": "https://thermeon.com/vacancies/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Thorn",
+      "careers_url": "https://thorn.org/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "TimeDoctor",
+      "careers_url": "https://www.timedoctor.com/about",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Tortuga Backpacks",
+      "careers_url": "https://www.tortugabackpacks.com/pages/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Transloadit",
+      "careers_url": "https://transloadit.com/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Tribe",
+      "careers_url": "https://www.tribexyz.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Truelogic",
+      "careers_url": "https://www.truelogic.io/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Tyk",
+      "careers_url": "https://tyk.io/current-vacancies/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Vidalingua",
+      "careers_url": "https://www.vidalingua.com/amaze.php",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Water Lily Pond",
+      "careers_url": "https://waterlilypond.co.uk/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "wemake.services",
+      "careers_url": "https://wemake.services/meta/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Wheel",
+      "careers_url": "https://www.wheel.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Quora",
+      "careers_url": "https://www.careers.quora.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Zamphyr",
+      "careers_url": "https://zamphyr.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "lukasz_awesome"
+    },
+    {
+      "name": "Remote : Office Not Required",
+      "careers_url": "http://37signals.com/remote/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "Remote Mob Programming",
+      "careers_url": "https://leanpub.com/remotemobprogramming",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "My Ideal Day as a Remote Programmer: Taking Charge of Your Daily Routine",
+      "careers_url": "https://overflow.bufferapp.com/2014/06/12/my-ideal-day-as-a-programmer-taking-charge-of-your-daily-routine/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "A Day in the Life of a Remote Developer",
+      "careers_url": "http://remotenation.co/blog/a-day-in-the-life-of-a-remote-developer",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "Working As A Remote Contract Code Monkey",
+      "careers_url": "https://coderwall.com/p/0ikc0w/working-as-a-remote-contract-code-monkey?p=1&q=author%3Alee101",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "The Joys and Benefits of Working as a Distributed Team",
+      "careers_url": "http://joel.is/the-joys-and-benefits-of-working-as-a-distributed-team/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "Landing a remote job straight out of college",
+      "careers_url": "https://careervault.io/blog/interview-with-automattic-software-engineer/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "Tips to Land a Remote Job",
+      "careers_url": "https://moduscreate.com/blog/tips-to-land-a-remote-job/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "Written communication is remote work super power",
+      "careers_url": "https://snir.dev/blog/remote-async-communication//",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "Effective Homeoffice: An opinionated guide to effectively work from home",
+      "careers_url": "https://effectivehomeoffice.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://himalayas.app",
+      "careers_url": "https://himalayas.app",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://workaline.com/",
+      "careers_url": "https://workaline.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://remotesome.com/",
+      "careers_url": "https://remotesome.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://whoishiring.io/",
+      "careers_url": "https://whoishiring.io/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://findwork.dev/",
+      "careers_url": "https://findwork.dev",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://careervault.io",
+      "careers_url": "https://www.careervault.io",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://weworkremotely.com",
+      "careers_url": "https://weworkremotely.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://dailyremote.com",
+      "careers_url": "https://dailyremote.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://careers.stackoverflow.com/jobs/remote",
+      "careers_url": "http://careers.stackoverflow.com/jobs/remote",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://www.flexjobs.com/jobs/",
+      "careers_url": "http://www.flexjobs.com/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://remoterole.com/",
+      "careers_url": "https://remoterole.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://www.reddit.com/r/forhire/new/",
+      "careers_url": "http://www.reddit.com/r/forhire/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://hnhiring.me/",
+      "careers_url": "http://hnhiring.me/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://workinstartups.com/",
+      "careers_url": "http://workinstartups.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://angel.co/jobs",
+      "careers_url": "https://angel.co/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://www.asklorem.com/",
+      "careers_url": "http://www.asklorem.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://remotecoder.io/",
+      "careers_url": "https://remotecoder.io/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://www.authenticjobs.com/#onlyremote=1",
+      "careers_url": "http://www.authenticjobs.com/#onlyremote=1",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://www.remoteyear.com/jobs/",
+      "careers_url": "http://www.remoteyear.com/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://nomadjobs.io/",
+      "careers_url": "http://nomadjobs.io/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://jobmote.com/",
+      "careers_url": "http://jobmote.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://workingnomads.co/",
+      "careers_url": "http://workingnomads.co/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://www.teamed.io/",
+      "careers_url": "http://www.teamed.io/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://www.toptal.com",
+      "careers_url": "http://www.toptal.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://automattic.com/work-with-us/",
+      "careers_url": "http://automattic.com/work-with-us/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://jobs.remotive.io/",
+      "careers_url": "http://jobs.remotive.io/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://remoteok.io/",
+      "careers_url": "http://remoteok.io/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://remotus.com/",
+      "careers_url": "http://remotus.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://www.candoerz.com/",
+      "careers_url": "http://www.candoerz.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://www.fossjobs.net/",
+      "careers_url": "https://www.fossjobs.net/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://www.golangprojects.com",
+      "careers_url": "https://www.golangprojects.com/golang-remote-jobs.html",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://jobhunt.ai",
+      "careers_url": "https://jobhunt.ai/machinelearning-remote-jobs.html",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://jobspresso.co",
+      "careers_url": "https://jobspresso.co/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://www.skipthedrive.com",
+      "careers_url": "https://www.skipthedrive.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://www.remotejobassistant.com",
+      "careers_url": "https://www.remotejobassistant.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://remotejobr.com",
+      "careers_url": "https://remotejobr.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://www.soshace.com",
+      "careers_url": "http://www.soshace.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://www.lancegator.com/",
+      "careers_url": "https://www.lancegator.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://fullstackjob.com/remote/jobs",
+      "careers_url": "https://fullstackjob.com/remote/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://alcamine.com",
+      "careers_url": "https://alcamine.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://tiancai.co/",
+      "careers_url": "https://tiancai.co/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://remotehub.io",
+      "careers_url": "https://remotehub.io",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "kaamwork",
+      "careers_url": "https://kaam.work",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://employbl.com",
+      "careers_url": "https://employbl.com/job-listings",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://rubyonremote.com",
+      "careers_url": "https://rubyonremote.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "http://remoteclub.io/",
+      "careers_url": "http://remoteclub.io/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://kube.careers/remote-kubernetes-jobs",
+      "careers_url": "https://kube.careers/remote-kubernetes-jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://4dayweek.io/",
+      "careers_url": "https://4dayweek.io/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://remotetify.com/",
+      "careers_url": "https://remotetify.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://uiuxdesignerjobs.com/remote-ui-ux-designer-jobs/",
+      "careers_url": "https://uiuxdesignerjobs.com/remote-ui-ux-designer-jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://realjobsfromanywhere.com/",
+      "careers_url": "https://realjobsfromanywhere.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://www.realworkfromanywhere.com/",
+      "careers_url": "https://www.realworkfromanywhere.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://www.onstrider.com/",
+      "careers_url": "https://www.onstrider.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://www.golangjob.xyz",
+      "careers_url": "https://www.golangjob.xyz/remote/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://reactjsjob.com",
+      "careers_url": "https://reactjsjob.com/remote/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://europeanremote.com",
+      "careers_url": "https://europeanremote.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://okjob.io",
+      "careers_url": "https://www.okjob.io",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "https://androiddev.careers",
+      "careers_url": "https://androiddev.careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "Work From Home List",
+      "careers_url": "https://wfhlist.io",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "LambdaTest",
+      "careers_url": "https://www.lambdatest.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "Pivotal Tracker",
+      "careers_url": "http://www.pivotaltracker.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "Desktime",
+      "careers_url": "http://desktime.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "Qbserve",
+      "careers_url": "https://qotoqot.com/qbserve/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "What Remote Working Means & The Tools We Use at Buffer",
+      "careers_url": "https://open.bufferapp.com/remote-working-means-tools-use/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "Timing",
+      "careers_url": "https://timingapp.com/",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "PukkaTeam",
+      "careers_url": "https://pukkateam.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    },
+    {
+      "name": "mob",
+      "careers_url": "https://mob.sh",
+      "ats": "custom",
+      "slug": null,
+      "source": "hugo53"
+    }
+  ],
+  "last_updated": "2026-08-11"
+}

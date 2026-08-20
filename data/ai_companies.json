@@ -1,0 +1,300 @@
+{
+  "scrapable": [
+    {
+      "name": "Anthropic",
+      "careers_url": "https://boards.greenhouse.io/anthropic",
+      "ats": "greenhouse",
+      "slug": "anthropic",
+      "source": "curated_ai"
+    },
+    {
+      "name": "Scale AI",
+      "careers_url": "https://boards.greenhouse.io/scaleai",
+      "ats": "greenhouse",
+      "slug": "scaleai",
+      "source": "curated_ai"
+    },
+    {
+      "name": "Databricks",
+      "careers_url": "https://boards.greenhouse.io/databricks",
+      "ats": "greenhouse",
+      "slug": "databricks",
+      "source": "curated_ai"
+    },
+    {
+      "name": "Cresta",
+      "careers_url": "https://boards.greenhouse.io/cresta",
+      "ats": "greenhouse",
+      "slug": "cresta",
+      "source": "curated_ai"
+    },
+    {
+      "name": "Together AI",
+      "careers_url": "https://boards.greenhouse.io/togetherai",
+      "ats": "greenhouse",
+      "slug": "togetherai",
+      "source": "curated_ai"
+    },
+    {
+      "name": "Snorkel AI",
+      "careers_url": "https://boards.greenhouse.io/snorkelai",
+      "ats": "greenhouse",
+      "slug": "snorkelai",
+      "source": "curated_ai"
+    },
+    {
+      "name": "Stability AI",
+      "careers_url": "https://boards.greenhouse.io/stabilityai",
+      "ats": "greenhouse",
+      "slug": "stabilityai",
+      "source": "curated_ai"
+    },
+    {
+      "name": "Labelbox",
+      "careers_url": "https://boards.greenhouse.io/labelbox",
+      "ats": "greenhouse",
+      "slug": "labelbox",
+      "source": "curated_ai"
+    },
+    {
+      "name": "DeepMind",
+      "careers_url": "https://boards.greenhouse.io/deepmind",
+      "ats": "greenhouse",
+      "slug": "deepmind",
+      "source": "curated_ai"
+    },
+    {
+      "name": "Abacus AI",
+      "careers_url": "https://boards.greenhouse.io/abacus",
+      "ats": "greenhouse",
+      "slug": "abacus",
+      "source": "curated_ai"
+    },
+    {
+      "name": "Otter.ai",
+      "careers_url": "https://boards.greenhouse.io/otterai",
+      "ats": "greenhouse",
+      "slug": "otterai",
+      "source": "curated_ai"
+    },
+    {
+      "name": "Descript",
+      "careers_url": "https://boards.greenhouse.io/descript",
+      "ats": "greenhouse",
+      "slug": "descript",
+      "source": "curated_ai"
+    },
+    {
+      "name": "AssemblyAI",
+      "careers_url": "https://boards.greenhouse.io/assemblyai",
+      "ats": "greenhouse",
+      "slug": "assemblyai",
+      "source": "curated_ai"
+    },
+    {
+      "name": "Imbue",
+      "careers_url": "https://boards.greenhouse.io/imbue",
+      "ats": "greenhouse",
+      "slug": "imbue",
+      "source": "curated_ai"
+    },
+    {
+      "name": "Inflection AI",
+      "careers_url": "https://boards.greenhouse.io/inflectionai",
+      "ats": "greenhouse",
+      "slug": "inflectionai",
+      "source": "curated_ai"
+    },
+    {
+      "name": "Weights & Biases",
+      "careers_url": "https://boards.greenhouse.io/wandb",
+      "ats": "greenhouse",
+      "slug": "wandb",
+      "source": "curated_ai"
+    },
+    {
+      "name": "DataRobot",
+      "careers_url": "https://boards.greenhouse.io/datarobot",
+      "ats": "greenhouse",
+      "slug": "datarobot",
+      "source": "curated_ai"
+    },
+    {
+      "name": "Shield AI",
+      "careers_url": "https://jobs.lever.co/shieldai",
+      "ats": "lever",
+      "slug": "shieldai",
+      "source": "curated_ai"
+    },
+    {
+      "name": "Anyscale",
+      "careers_url": "https://jobs.lever.co/anyscale",
+      "ats": "lever",
+      "slug": "anyscale",
+      "source": "curated_ai"
+    },
+    {
+      "name": "Runway",
+      "careers_url": "https://jobs.lever.co/runwayml",
+      "ats": "lever",
+      "slug": "runwayml",
+      "source": "curated_ai"
+    },
+    {
+      "name": "Cohere",
+      "careers_url": "https://jobs.lever.co/cohere",
+      "ats": "lever",
+      "slug": "cohere",
+      "source": "curated_ai"
+    },
+    {
+      "name": "Hugging Face",
+      "careers_url": "https://apply.workable.com/huggingface",
+      "ats": "workable",
+      "slug": "huggingface",
+      "source": "curated_ai"
+    }
+  ],
+  "custom_ats": [
+    {
+      "name": "OpenAI",
+      "careers_url": "https://openai.com/careers/search/",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    },
+    {
+      "name": "Mistral AI",
+      "careers_url": "https://mistral.ai/jobs/",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    },
+    {
+      "name": "Perplexity",
+      "careers_url": "https://www.perplexity.ai/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    },
+    {
+      "name": "xAI",
+      "careers_url": "https://x.ai/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    },
+    {
+      "name": "ElevenLabs",
+      "careers_url": "https://elevenlabs.io/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    },
+    {
+      "name": "Character.AI",
+      "careers_url": "https://character.ai/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    },
+    {
+      "name": "Pinecone",
+      "careers_url": "https://www.pinecone.io/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    },
+    {
+      "name": "Weaviate",
+      "careers_url": "https://weaviate.io/company/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    },
+    {
+      "name": "LangChain",
+      "careers_url": "https://www.langchain.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    },
+    {
+      "name": "Modal",
+      "careers_url": "https://modal.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    },
+    {
+      "name": "Replicate",
+      "careers_url": "https://replicate.com/careers",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    },
+    {
+      "name": "Baseten",
+      "careers_url": "https://www.baseten.co/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    },
+    {
+      "name": "Groq",
+      "careers_url": "https://groq.com/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    },
+    {
+      "name": "Cerebras",
+      "careers_url": "https://cerebras.ai/careers/",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    },
+    {
+      "name": "AI-Jobs.net",
+      "careers_url": "https://ai-jobs.net",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    },
+    {
+      "name": "DataScienceJobs",
+      "careers_url": "https://datasciencejobs.com",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    },
+    {
+      "name": "RemoteAI.io",
+      "careers_url": "https://remoteai.io",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    },
+    {
+      "name": "CryptoJobs AI",
+      "careers_url": "https://crypto.jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    },
+    {
+      "name": "Web3 Career AI",
+      "careers_url": "https://web3.career",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    },
+    {
+      "name": "HackerNews AI Jobs",
+      "careers_url": "https://news.ycombinator.com/jobs",
+      "ats": "custom",
+      "slug": null,
+      "source": "curated_ai"
+    }
+  ]
+}
