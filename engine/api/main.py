@@ -21,6 +21,13 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from .config import get_settings
+from .db import (
+    get_all_job_history,
+    get_job_by_url,
+    init_db,
+    save_tailored_cover_letter,
+    save_tailored_resume,
+)
 from .gemini_client import generate_cover_letter, tailor_resume
 from .google_docs import fetch_resume_from_google_doc
 from .google_drive_docs import clone_and_tailor_doc, is_google_drive_configured
@@ -36,6 +43,7 @@ from .models import (
 )
 from .pdf_service import (
     cleanup_old_pdfs,
+    find_pdf_by_doc_id,
     generate_cover_letter_pdf,
     generate_resume_pdf,
     generate_signed_token,
@@ -61,6 +69,7 @@ limiter = Limiter(key_func=get_remote_address)
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Run startup/shutdown tasks."""
     settings = get_settings()
+    init_db()
     logger.info("Starting Job Acquisition Engine API...")
     logger.info(
         "Models: Pro=%s  Flash=%s",
@@ -261,6 +270,21 @@ async def tailor_resume_endpoint(request: Request, body: ResumeTailorRequest):
     elapsed_ms = int((time.perf_counter() - t0) * 1000)
     ats_report = _compute_ats_report(resume_output)
 
+    # Save to SQLite Persistent Memory
+    try:
+        save_tailored_resume(
+            job_url=body.job_url or f"https://job.local/{body.company_name}/{body.job_title}",
+            company_name=body.company_name,
+            job_title=body.job_title,
+            ats_score=ats_report.ats_score_estimate,
+            matched_keywords=ats_report.matched_keywords,
+            missing_keywords=ats_report.missing_entirely,
+            resume_doc_id=doc_id,
+            google_doc_url=google_doc_url,
+        )
+    except Exception as db_err:
+        logger.warning("Failed to save to jobs database: %s", db_err)
+
     return DocumentResponse(
         success=True,
         doc_id=doc_id,
@@ -323,6 +347,18 @@ async def generate_cover_letter_endpoint(request: Request, body: CoverLetterRequ
     token = generate_signed_token(doc_id)
     elapsed_ms = int((time.perf_counter() - t0) * 1000)
 
+    # Save to SQLite Persistent Memory
+    try:
+        save_tailored_cover_letter(
+            job_url=body.job_url or f"https://job.local/{body.company_name}/{body.job_title}",
+            company_name=body.company_name,
+            job_title=body.job_title,
+            cover_letter_doc_id=doc_id,
+            cover_letter_body=letter_body,
+        )
+    except Exception as db_err:
+        logger.warning("Failed to save cover letter to jobs database: %s", db_err)
+
     return DocumentResponse(
         success=True,
         doc_id=doc_id,
@@ -331,6 +367,33 @@ async def generate_cover_letter_endpoint(request: Request, body: CoverLetterRequ
         processing_time_ms=elapsed_ms,
         message="Cover letter generated successfully.",
     )
+
+
+# ── Job Memory Routes ─────────────────────────────────────────────────────────
+
+@app.get("/api/v1/jobs/lookup", tags=["Jobs Memory"])
+async def lookup_job(url: str):
+    """
+    Check if a job posting URL was previously processed.
+    Returns the saved ATS score, keywords, Google Doc URL, and doc IDs.
+    """
+    record = get_job_by_url(url)
+    if not record:
+        return {"found": False}
+    return {
+        "found": True,
+        "job": record,
+    }
+
+
+@app.get("/api/v1/jobs/history", tags=["Jobs Memory"])
+async def job_history(limit: int = 50):
+    """Return historical records of all tailored jobs."""
+    records = get_all_job_history(limit=limit)
+    return {
+        "count": len(records),
+        "jobs": records,
+    }
 
 
 @app.get("/api/v1/document/{session_id}/{doc_id}", tags=["Documents"])
@@ -351,6 +414,25 @@ async def download_document(session_id: str, doc_id: str, token: str):
         raise HTTPException(status_code=404, detail="Document not found or session expired.")
 
     pdf_path = get_pdf_path(session_id, doc_id)
+    if pdf_path is None:
+        raise HTTPException(status_code=404, detail="Document file not found. It may have expired.")
+
+    media_type = "application/pdf" if str(pdf_path).endswith(".pdf") else "text/html"
+    filename = f"resume_{doc_id[:8]}.pdf" if "resume" in str(pdf_path) else f"cover_letter_{doc_id[:8]}.pdf"
+
+    return FileResponse(
+        path=str(pdf_path),
+        media_type=media_type,
+        filename=filename,
+    )
+
+
+@app.get("/api/v1/document/saved/{doc_id}", tags=["Documents"])
+async def download_saved_document(doc_id: str):
+    """
+    Serve a saved PDF by doc_id directly from memory history without session token.
+    """
+    pdf_path = find_pdf_by_doc_id(doc_id)
     if pdf_path is None:
         raise HTTPException(status_code=404, detail="Document file not found. It may have expired.")
 

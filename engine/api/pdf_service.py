@@ -180,6 +180,20 @@ def get_pdf_path(session_id: str, doc_id: str) -> Optional[Path]:
     return None
 
 
+def find_pdf_by_doc_id(doc_id: str) -> Optional[Path]:
+    """Search for a PDF by doc_id across all session storage."""
+    out_dir = _ensure_output_dir()
+    for session_dir in out_dir.iterdir():
+        if session_dir.is_dir():
+            pdf_path = session_dir / f"{doc_id}.pdf"
+            if pdf_path.exists():
+                return pdf_path
+            html_path = session_dir / f"{doc_id}.html"
+            if html_path.exists():
+                return html_path
+    return None
+
+
 def cleanup_old_pdfs() -> int:
     """Delete PDFs older than the configured TTL. Returns count of deleted files."""
     ttl = get_settings().pdf_ttl_seconds

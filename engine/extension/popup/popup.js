@@ -1,11 +1,11 @@
 /**
  * popup.js — Extension Popup Controller
  *
- * Manages the popup UI state machine:
- *   no-jd → jd-found → loading → result
- *                            ↘ error
- *
- * Communicates with background.js (service worker) and content.js.
+ * Manages:
+ *   1. Background task reconnection (resumes progress if popup was closed during generation)
+ *   2. Persistent memory recognition (identifies previously tailored jobs by URL)
+ *   3. UI State Machine: no-jd → jd-found → loading → result | error
+ *   4. Communication with background.js & content.js
  */
 
 'use strict';
@@ -13,7 +13,8 @@
 // ── State ─────────────────────────────────────────────────────────────────────
 
 let currentJobData = null;  // Extracted JD data from the current page
-let currentResult = null;   // Last API response
+let currentResult = null;   // Active or saved API response
+let activePollInterval = null;
 
 // ── DOM Helpers ───────────────────────────────────────────────────────────────
 
@@ -40,6 +41,7 @@ function updateJobBanner(jobData) {
 }
 
 function showError(message) {
+  stopProgressTracking();
   $('error-message').textContent = message || 'An unexpected error occurred.';
   showState('error');
 }
@@ -53,24 +55,40 @@ function setProgress(pct) {
   $('progress-fill').style.width = `${pct}%`;
 }
 
-// ── Progress Animation ────────────────────────────────────────────────────────
+// ── Progress & Background Task Tracker ────────────────────────────────────────
 
 let _progressTimer = null;
 
-function startProgressAnimation() {
-  let pct = 5;
+function startProgressAnimation(startTime = Date.now(), title = 'Optimizing documents with Gemini 3.7 Flash...') {
+  $('loading-title').textContent = title;
+  
+  function updateElapsed() {
+    const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
+    $('loading-subtitle').textContent = `Running in background... (${elapsedSec}s elapsed). You can safely close this popup.`;
+  }
+  updateElapsed();
+
+  let pct = 10;
   setProgress(pct);
+  
+  clearInterval(_progressTimer);
   _progressTimer = setInterval(() => {
-    // Logarithmic fill — never reaches 100% until manually completed
-    if (pct < 85) {
-      pct += (85 - pct) * 0.07;
+    updateElapsed();
+    if (pct < 90) {
+      pct += (90 - pct) * 0.05;
       setProgress(pct);
     }
-  }, 400);
+  }, 1000);
+}
+
+function stopProgressTracking() {
+  clearInterval(_progressTimer);
+  clearInterval(activePollInterval);
+  activePollInterval = null;
 }
 
 function completeProgress() {
-  clearInterval(_progressTimer);
+  stopProgressTracking();
   setProgress(100);
 }
 
@@ -137,15 +155,14 @@ async function scanPage() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-    // Inject content script if not already injected
     try {
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         files: ['content.js'],
       });
-    } catch (_) { /* Already injected — ignore */ }
+    } catch (_) { /* Injected */ }
 
-    await new Promise((r) => setTimeout(r, 300)); // Let content script initialize
+    await new Promise((r) => setTimeout(r, 200));
 
     const response = await chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_JD' });
     setProgress(80);
@@ -157,56 +174,116 @@ async function scanPage() {
 
     currentJobData = response;
     setProgress(100);
-    await new Promise((r) => setTimeout(r, 250));
+    await new Promise((r) => setTimeout(r, 150));
 
     updateJobBanner(currentJobData);
-    $('jd-preview').textContent = truncate(currentJobData.jobDescription, 300);
+    $('jd-preview').textContent = truncate(currentJobData.jobDescription, 260);
+
+    // Check persistent memory for this URL
+    await checkJobMemory(currentJobData.pageUrl);
+
     showState('jd-found');
   } catch (err) {
     showError(`Scan failed: ${err.message}`);
   }
 }
 
-// ── Resume Tailoring ──────────────────────────────────────────────────────────
+async function checkJobMemory(pageUrl) {
+  try {
+    const res = await sendToBackground({ action: 'CHECK_JOB_MEMORY', url: pageUrl });
+    const memoryBadge = $('memory-badge');
+    if (res && res.found && res.data) {
+      const data = res.data;
+      memoryBadge.classList.remove('hidden');
+      const score = data.ats_score || data.ats_report?.ats_score_estimate || 0;
+      const dateStr = data.updated_at
+        ? new Date(data.updated_at * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : 'Recently';
+
+      $('memory-details').textContent = `Match Score: ${score}% · Saved on ${dateStr}`;
+      $('btn-view-previous').onclick = () => {
+        if (data.download_url || data.resume_doc_id) {
+          displayResumeResult(data);
+        } else if (data.cover_letter_doc_id) {
+          displayCoverLetterResult(data);
+        }
+      };
+    } else {
+      memoryBadge.classList.add('hidden');
+    }
+  } catch (e) {
+    console.warn('Memory check failed:', e);
+  }
+}
+
+// ── Resume Tailoring (Background Persistent) ───────────────────────────────────
 
 async function tailorResume() {
   if (!currentJobData) return;
 
   showState('loading');
-  $('loading-title').textContent = 'Optimizing resume with Gemini 3.7 Flash...';
-  $('loading-subtitle').textContent = 'Analyzing keywords, rewriting bullet points, and building your PDF.';
-  startProgressAnimation();
+  startProgressAnimation(Date.now(), 'Optimizing resume with Gemini 3.7 Flash...');
 
   try {
-    const { success, result, error } = await sendToBackground({
+    // 1. Kick off background task (runs independently of popup)
+    await sendToBackground({
       action: 'TAILOR_RESUME',
       jobData: currentJobData,
       options: { ats_mode: true, max_bullet_additions: 3, preserve_dates: true },
     });
 
-    completeProgress();
-    await new Promise((r) => setTimeout(r, 300));
-
-    if (!success) {
-      showError(error || 'Resume tailoring failed.');
-      return;
-    }
-
-    currentResult = result;
-    displayResumeResult(result);
+    // 2. Poll background task status
+    pollTaskStatus(currentJobData.pageUrl);
   } catch (err) {
-    completeProgress();
     showError(err.message);
   }
 }
 
+function pollTaskStatus(url) {
+  stopProgressTracking();
+  
+  const checkStatus = async () => {
+    try {
+      const res = await sendToBackground({ action: 'GET_TASK_STATUS', url });
+      const task = res?.task;
+      if (!task) return;
+
+      if (task.status === 'RUNNING') {
+        startProgressAnimation(task.startedAt || Date.now(), 
+          task.type === 'cover_letter' ? 'Writing cover letter...' : 'Optimizing resume with Gemini 3.7 Flash...'
+        );
+      } else if (task.status === 'COMPLETED') {
+        completeProgress();
+        currentResult = task.result;
+        if (task.type === 'cover_letter') {
+          displayCoverLetterResult(task.result);
+        } else {
+          displayResumeResult(task.result);
+        }
+      } else if (task.status === 'FAILED') {
+        showError(task.error || 'Generation failed.');
+      }
+    } catch (e) {
+      console.warn('Task poll error:', e);
+    }
+  };
+
+  checkStatus();
+  activePollInterval = setInterval(checkStatus, 1500);
+}
+
 function displayResumeResult(result) {
   $('result-title').textContent = '📄 Resume Optimized!';
-  $('result-meta').textContent  =
-    `${result.processing_time_ms ? `Processed in ${(result.processing_time_ms / 1000).toFixed(1)}s` : ''}`;
+  $('result-meta').textContent =
+    result.processing_time_ms ? `Processed in ${(result.processing_time_ms / 1000).toFixed(1)}s` : '';
 
   // ATS Report
-  const ats = result.ats_report;
+  const ats = result.ats_report || {
+    ats_score_estimate: result.ats_score || 0,
+    matched_keywords: result.matched_keywords || [],
+    missing_entirely: result.missing_keywords || [],
+  };
+
   if (ats) {
     $('ats-section').classList.remove('hidden');
     const score = ats.ats_score_estimate || 0;
@@ -231,10 +308,11 @@ function displayResumeResult(result) {
     $('ats-section').classList.add('hidden');
   }
 
-  // Store download URL for the download button
-  $('btn-download').dataset.url = result.download_url;
+  // Store download URL
+  const downloadUrl = result.download_url || (result.resume_doc_id ? `/api/v1/document/saved/${result.resume_doc_id}` : '');
+  $('btn-download').dataset.url = downloadUrl;
   $('btn-download').dataset.filename =
-    `resume_${(currentJobData?.companyName || 'job').replace(/\s+/g, '_')}.pdf`;
+    `resume_${(currentJobData?.companyName || result.company_name || 'job').replace(/\s+/g, '_')}.pdf`;
 
   // Google Doc link
   const btnGDoc = $('btn-open-gdoc');
@@ -254,46 +332,44 @@ async function generateCoverLetter() {
   if (!currentJobData) return;
 
   showState('loading');
-  $('loading-title').textContent = 'Writing cover letter with Gemini 3.7 Flash...';
-  $('loading-subtitle').textContent = 'Identifying pain points, matching your background, and crafting a human-toned letter.';
-  startProgressAnimation();
+  startProgressAnimation(Date.now(), 'Writing cover letter with Gemini 3.7 Flash...');
 
   try {
-    const { success, result, error } = await sendToBackground({
+    await sendToBackground({
       action: 'GENERATE_COVER_LETTER',
       jobData: currentJobData,
       options: { tone: 'professional' },
     });
 
-    completeProgress();
-    await new Promise((r) => setTimeout(r, 300));
-
-    if (!success) {
-      showError(error || 'Cover letter generation failed.');
-      return;
-    }
-
-    currentResult = result;
-    $('result-title').textContent = '✉️ Cover Letter Ready!';
-    $('ats-section').classList.add('hidden');
-    $('btn-open-gdoc').classList.add('hidden');
-    $('result-meta').textContent  = result.processing_time_ms
-      ? `Generated in ${(result.processing_time_ms / 1000).toFixed(1)}s`
-      : '';
-    $('btn-download').dataset.url = result.download_url;
-    $('btn-download').dataset.filename =
-      `cover_letter_${(currentJobData?.companyName || 'job').replace(/\s+/g, '_')}.pdf`;
-
-    showState('result');
+    pollTaskStatus(currentJobData.pageUrl);
   } catch (err) {
-    completeProgress();
     showError(err.message);
   }
+}
+
+function displayCoverLetterResult(result) {
+  $('result-title').textContent = '✉️ Cover Letter Ready!';
+  $('ats-section').classList.add('hidden');
+  $('btn-open-gdoc').classList.add('hidden');
+  $('result-meta').textContent = result.processing_time_ms
+    ? `Generated in ${(result.processing_time_ms / 1000).toFixed(1)}s`
+    : '';
+
+  const downloadUrl = result.download_url || (result.cover_letter_doc_id ? `/api/v1/document/saved/${result.cover_letter_doc_id}` : '');
+  $('btn-download').dataset.url = downloadUrl;
+  $('btn-download').dataset.filename =
+    `cover_letter_${(currentJobData?.companyName || result.company_name || 'job').replace(/\s+/g, '_')}.pdf`;
+
+  showState('result');
 }
 
 // ── Download ──────────────────────────────────────────────────────────────────
 
 async function downloadDocument(url, filename) {
+  if (!url) {
+    showError('Download URL not found. Please re-optimize.');
+    return;
+  }
   const { success, error } = await sendToBackground({
     action: 'DOWNLOAD_DOCUMENT',
     downloadUrl: url,
@@ -339,14 +415,34 @@ async function init() {
     downloadDocument(btn.dataset.url, btn.dataset.filename);
   });
 
-  // Auto-scan on popup open if we're on a job page
+  // Check if active tab has a running or completed task
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    const isJobPage = /jobs|careers|job-offer|posting|apply|positions/i.test(tab.url || '');
-    if (isJobPage) {
-      await scanPage();
+    if (tab && tab.url) {
+      const { task } = await sendToBackground({ action: 'GET_TASK_STATUS', url: tab.url });
+      
+      if (task && task.status === 'RUNNING') {
+        showState('loading');
+        pollTaskStatus(tab.url);
+        return;
+      }
+      
+      if (task && task.status === 'COMPLETED') {
+        if (task.type === 'cover_letter') {
+          displayCoverLetterResult(task.result);
+        } else {
+          displayResumeResult(task.result);
+        }
+        return;
+      }
+
+      // Check if it's a job page to auto-scan
+      const isJobPage = /jobs|careers|job-offer|posting|apply|positions/i.test(tab.url || '');
+      if (isJobPage) {
+        await scanPage();
+      }
     }
-  } catch (_) { /* Not on a job page — show default state */ }
+  } catch (_) { /* Default state */ }
 }
 
 document.addEventListener('DOMContentLoaded', init);

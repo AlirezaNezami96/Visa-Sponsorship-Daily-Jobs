@@ -46,7 +46,18 @@
   <div id="state-jd-found" class="state-card hidden">
     <div class="state-icon success-icon">✅</div>
     <div class="state-title">Job Description Ready</div>
-    <div class="state-body" id="jd-preview">Loading preview...</div>
+    <!-- Memory Notice (if previously tailored) -->
+    <div id="memory-badge" class="memory-badge hidden" style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 12px; color: #a5b4fc; text-align: left;">
+      <div style="font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+        <span>⚡</span> Previously Tailored for this Job
+      </div>
+      <div id="memory-details" style="color: #cbd5e1; font-size: 11px;"></div>
+      <div style="margin-top: 8px; display: flex; gap: 6px;">
+        <button id="btn-view-previous" class="btn btn-secondary btn-small" style="flex: 1; padding: 6px 10px; font-size: 11px;">
+          📄 View Saved Documents
+        </button>
+      </div>
+    </div>
 
     <div class="action-buttons">
       <button id="btn-tailor-resume" class="btn btn-primary btn-full">

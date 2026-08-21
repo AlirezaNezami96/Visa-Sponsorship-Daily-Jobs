@@ -2,21 +2,34 @@
  * background.js — Service Worker
  *
  * Manages:
- *  1. Session lifecycle (init, persist session_id in chrome.storage.local, auto-recover on 401)
- *  2. API calls to the FastAPI backend (keeps Gemini key server-side)
- *  3. Downloads of generated PDFs
- *
- * Manifest V3 Service Worker — no persistent state between events.
+ *  1. Background async task lifecycle (tasks persist even if popup closes)
+ *  2. Persistent memory & history caching per job URL
+ *  3. Session lifecycle (init, auto-recovery on 401)
+ *  4. API calls to the FastAPI backend
+ *  5. Downloads of generated PDFs
  */
 
 'use strict';
 
 // ── Config ─────────────────────────────────────────────────────────────────
-const API_BASE = 'http://localhost:8000'; // Updated via options page in production
+const API_BASE = 'http://localhost:8000';
 
 async function getApiBase() {
   const result = await chrome.storage.sync.get(['apiBase']);
   return result.apiBase || API_BASE;
+}
+
+function normalizeUrl(rawUrl) {
+  if (!rawUrl) return '';
+  try {
+    const u = new URL(rawUrl);
+    const trackingParams = ['utm_source', 'utm_medium', 'utm_campaign', 'ref', 'source', 'trk', 'tracking', 'midToken', 'trkInfo'];
+    trackingParams.forEach((p) => u.searchParams.delete(p));
+    let path = u.pathname.replace(/\/+$/, '');
+    return `${u.origin}${path}${u.search}`;
+  } catch {
+    return rawUrl.split('?')[0].replace(/\/+$/, '');
+  }
 }
 
 // ── Session Management ────────────────────────────────────────────────────────
@@ -33,7 +46,6 @@ async function getOrCreateSession(googleDocId, forceNew = false) {
     }
   }
 
-  // Create new session
   const base = await getApiBase();
   const response = await fetch(`${base}/api/v1/session/init`, {
     method: 'POST',
@@ -49,7 +61,6 @@ async function getOrCreateSession(googleDocId, forceNew = false) {
   const data = await response.json();
   const sessionId = data.session_id;
 
-  // Cache session for 90 minutes (TTL is 2h server-side)
   await chrome.storage.local.set({
     sessionId,
     sessionDocId: googleDocId,
@@ -93,6 +104,20 @@ async function callCoverLetterApi(payload) {
   return response.json();
 }
 
+async function lookupJobMemoryApi(url) {
+  try {
+    const base = await getApiBase();
+    const encoded = encodeURIComponent(url);
+    const response = await fetch(`${base}/api/v1/jobs/lookup?url=${encoded}`);
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch (e) {
+    console.warn('Backend lookup failed:', e);
+  }
+  return { found: false };
+}
+
 // ── Download Helper ───────────────────────────────────────────────────────────
 
 async function downloadDocument(downloadUrl, filename) {
@@ -101,62 +126,131 @@ async function downloadDocument(downloadUrl, filename) {
   await chrome.downloads.download({ url: fullUrl, filename, saveAs: false });
 }
 
+// ── Task Management (Background Persistence) ──────────────────────────────────
+
+async function setTaskState(url, taskObj) {
+  const key = `task_${normalizeUrl(url)}`;
+  await chrome.storage.local.set({ [key]: taskObj });
+}
+
+async function getTaskState(url) {
+  const key = `task_${normalizeUrl(url)}`;
+  const stored = await chrome.storage.local.get([key]);
+  return stored[key] || null;
+}
+
+async function clearTaskState(url) {
+  const key = `task_${normalizeUrl(url)}`;
+  await chrome.storage.local.remove([key]);
+}
+
 // ── Message Router ────────────────────────────────────────────────────────────
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   handleMessage(message).then(sendResponse).catch((err) => {
     sendResponse({ success: false, error: err.message });
   });
-  return true; // Required to keep async channel open
+  return true; // Keep async channel open
 });
 
 async function handleMessage(message) {
   const { action } = message;
 
+  if (action === 'GET_TASK_STATUS') {
+    const { url } = message;
+    const task = await getTaskState(url);
+    return { success: true, task };
+  }
+
+  if (action === 'CHECK_JOB_MEMORY') {
+    const { url } = message;
+    // Check local task memory first
+    const localTask = await getTaskState(url);
+    if (localTask && localTask.status === 'COMPLETED') {
+      return { success: true, found: true, source: 'local', data: localTask.result };
+    }
+
+    // Check backend SQLite database
+    const dbResult = await lookupJobMemoryApi(url);
+    if (dbResult && dbResult.found) {
+      return { success: true, found: true, source: 'backend', data: dbResult.job };
+    }
+
+    return { success: true, found: false };
+  }
+
   if (action === 'TAILOR_RESUME') {
     const { jobData, options } = message;
+    const pageUrl = jobData.pageUrl;
     const settings = await chrome.storage.sync.get(['googleDocId', 'userName']);
 
     if (!settings.googleDocId) {
       throw new Error('No Google Doc ID configured. Please open the extension settings.');
     }
 
-    let { sessionId } = await getOrCreateSession(settings.googleDocId);
+    // Set task to RUNNING in storage so popup can disconnect & reconnect safely
+    await setTaskState(pageUrl, {
+      status: 'RUNNING',
+      type: 'resume',
+      startedAt: Date.now(),
+      companyName: jobData.companyName,
+      jobTitle: jobData.jobTitle,
+    });
 
-    let result;
-    try {
-      result = await callResumeApi({
-        session_id: sessionId,
-        job_description: jobData.jobDescription,
-        job_url: jobData.pageUrl,
-        company_name: jobData.companyName || 'Unknown Company',
-        job_title: jobData.jobTitle || 'Unknown Role',
-        options: options || {},
-      });
-    } catch (err) {
-      // Auto-recover if session expired on backend (e.g. server restart)
-      if (err.status === 401 || err.message.includes('Session not found') || err.message.includes('expired')) {
-        const reinit = await getOrCreateSession(settings.googleDocId, true);
-        result = await callResumeApi({
-          session_id: reinit.sessionId,
-          job_description: jobData.jobDescription,
-          job_url: jobData.pageUrl,
-          company_name: jobData.companyName || 'Unknown Company',
-          job_title: jobData.jobTitle || 'Unknown Role',
-          options: options || {},
+    // Execute tailoring asynchronously
+    (async () => {
+      try {
+        let { sessionId } = await getOrCreateSession(settings.googleDocId);
+        let result;
+        try {
+          result = await callResumeApi({
+            session_id: sessionId,
+            job_description: jobData.jobDescription,
+            job_url: pageUrl,
+            company_name: jobData.companyName || 'Unknown Company',
+            job_title: jobData.jobTitle || 'Unknown Role',
+            options: options || {},
+          });
+        } catch (err) {
+          if (err.status === 401 || err.message.includes('Session not found') || err.message.includes('expired')) {
+            const reinit = await getOrCreateSession(settings.googleDocId, true);
+            result = await callResumeApi({
+              session_id: reinit.sessionId,
+              job_description: jobData.jobDescription,
+              job_url: pageUrl,
+              company_name: jobData.companyName || 'Unknown Company',
+              job_title: jobData.jobTitle || 'Unknown Role',
+              options: options || {},
+            });
+          } else {
+            throw err;
+          }
+        }
+
+        await setTaskState(pageUrl, {
+          status: 'COMPLETED',
+          type: 'resume',
+          result,
+          companyName: jobData.companyName,
+          jobTitle: jobData.jobTitle,
+          completedAt: Date.now(),
         });
-      } else {
-        throw err;
+      } catch (err) {
+        await setTaskState(pageUrl, {
+          status: 'FAILED',
+          type: 'resume',
+          error: err.message,
+          failedAt: Date.now(),
+        });
       }
-    }
+    })();
 
-    // Store download URL for quick access
-    await chrome.storage.local.set({ lastResumeResult: result });
-    return { success: true, result };
+    return { success: true, status: 'RUNNING' };
   }
 
   if (action === 'GENERATE_COVER_LETTER') {
-    const { jobData } = message;
+    const { jobData, options } = message;
+    const pageUrl = jobData.pageUrl;
     const settings = await chrome.storage.sync.get(['googleDocId', 'userName']);
 
     if (!settings.googleDocId) {
@@ -166,39 +260,71 @@ async function handleMessage(message) {
       throw new Error('Please set your name in the extension settings.');
     }
 
-    let { sessionId } = await getOrCreateSession(settings.googleDocId);
+    // Set task to RUNNING
+    await setTaskState(pageUrl, {
+      status: 'RUNNING',
+      type: 'cover_letter',
+      startedAt: Date.now(),
+      companyName: jobData.companyName,
+      jobTitle: jobData.jobTitle,
+    });
 
-    let result;
-    try {
-      result = await callCoverLetterApi({
-        session_id: sessionId,
-        job_description: jobData.jobDescription,
-        job_url: jobData.pageUrl,
-        company_name: jobData.companyName || 'Unknown Company',
-        job_title: jobData.jobTitle || 'Unknown Role',
-        user_name: settings.userName,
-        tone: 'professional',
-      });
-    } catch (err) {
-      // Auto-recover if session expired on backend (e.g. server restart)
-      if (err.status === 401 || err.message.includes('Session not found') || err.message.includes('expired')) {
-        const reinit = await getOrCreateSession(settings.googleDocId, true);
-        result = await callCoverLetterApi({
-          session_id: reinit.sessionId,
-          job_description: jobData.jobDescription,
-          job_url: jobData.pageUrl,
-          company_name: jobData.companyName || 'Unknown Company',
-          job_title: jobData.jobTitle || 'Unknown Role',
-          user_name: settings.userName,
-          tone: 'professional',
+    (async () => {
+      try {
+        let { sessionId } = await getOrCreateSession(settings.googleDocId);
+        let result;
+        try {
+          result = await callCoverLetterApi({
+            session_id: sessionId,
+            job_description: jobData.jobDescription,
+            job_url: pageUrl,
+            company_name: jobData.companyName || 'Unknown Company',
+            job_title: jobData.jobTitle || 'Unknown Role',
+            user_name: settings.userName,
+            tone: options?.tone || 'professional',
+          });
+        } catch (err) {
+          if (err.status === 401 || err.message.includes('Session not found') || err.message.includes('expired')) {
+            const reinit = await getOrCreateSession(settings.googleDocId, true);
+            result = await callCoverLetterApi({
+              session_id: reinit.sessionId,
+              job_description: jobData.jobDescription,
+              job_url: pageUrl,
+              company_name: jobData.companyName || 'Unknown Company',
+              job_title: jobData.jobTitle || 'Unknown Role',
+              user_name: settings.userName,
+              tone: options?.tone || 'professional',
+            });
+          } else {
+            throw err;
+          }
+        }
+
+        await setTaskState(pageUrl, {
+          status: 'COMPLETED',
+          type: 'cover_letter',
+          result,
+          companyName: jobData.companyName,
+          jobTitle: jobData.jobTitle,
+          completedAt: Date.now(),
         });
-      } else {
-        throw err;
+      } catch (err) {
+        await setTaskState(pageUrl, {
+          status: 'FAILED',
+          type: 'cover_letter',
+          error: err.message,
+          failedAt: Date.now(),
+        });
       }
-    }
+    })();
 
-    await chrome.storage.local.set({ lastCoverLetterResult: result });
-    return { success: true, result };
+    return { success: true, status: 'RUNNING' };
+  }
+
+  if (action === 'CLEAR_TASK_STATE') {
+    const { url } = message;
+    await clearTaskState(url);
+    return { success: true };
   }
 
   if (action === 'DOWNLOAD_DOCUMENT') {
@@ -214,7 +340,6 @@ async function handleMessage(message) {
 
   if (action === 'SAVE_SETTINGS') {
     await chrome.storage.sync.set(message.settings);
-    // Invalidate session when Google Doc ID changes
     await chrome.storage.local.remove(['sessionId', 'sessionExpiry', 'sessionDocId']);
     return { success: true };
   }

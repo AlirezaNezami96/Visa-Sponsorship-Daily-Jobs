@@ -33,3 +33,5 @@ Thumbs.db
 state/pending_post.json
 state/cover_image.jpg
 !state/.gitkeep
+engine/data/
+*.db
