@@ -153,10 +153,20 @@ def clone_and_tailor_doc(
             .execute()
         )
     except HttpError as exc:
+        error_str = str(exc)
         logger.error("Failed to copy Google Doc: %s", exc)
+        if "storageQuotaExceeded" in error_str or "storage quota" in error_str.lower():
+            raise ValueError(
+                "Service account Drive storage quota exceeded. "
+                "Service accounts have 0 bytes of personal storage. "
+                "To fix: convert the 'Tailored Resumes' folder to a Shared Drive "
+                "and add the service account as a Member — copies will then count against "
+                "the Shared Drive quota, not the SA's personal storage. "
+                "See: https://support.google.com/a/answer/7212025"
+            ) from exc
         raise ValueError(
             f"Google Drive failed to copy document: {exc}. "
-            "Make sure your Master Resume or Tailored Resumes folder is shared with your Service Account email."
+            "Make sure your Master Resume and Tailored Resumes folder are shared with your Service Account email."
         ) from exc
 
     new_doc_id = copied_file["id"]
