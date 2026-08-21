@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Acquisition Engine — Settings</title>
+  <link rel="stylesheet" href="popup.css" />
+  <style>
+    body {
+      width: 480px;
+      margin: 0 auto;
+      padding: 24px 20px;
+      background: var(--bg);
+    }
+    .options-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .options-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .options-header h1 {
+      font-size: 18px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="options-container">
+    <div class="options-header">
+      <span class="logo-icon">⚡</span>
+      <h1>Job Acquisition Engine Settings</h1>
+    </div>
+
+    <div class="settings-group">
+      <label for="input-doc-id" class="settings-label">Master Resume Google Doc ID</label>
+      <input
+        id="input-doc-id"
+        type="text"
+        class="settings-input"
+        placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <p class="settings-hint">
+        Found in your Google Doc URL: <code>https://docs.google.com/document/d/<strong>{YOUR_DOC_ID}</strong>/edit</code><br>
+        Make sure the doc is set to <strong>"Anyone with the link can view"</strong>.
+      </p>
+    </div>
+
+    <div class="settings-group">
+      <label for="input-user-name" class="settings-label">Your Full Name</label>
+      <input
+        id="input-user-name"
+        type="text"
+        class="settings-input"
+        placeholder="Alireza Nezami"
+        autocomplete="name"
+      />
+      <p class="settings-hint">Used for cover letter signatures and headers.</p>
+    </div>
+
+    <div class="settings-group">
+      <label for="input-api-base" class="settings-label">Backend API URL</label>
+      <input
+        id="input-api-base"
+        type="url"
+        class="settings-input"
+        placeholder="http://localhost:8000"
+        autocomplete="off"
+      />
+      <p class="settings-hint">Local: <code>http://localhost:8000</code> or your deployed Railway/cloud URL.</p>
+    </div>
+
+    <button id="btn-save-settings" class="btn btn-primary btn-full" style="margin: 20px 0 10px 0;">
+      Save Settings
+    </button>
+    <div id="settings-status" class="settings-status"></div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
