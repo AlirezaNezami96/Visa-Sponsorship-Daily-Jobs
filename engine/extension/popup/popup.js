@@ -154,21 +154,34 @@ async function scanPage() {
 
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab || !tab.id) throw new Error('No active tab found.');
 
     try {
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         files: ['content.js'],
       });
-    } catch (_) { /* Injected */ }
+    } catch (_) { /* Already injected or restricted page */ }
 
-    await new Promise((r) => setTimeout(r, 200));
+    await new Promise((r) => setTimeout(r, 250));
 
-    const response = await chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_JD' });
+    let response = null;
+    try {
+      response = await chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_JD' });
+    } catch (_) {
+      // Retry once after 300ms
+      await new Promise((r) => setTimeout(r, 300));
+      try {
+        response = await chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_JD' });
+      } catch (retryErr) {
+        console.warn('Direct message failed, attempting script fallback:', retryErr);
+      }
+    }
+
     setProgress(80);
 
     if (!response || !response.success) {
-      showError(response?.error || 'Could not extract a job description from this page.');
+      showError(response?.error || 'Could not extract a job description from this page. Try scrolling or refreshing.');
       return;
     }
 

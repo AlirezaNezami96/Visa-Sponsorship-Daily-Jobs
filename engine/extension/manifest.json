@@ -23,25 +23,7 @@
   },
   "content_scripts": [
     {
-      "matches": [
-        "*://*.linkedin.com/*",
-        "*://*.indeed.com/*",
-        "*://*.greenhouse.io/*",
-        "*://*.lever.co/*",
-        "*://*.ashbyhq.com/*",
-        "*://*.workable.com/*",
-        "*://*.myworkdayjobs.com/*",
-        "*://*.smartrecruiters.com/*",
-        "*://*.jobvite.com/*",
-        "*://*.icims.com/*",
-        "*://*.breezy.hr/*",
-        "*://justjoin.it/*",
-        "*://*.wellfound.com/*",
-        "*://*.ycombinator.com/*",
-        "*://*/*/jobs/*",
-        "*://*/*/careers/*",
-        "*://*/*/job-offer/*"
-      ],
+      "matches": ["<all_urls>"],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
