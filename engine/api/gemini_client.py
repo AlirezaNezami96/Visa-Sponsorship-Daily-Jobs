@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import textwrap
 import time
 from pathlib import Path
@@ -44,6 +45,36 @@ def _get_client() -> genai.Client:
     return genai.Client(api_key=key)
 
 
+def _generate_with_fallback(
+    client: genai.Client,
+    primary_model: str,
+    contents: str,
+    config: Optional[types.GenerateContentConfig] = None,
+) -> str:
+    """Generate content with automatic fallback to secondary models on 503/429/errors."""
+    candidate_models = [primary_model, "gemini-3.6-flash", "gemini-flash-latest"]
+    seen = set()
+    models_to_try = [m for m in candidate_models if not (m in seen or seen.add(m))]
+
+    last_error = None
+    for model_name in models_to_try:
+        try:
+            logger.info("Calling Gemini model: %s", model_name)
+            response = client.models.generate_content(
+                model=model_name,
+                contents=contents,
+                config=config,
+            )
+            text = (response.text or "").strip()
+            if text:
+                return text
+        except Exception as exc:
+            last_error = exc
+            logger.warning("Gemini model %s failed: %s — trying next fallback", model_name, exc)
+
+    raise RuntimeError(f"All Gemini models failed. Last error: {last_error}") from last_error
+
+
 # ── Resume Tailoring ──────────────────────────────────────────────────────────
 
 def tailor_resume(
@@ -54,7 +85,7 @@ def tailor_resume(
     max_bullet_additions: int = 3,
 ) -> GeminiResumeOutput:
     """
-    Use Gemini 3.7 Flash to rewrite the resume to match the job description.
+    Use Gemini 3.7 Flash (with fallback) to rewrite the resume to match the job description.
 
     Returns a GeminiResumeOutput parsed from the model's structured JSON output.
     """
@@ -78,17 +109,20 @@ def tailor_resume(
     full_input = f"{system_prompt}\n\n---\n\n{user_content}"
 
     logger.info(
-        "Calling Gemini %s for resume tailoring [%s at %s]",
-        settings.gemini_pro_model, job_title, company_name,
+        "Calling Gemini for resume tailoring [%s at %s]",
+        job_title, company_name,
     )
     t0 = time.perf_counter()
 
-    interaction = client.interactions.create(
-        model=settings.gemini_pro_model,
-        input=full_input,
+    config = types.GenerateContentConfig(
         response_mime_type="application/json",
     )
-    raw_text = (interaction.output_text or "").strip()
+    raw_text = _generate_with_fallback(
+        client=client,
+        primary_model=settings.gemini_pro_model,
+        contents=full_input,
+        config=config,
+    )
 
     elapsed_ms = int((time.perf_counter() - t0) * 1000)
     logger.info("Resume tailoring completed in %dms", elapsed_ms)
@@ -122,7 +156,7 @@ def generate_cover_letter(
     tone: str = "professional",
 ) -> str:
     """
-    Use Gemini 3.7 Flash to generate a human-toned, pain-point-driven cover letter.
+    Use Gemini 3.7 Flash (with fallback) to generate a human-toned cover letter.
 
     Returns the body text of the cover letter (3 paragraphs, no headers/sign-off).
     """
@@ -147,16 +181,16 @@ def generate_cover_letter(
     full_input = f"{system_prompt}\n\n---\n\n{user_content}"
 
     logger.info(
-        "Calling Gemini %s for cover letter [%s at %s]",
-        settings.gemini_flash_model, job_title, company_name,
+        "Calling Gemini for cover letter [%s at %s]",
+        job_title, company_name,
     )
     t0 = time.perf_counter()
 
-    interaction = client.interactions.create(
-        model=settings.gemini_flash_model,
-        input=full_input,
+    letter_body = _generate_with_fallback(
+        client=client,
+        primary_model=settings.gemini_flash_model,
+        contents=full_input,
     )
-    letter_body = (interaction.output_text or "").strip()
 
     elapsed_ms = int((time.perf_counter() - t0) * 1000)
     logger.info("Cover letter generated in %dms (%d chars)", elapsed_ms, len(letter_body))
