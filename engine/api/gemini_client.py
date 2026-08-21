@@ -52,9 +52,15 @@ def _generate_with_fallback(
     config: Optional[types.GenerateContentConfig] = None,
 ) -> str:
     """Generate content with automatic fallback to secondary models on 503/429/errors."""
-    # Ordered fallback: try each model until one works
-    # gemini-3.6-flash is the current AI Studio flagship as of 2025
-    fallbacks = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite-preview-06-17"]
+    # Ordered fallback: confirmed available models via API as of 2026-08
+    # gemini-3.6-flash is the stable default; others are tried on 503/404
+    fallbacks = [
+        "gemini-3.6-flash",
+        "gemini-3.7-flash",
+        "gemini-3.5-flash",
+        "gemini-2.5-flash",
+        "gemini-flash-latest",
+    ]
     candidate_models = [primary_model] + [m for m in fallbacks if m != primary_model]
     seen: set = set()
     models_to_try = [m for m in candidate_models if not (m in seen or seen.add(m))]
