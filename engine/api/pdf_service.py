@@ -46,20 +46,38 @@ def _render_html(template_name: str, context: dict) -> str:
 
 
 def _html_to_pdf(html: str, output_path: str) -> None:
-    """Convert HTML string to PDF using WeasyPrint."""
+    """
+    Convert HTML string to PDF with multi-tier fallback:
+      1. WeasyPrint (best CSS rendering, requires system pango/cairo)
+      2. xhtml2pdf / ReportLab (pure Python, zero C dependencies)
+      3. HTML raw file (ultimate fallback)
+    """
+    # Tier 1: Try WeasyPrint
     try:
         from weasyprint import HTML  # type: ignore
         HTML(string=html).write_pdf(output_path)
-        logger.debug("PDF written to %s", output_path)
-    except ImportError:
-        # Fallback: write HTML as-is (for dev environments without WeasyPrint system deps)
-        logger.warning("WeasyPrint not available — saving as .html fallback")
-        html_path = output_path.replace(".pdf", ".html")
-        with open(html_path, "w", encoding="utf-8") as f:
-            f.write(html)
-        raise RuntimeError(
-            "WeasyPrint is not installed. Run: pip install weasyprint"
-        ) from None
+        logger.debug("PDF written via WeasyPrint: %s", output_path)
+        return
+    except (ImportError, OSError, Exception) as weasy_err:
+        logger.info("WeasyPrint unavailable (%s), falling back to xhtml2pdf...", weasy_err)
+
+    # Tier 2: Try xhtml2pdf (pure Python)
+    try:
+        from xhtml2pdf import pisa  # type: ignore
+        with open(output_path, "wb") as pdf_file:
+            status = pisa.CreatePDF(html, dest=pdf_file)
+        if not status.err:
+            logger.debug("PDF written via xhtml2pdf: %s", output_path)
+            return
+        logger.warning("xhtml2pdf reported errors: %s", status.err)
+    except (ImportError, Exception) as xhtml_err:
+        logger.warning("xhtml2pdf failed (%s), writing HTML fallback...", xhtml_err)
+
+    # Tier 3: Write HTML fallback file
+    html_path = output_path.replace(".pdf", ".html")
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html)
+    logger.info("HTML fallback written to %s", html_path)
 
 
 def generate_signed_token(doc_id: str) -> str:
