@@ -18,8 +18,8 @@ from typing import Optional
 
 from jinja2 import Environment, FileSystemLoader
 
-from engine.api.config import get_settings
-from engine.api.models import GeminiResumeOutput
+from .config import get_settings
+from .models import GeminiResumeOutput
 
 logger = logging.getLogger(__name__)
 

@@ -17,8 +17,8 @@ from typing import Optional
 from google import genai
 from google.genai import types
 
-from engine.api.config import get_settings
-from engine.api.models import GeminiResumeOutput
+from .config import get_settings
+from .models import GeminiResumeOutput
 
 logger = logging.getLogger(__name__)
 

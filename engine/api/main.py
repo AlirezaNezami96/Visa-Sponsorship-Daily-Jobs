@@ -20,10 +20,10 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from engine.api.config import get_settings
-from engine.api.gemini_client import generate_cover_letter, tailor_resume
-from engine.api.google_docs import fetch_resume_from_google_doc
-from engine.api.models import (
+from .config import get_settings
+from .gemini_client import generate_cover_letter, tailor_resume
+from .google_docs import fetch_resume_from_google_doc
+from .models import (
     ATSReport,
     CoverLetterRequest,
     DocumentResponse,
@@ -33,14 +33,14 @@ from engine.api.models import (
     SessionInitRequest,
     SessionInitResponse,
 )
-from engine.api.pdf_service import (
+from .pdf_service import (
     cleanup_old_pdfs,
     generate_cover_letter_pdf,
     generate_resume_pdf,
     generate_signed_token,
     get_pdf_path,
 )
-from engine.api.session_store import get_session_store
+from .session_store import get_session_store
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -94,7 +94,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 settings = get_settings()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins,
+    allow_origins=settings.allowed_origins_list,
     allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type", "X-Session-ID"],

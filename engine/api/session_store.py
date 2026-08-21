@@ -75,6 +75,6 @@ _store: Optional[SessionStore] = None
 def get_session_store() -> SessionStore:
     global _store
     if _store is None:
-        from engine.api.config import get_settings
+        from .config import get_settings
         _store = SessionStore(ttl_seconds=get_settings().session_ttl_seconds)
     return _store
