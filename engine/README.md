@@ -10,7 +10,7 @@ engine/
 │   ├── main.py             ← App entry point + all routes
 │   ├── config.py           ← Pydantic settings
 │   ├── models.py           ← Request/response schemas
-│   ├── gemini_client.py    ← Gemini 2.5 Pro + 3.7 Flash
+│   ├── gemini_client.py    ← Gemini 3.7 Flash (Hybrid Reasoning)
 │   ├── google_docs.py      ← Public Google Doc fetcher
 │   ├── pdf_service.py      ← WeasyPrint PDF generation + HMAC tokens
 │   ├── session_store.py    ← In-memory session cache with TTL
@@ -26,7 +26,7 @@ engine/
 │       ├── popup.js
 │       └── popup.css
 ├── prompts/
-│   ├── resume_tailor_v1.txt    ← Gemini 2.5 Pro prompt
+│   ├── resume_tailor_v1.txt    ← Gemini 3.7 Flash prompt
 │   └── cover_letter_v1.txt     ← Gemini 3.7 Flash prompt
 ├── requirements.txt
 ├── Dockerfile
@@ -77,7 +77,7 @@ https://docs.google.com/document/d/THIS_IS_YOUR_DOC_ID/edit
 |--------|----------|-------------|
 | `GET` | `/health` | Liveness check |
 | `POST` | `/api/v1/session/init` | Fetch resume from Google Doc, create session |
-| `POST` | `/api/v1/resume/tailor` | ATS-optimize resume (Gemini 2.5 Pro) |
+| `POST` | `/api/v1/resume/tailor` | ATS-optimize resume (Gemini 3.7 Flash) |
 | `POST` | `/api/v1/cover-letter/generate` | Generate cover letter (Gemini 3.7 Flash) |
 | `GET` | `/api/v1/document/{session_id}/{doc_id}` | Download generated PDF |
 

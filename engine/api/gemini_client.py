@@ -2,8 +2,8 @@
 Gemini AI client for resume tailoring and cover letter generation.
 
 Uses google-genai SDK with:
-  - gemini-2.5-pro  → resume_tailor  (reasoning-heavy, structured JSON output)
-  - gemini-3.7-flash → cover_letter  (speed-optimized, human-toned text)
+  - gemini-3.7-flash → resume_tailor  (hybrid reasoning + structured JSON)
+  - gemini-3.7-flash → cover_letter   (human-toned text generation)
 """
 from __future__ import annotations
 
@@ -47,7 +47,7 @@ def tailor_resume(
     max_bullet_additions: int = 3,
 ) -> GeminiResumeOutput:
     """
-    Use Gemini 2.5 Pro to rewrite the resume to match the job description.
+    Use Gemini 3.7 Flash to rewrite the resume to match the job description.
 
     Returns a GeminiResumeOutput parsed from the model's structured JSON output.
     """

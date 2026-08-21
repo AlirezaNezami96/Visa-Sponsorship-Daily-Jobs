@@ -173,7 +173,7 @@ async function tailorResume() {
   if (!currentJobData) return;
 
   showState('loading');
-  $('loading-title').textContent = 'Optimizing resume with Gemini 2.5 Pro...';
+  $('loading-title').textContent = 'Optimizing resume with Gemini 3.7 Flash...';
   $('loading-subtitle').textContent = 'Analyzing keywords, rewriting bullet points, and building your PDF.';
   startProgressAnimation();
 

@@ -81,7 +81,7 @@ app = FastAPI(
     title="Job Acquisition Engine API",
     description=(
         "AI-powered resume tailoring and cover letter generation. "
-        "Uses Gemini 2.5 Pro for resume rewriting and Gemini 3.7 Flash for cover letters."
+        "Powered by Gemini 3.7 Flash with hybrid reasoning."
     ),
     version="1.0.0",
     lifespan=lifespan,

@@ -3,7 +3,7 @@
 ## v1 — Initial Release (2025-08)
 
 ### resume_tailor_v1.txt
-- Model: `gemini-2.5-pro`
+- Model: `gemini-3.7-flash`
 - 6-step Chain-of-Thought with structured JSON output
 - Explicit honesty constraints: no fabricated skills, tools, or projects
 - Keywords classified as: required / preferred / implicit
