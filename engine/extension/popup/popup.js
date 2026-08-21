@@ -245,7 +245,7 @@ async function generateCoverLetter() {
   if (!currentJobData) return;
 
   showState('loading');
-  $('loading-title').textContent = 'Writing cover letter with Gemini 2.0 Flash...';
+  $('loading-title').textContent = 'Writing cover letter with Gemini 3.7 Flash...';
   $('loading-subtitle').textContent = 'Identifying pain points, matching your background, and crafting a human-toned letter.';
   startProgressAnimation();
 

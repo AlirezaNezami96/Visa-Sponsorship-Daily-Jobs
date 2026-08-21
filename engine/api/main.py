@@ -81,7 +81,7 @@ app = FastAPI(
     title="Job Acquisition Engine API",
     description=(
         "AI-powered resume tailoring and cover letter generation. "
-        "Uses Gemini 2.5 Pro for resume rewriting and Gemini 2.0 Flash for cover letters."
+        "Uses Gemini 2.5 Pro for resume rewriting and Gemini 3.7 Flash for cover letters."
     ),
     version="1.0.0",
     lifespan=lifespan,
@@ -241,7 +241,7 @@ async def tailor_resume_endpoint(request: Request, body: ResumeTailorRequest):
 @limiter.limit(f"{settings.rate_limit_per_hour}/hour")
 async def generate_cover_letter_endpoint(request: Request, body: CoverLetterRequest):
     """
-    Generate a human-toned, pain-point-driven cover letter using Gemini 2.0 Flash.
+    Generate a human-toned, pain-point-driven cover letter using Gemini 3.7 Flash.
     Returns a download URL for the generated PDF.
     """
     session = _require_session(body.session_id)

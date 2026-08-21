@@ -3,7 +3,7 @@ Gemini AI client for resume tailoring and cover letter generation.
 
 Uses google-genai SDK with:
   - gemini-2.5-pro  → resume_tailor  (reasoning-heavy, structured JSON output)
-  - gemini-2.0-flash → cover_letter  (speed-optimized, human-toned text)
+  - gemini-3.7-flash → cover_letter  (speed-optimized, human-toned text)
 """
 from __future__ import annotations
 
@@ -115,7 +115,7 @@ def generate_cover_letter(
     tone: str = "professional",
 ) -> str:
     """
-    Use Gemini 2.0 Flash to generate a human-toned, pain-point-driven cover letter.
+    Use Gemini 3.7 Flash to generate a human-toned, pain-point-driven cover letter.
 
     Returns the body text of the cover letter (3 paragraphs, no headers/sign-off).
     """

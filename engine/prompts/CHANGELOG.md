@@ -11,7 +11,7 @@
 - MAX_NEW_BULLETS: controlled per-request (default 3)
 
 ### cover_letter_v1.txt
-- Model: `gemini-2.0-flash`
+- Model: `gemini-3.7-flash`
 - 3-paragraph structure: Hook → Evidence → Close
 - Anti-AI-voice forbidden patterns listed explicitly
 - Tone modes: professional / startup / casual

@@ -14,9 +14,8 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # ── Gemini ──────────────────────────────────────────────────────────────
-    gemini_api_key: str = Field(..., env="GEMINI_API_KEY")
     gemini_pro_model: str = Field("gemini-2.5-pro", env="GEMINI_PRO_MODEL")
-    gemini_flash_model: str = Field("gemini-2.0-flash", env="GEMINI_FLASH_MODEL")
+    gemini_flash_model: str = Field("gemini-3.7-flash", env="GEMINI_FLASH_MODEL")
 
     # ── Session ──────────────────────────────────────────────────────────────
     session_ttl_seconds: int = Field(7200, env="SESSION_TTL_SECONDS")
