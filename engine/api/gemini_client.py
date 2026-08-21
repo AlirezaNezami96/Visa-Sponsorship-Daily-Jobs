@@ -34,7 +34,14 @@ def _load_prompt(filename: str) -> str:
 
 
 def _get_client() -> genai.Client:
-    return genai.Client(api_key=get_settings().gemini_api_key)
+    key = get_settings().gemini_api_key or os.environ.get("GEMINI_API_KEY", "")
+    key = key.strip().strip("'\"")
+    if not key or key == "your-gemini-api-key-here":
+        raise ValueError(
+            "GEMINI_API_KEY is not configured or is still the placeholder value. "
+            "Please add your valid Gemini API key to engine/.env and restart the server."
+        )
+    return genai.Client(api_key=key)
 
 
 # ── Resume Tailoring ──────────────────────────────────────────────────────────

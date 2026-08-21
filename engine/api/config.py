@@ -27,6 +27,13 @@ class Settings(BaseSettings):
     gemini_pro_model: str = Field("gemini-3.7-flash")
     gemini_flash_model: str = Field("gemini-3.7-flash")
 
+    @field_validator("gemini_api_key", mode="before")
+    @classmethod
+    def clean_api_key(cls, v: Any) -> str:
+        if isinstance(v, str):
+            return v.strip().strip("'\"").strip()
+        return str(v or "").strip()
+
     # ── Session ──────────────────────────────────────────────────────────────
     session_ttl_seconds: int = Field(7200)
     session_secret: str = Field(
