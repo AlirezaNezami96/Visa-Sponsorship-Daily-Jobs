@@ -10,6 +10,7 @@ from typing import List, Optional, Tuple
 
 from job_radar.config.loader import get_config
 from job_radar.dedup.store import bulk_mark_sent, is_already_sent, is_available as supabase_available
+from job_radar.enrichment.linkedin import enrich_jobs_with_linkedin
 from job_radar.fetchers.jobboards import (
     DEFAULT_CONFIG_PATH,
     fetch_all_jobboard_jobs,
@@ -112,6 +113,11 @@ def run(
     if resume_text and new_matching_jobs:
         logger.info("Running resume matching for %d Junior AI jobs...", len(new_matching_jobs))
         match_resume_batch(new_matching_jobs, resume_text, config=radar_cfg)
+
+    # Company LinkedIn page discovery & enrichment
+    if new_matching_jobs:
+        logger.info("Enriching %d Junior AI jobs with company LinkedIn pages...", len(new_matching_jobs))
+        enrich_jobs_with_linkedin(new_matching_jobs)
 
     grouped = collections.defaultdict(list)
     for job in new_matching_jobs:

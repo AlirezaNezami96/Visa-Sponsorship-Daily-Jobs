@@ -120,11 +120,18 @@ def _render_job_card(
 
     ats_block = _render_ats_block(resume_match)
 
+    linkedin_url = j.get("company_linkedin_url")
+    linkedin_badge = (
+        f' · <a href="{html_lib.escape(linkedin_url)}" target="_blank" style="color:#0A66C2;text-decoration:none;font-weight:600;font-size:12px;text-transform:none;letter-spacing:normal;">💼 LinkedIn</a>'
+        if linkedin_url
+        else ""
+    )
+
     return f"""
     <div style="margin-bottom:16px;padding:16px;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
         <div>
-          <div style="font-size:13px;color:#64748B;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">{company}</div>
+          <div style="font-size:13px;color:#64748B;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">{company}{linkedin_badge}</div>
           <div style="font-size:16px;font-weight:700;color:#0F172A;margin-top:2px;">
             <a href="{url}" style="color:#1E293B;text-decoration:none;">{title}</a>
           </div>
@@ -230,7 +237,18 @@ def build_legacy_html(report: list, total_jobs: int) -> str:
         '<div style="padding: 20px 28px 28px; background: #fff; border: 1px solid #e8e8e8; border-top: none; border-radius: 0 0 12px 12px;">',
     ]
     for company, jobs in report:
-        html_parts.append(f'<h2 style="margin: 20px 0 8px; font-size: 17px; color: #333;">{company}</h2>')
+        # Check if first job has company_linkedin_url
+        co_linkedin = None
+        for j in jobs:
+            if j.get("company_linkedin_url"):
+                co_linkedin = j.get("company_linkedin_url")
+                break
+        linkedin_link = (
+            f' <a href="{html_lib.escape(co_linkedin)}" target="_blank" style="font-size:12px;color:#0A66C2;font-weight:normal;text-decoration:none;margin-left:8px;">💼 LinkedIn</a>'
+            if co_linkedin
+            else ""
+        )
+        html_parts.append(f'<h2 style="margin: 20px 0 8px; font-size: 17px; color: #333;">{company}{linkedin_link}</h2>')
         html_parts.append('<ul style="margin: 0; padding-left: 20px;">')
         for j in jobs:
             loc = j.get("location", "")
@@ -288,9 +306,16 @@ def build_justjoin_html(
 
         ats_block = _render_ats_block(job.get("resume_match"))
 
+        linkedin_url = job.get("company_linkedin_url")
+        linkedin_badge = (
+            f' · <a href="{html_lib.escape(linkedin_url)}" target="_blank" style="color:#0A66C2;text-decoration:none;font-weight:600;font-size:11px;text-transform:none;letter-spacing:normal;">💼 LinkedIn</a>'
+            if linkedin_url
+            else ""
+        )
+
         return f"""
         <div style="margin-bottom:14px;padding:14px;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,0.03);">
-          <div style="font-size:12px;color:#64748B;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">{company}</div>
+          <div style="font-size:12px;color:#64748B;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">{company}{linkedin_badge}</div>
           <div style="font-size:15px;font-weight:700;color:#0F172A;margin-top:2px;">
             <a href="{url}" style="color:#0F172A;text-decoration:none;">{title}</a>
           </div>

@@ -10,6 +10,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from job_radar.config.loader import get_config
 from job_radar.dedup.store import bulk_mark_sent, is_already_sent, is_available as supabase_available
+from job_radar.enrichment.linkedin import enrich_jobs_with_linkedin
 from job_radar.fetchers.justjoin import fetch_justjoin_jobs
 from job_radar.filters.dedupe import _load_seen, _save_seen
 from job_radar.notifications.email import send_justjoin_email
@@ -96,6 +97,11 @@ def run(
     if resume_text and new_jobs:
         logger.info("Running resume ATS scoring for %d JustJoin jobs...", len(new_jobs))
         match_resume_batch(new_jobs, resume_text, config=cfg)
+
+    # 5. Company LinkedIn page discovery & enrichment
+    if new_jobs:
+        logger.info("Enriching %d JustJoin jobs with company LinkedIn pages...", len(new_jobs))
+        enrich_jobs_with_linkedin(new_jobs)
 
     # Split by track
     ai_jobs = [j for j in new_jobs if j.get("category") == "AI / ML"]

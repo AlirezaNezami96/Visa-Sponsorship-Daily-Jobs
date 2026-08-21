@@ -88,7 +88,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add seen_justjoin_jobs.json || true
+          git add seen_justjoin_jobs.json state/company_linkedin_cache.json 2>/dev/null || true
           if git diff --cached --quiet; then
             exit 0
           fi

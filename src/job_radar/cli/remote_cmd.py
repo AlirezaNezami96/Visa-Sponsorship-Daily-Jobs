@@ -12,6 +12,7 @@ from typing import List, Optional
 
 from job_radar.config.loader import get_config
 from job_radar.dedup.store import bulk_mark_sent, is_already_sent, is_available as supabase_available
+from job_radar.enrichment.linkedin import enrich_jobs_with_linkedin
 from job_radar.fetchers.pipeline import fetch_companies
 from job_radar.fetchers.search_grounding import fetch_search_grounded_jobs
 from job_radar.filters.dedupe import _load_seen, _save_seen, dedupe
@@ -47,7 +48,17 @@ def _build_remote_html(report: list, total_jobs: int) -> str:
     ]
 
     for company, jobs in report:
-        html_parts.append(f'<h2 style="margin: 20px 0 8px; font-size: 17px; color: #333;">{company} <span style="font-size:12px;color:#11998e;font-weight:normal;">🌍 Remote</span></h2>')
+        co_linkedin = None
+        for j in jobs:
+            if j.get("company_linkedin_url"):
+                co_linkedin = j.get("company_linkedin_url")
+                break
+        linkedin_link = (
+            f' <a href="{co_linkedin}" target="_blank" style="font-size:12px;color:#0A66C2;font-weight:normal;text-decoration:none;margin-left:8px;">💼 LinkedIn</a>'
+            if co_linkedin
+            else ""
+        )
+        html_parts.append(f'<h2 style="margin: 20px 0 8px; font-size: 17px; color: #333;">{company}{linkedin_link} <span style="font-size:12px;color:#11998e;font-weight:normal;">🌍 Remote</span></h2>')
         for j in jobs:
             loc = j.get("location", "Remote")
             dept = j.get("department", "")
@@ -210,6 +221,11 @@ def run(
     if resume_text and all_new_jobs:
         logger.info("Running resume matching for %d remote jobs...", len(all_new_jobs))
         match_resume_batch(all_new_jobs, resume_text, config=cfg)
+
+    # Company LinkedIn page discovery & enrichment
+    if all_new_jobs:
+        logger.info("Enriching %d remote jobs with company LinkedIn pages...", len(all_new_jobs))
+        enrich_jobs_with_linkedin(all_new_jobs)
 
     if not dry_run:
         _save_seen(seen, REMOTE_SEEN_FILE)

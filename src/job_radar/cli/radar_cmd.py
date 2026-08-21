@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from job_radar.classifiers.relevance import classify_and_filter_jobs
 from job_radar.config.loader import get_config
 from job_radar.dedup.store import bulk_mark_sent, is_already_sent, is_available as supabase_available
+from job_radar.enrichment.linkedin import enrich_jobs_with_linkedin
 from job_radar.fetchers.pipeline import fetch_companies
 from job_radar.fetchers.public_apis import fetch_all_public_apis
 from job_radar.fetchers.search_grounding import fetch_search_grounded_jobs
@@ -165,6 +166,11 @@ def run(
     else:
         if not os.environ.get("GEMINI_API_KEY"):
             logger.debug("GEMINI_API_KEY not set — skipping resume matching")
+
+    # Company LinkedIn page discovery & enrichment (after discovery is finalized)
+    if qualified_jobs:
+        logger.info("Enriching %d qualified jobs with company LinkedIn pages...", len(qualified_jobs))
+        enrich_jobs_with_linkedin(qualified_jobs)
 
     internships = [j for j in qualified_jobs if j.get("classified_track") == "internship"]
     engineers = [j for j in qualified_jobs if j.get("classified_track") == "engineer"]
