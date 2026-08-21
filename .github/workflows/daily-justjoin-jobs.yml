@@ -1,0 +1,97 @@
+# Daily JustJoin.it Job Scraper (AI/ML & Mobile Tracks)
+# Scheduled for 05:00 UTC (08:30 AM Iran Time) — once daily
+# Supports manual trigger via workflow_dispatch
+
+name: Daily JustJoin Job Scan
+
+concurrency:
+  group: job-discovery-state
+  cancel-in-progress: false
+
+on:
+  schedule:
+    # 05:00 UTC = 08:30 AM IRST (Iran Standard Time)
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (no email sent)"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+permissions:
+  contents: write
+
+jobs:
+  scan-justjoin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.6.0
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libnss3 libatk-bridge2.0-0 libdrm2 libxkbcommon0 libgbm1 \
+            libasound2t64 libxshmfence1 libxrandr2 libxcursor1 libxi6 \
+            libxtst6 libxcomposite1 libxdamage1 libxfixes3
+        env:
+          DEBIAN_FRONTEND: noninteractive
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore Playwright browser cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}
+
+      - name: Install headless Chromium
+        run: python -m playwright install --only-shell chromium
+
+      - name: Run JustJoin Scraper
+        env:
+          EMAIL_PROVIDER: ${{ secrets.EMAIL_PROVIDER || 'resend' }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM || 'onboarding@resend.dev' }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            python run_justjoin.py --dry-run
+          else
+            python run_justjoin.py
+          fi
+
+      - name: Commit seen_justjoin_jobs state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add seen_justjoin_jobs.json || true
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "chore: update JustJoin seen state [skip ci]"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

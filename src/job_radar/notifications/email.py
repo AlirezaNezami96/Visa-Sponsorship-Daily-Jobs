@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional
 import requests as http_requests
 
 from job_radar.notifications.renderers import (
+    build_justjoin_html,
     build_legacy_html,
     build_radar_html,
 )
@@ -123,6 +124,45 @@ def send_junior_ai_email(report: list, provider: str = None):
         _send_via_gmail_smtp(subject, html_content)
     else:
         raise ValueError(f"Unknown email provider: {provider}")
+
+
+def send_justjoin_email(
+    ai_jobs: List[dict],
+    mobile_jobs: List[dict],
+    provider: Optional[str] = None,
+):
+    """Send JustJoin.it daily digest grouped by AI and Mobile tracks."""
+    provider = (provider or os.environ.get("EMAIL_PROVIDER", "resend")).lower()
+    total_jobs = len(ai_jobs) + len(mobile_jobs)
+    if total_jobs == 0:
+        logger.info("No new JustJoin.it jobs today — skipping email.")
+        return
+
+    # Sort each track's jobs by ATS score descending where available
+    sorted_ai = sorted(
+        ai_jobs,
+        key=lambda j: (j.get("resume_match") or {}).get("ats_score") or 0,
+        reverse=True,
+    )
+    sorted_mobile = sorted(
+        mobile_jobs,
+        key=lambda j: (j.get("resume_match") or {}).get("ats_score") or 0,
+        reverse=True,
+    )
+
+    subject = f"🚀 JustJoin.it Digest — {len(sorted_ai)} AI/ML, {len(sorted_mobile)} Mobile ({total_jobs} total jobs)"
+    html_content = build_justjoin_html(sorted_ai, sorted_mobile)
+
+    if provider == "resend":
+        _send_via_resend(subject, html_content)
+    elif provider == "sendgrid":
+        _send_via_sendgrid(subject, html_content)
+    elif provider == "gmail":
+        _send_via_gmail_smtp(subject, html_content)
+    else:
+        raise ValueError(f"Unknown email provider: {provider}")
+
+    logger.info("JustJoin email sent via %s: %d total jobs (%d AI, %d Mobile)", provider, total_jobs, len(sorted_ai), len(sorted_mobile))
 
 
 def _send_via_resend(subject: str, html: str):
