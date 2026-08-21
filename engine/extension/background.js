@@ -2,7 +2,7 @@
  * background.js — Service Worker
  *
  * Manages:
- *  1. Session lifecycle (init, persist session_id in chrome.storage.local)
+ *  1. Session lifecycle (init, persist session_id in chrome.storage.local, auto-recover on 401)
  *  2. API calls to the FastAPI backend (keeps Gemini key server-side)
  *  3. Downloads of generated PDFs
  *
@@ -21,16 +21,16 @@ async function getApiBase() {
 
 // ── Session Management ────────────────────────────────────────────────────────
 
-async function getOrCreateSession(googleDocId) {
-  const stored = await chrome.storage.local.get(['sessionId', 'sessionExpiry', 'sessionDocId']);
-
-  // Return cached session if still valid and same Google Doc
-  if (
-    stored.sessionId &&
-    stored.sessionExpiry > Date.now() &&
-    stored.sessionDocId === googleDocId
-  ) {
-    return { sessionId: stored.sessionId, fromCache: true };
+async function getOrCreateSession(googleDocId, forceNew = false) {
+  if (!forceNew) {
+    const stored = await chrome.storage.local.get(['sessionId', 'sessionExpiry', 'sessionDocId']);
+    if (
+      stored.sessionId &&
+      stored.sessionExpiry > Date.now() &&
+      stored.sessionDocId === googleDocId
+    ) {
+      return { sessionId: stored.sessionId, fromCache: true };
+    }
   }
 
   // Create new session
@@ -70,7 +70,9 @@ async function callResumeApi(payload) {
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(err.detail || `Resume API failed: ${response.status}`);
+    const error = new Error(err.detail || `Resume API failed: ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
   return response.json();
 }
@@ -84,7 +86,9 @@ async function callCoverLetterApi(payload) {
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(err.detail || `Cover letter API failed: ${response.status}`);
+    const error = new Error(err.detail || `Cover letter API failed: ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
   return response.json();
 }
@@ -117,16 +121,34 @@ async function handleMessage(message) {
       throw new Error('No Google Doc ID configured. Please open the extension settings.');
     }
 
-    const { sessionId } = await getOrCreateSession(settings.googleDocId);
+    let { sessionId } = await getOrCreateSession(settings.googleDocId);
 
-    const result = await callResumeApi({
-      session_id: sessionId,
-      job_description: jobData.jobDescription,
-      job_url: jobData.pageUrl,
-      company_name: jobData.companyName || 'Unknown Company',
-      job_title: jobData.jobTitle || 'Unknown Role',
-      options: options || {},
-    });
+    let result;
+    try {
+      result = await callResumeApi({
+        session_id: sessionId,
+        job_description: jobData.jobDescription,
+        job_url: jobData.pageUrl,
+        company_name: jobData.companyName || 'Unknown Company',
+        job_title: jobData.jobTitle || 'Unknown Role',
+        options: options || {},
+      });
+    } catch (err) {
+      // Auto-recover if session expired on backend (e.g. server restart)
+      if (err.status === 401 || err.message.includes('Session not found') || err.message.includes('expired')) {
+        const reinit = await getOrCreateSession(settings.googleDocId, true);
+        result = await callResumeApi({
+          session_id: reinit.sessionId,
+          job_description: jobData.jobDescription,
+          job_url: jobData.pageUrl,
+          company_name: jobData.companyName || 'Unknown Company',
+          job_title: jobData.jobTitle || 'Unknown Role',
+          options: options || {},
+        });
+      } else {
+        throw err;
+      }
+    }
 
     // Store download URL for quick access
     await chrome.storage.local.set({ lastResumeResult: result });
@@ -144,17 +166,36 @@ async function handleMessage(message) {
       throw new Error('Please set your name in the extension settings.');
     }
 
-    const { sessionId } = await getOrCreateSession(settings.googleDocId);
+    let { sessionId } = await getOrCreateSession(settings.googleDocId);
 
-    const result = await callCoverLetterApi({
-      session_id: sessionId,
-      job_description: jobData.jobDescription,
-      job_url: jobData.pageUrl,
-      company_name: jobData.companyName || 'Unknown Company',
-      job_title: jobData.jobTitle || 'Unknown Role',
-      user_name: settings.userName,
-      tone: 'professional',
-    });
+    let result;
+    try {
+      result = await callCoverLetterApi({
+        session_id: sessionId,
+        job_description: jobData.jobDescription,
+        job_url: jobData.pageUrl,
+        company_name: jobData.companyName || 'Unknown Company',
+        job_title: jobData.jobTitle || 'Unknown Role',
+        user_name: settings.userName,
+        tone: 'professional',
+      });
+    } catch (err) {
+      // Auto-recover if session expired on backend (e.g. server restart)
+      if (err.status === 401 || err.message.includes('Session not found') || err.message.includes('expired')) {
+        const reinit = await getOrCreateSession(settings.googleDocId, true);
+        result = await callCoverLetterApi({
+          session_id: reinit.sessionId,
+          job_description: jobData.jobDescription,
+          job_url: jobData.pageUrl,
+          company_name: jobData.companyName || 'Unknown Company',
+          job_title: jobData.jobTitle || 'Unknown Role',
+          user_name: settings.userName,
+          tone: 'professional',
+        });
+      } else {
+        throw err;
+      }
+    }
 
     await chrome.storage.local.set({ lastCoverLetterResult: result });
     return { success: true, result };
