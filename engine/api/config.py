@@ -24,8 +24,8 @@ class Settings(BaseSettings):
     gemini_api_key: str = Field(
         default_factory=lambda: os.environ.get("GEMINI_API_KEY", ""),
     )
-    gemini_pro_model: str = Field("gemini-3.7-flash")
-    gemini_flash_model: str = Field("gemini-3.7-flash")
+    gemini_pro_model: str = Field("gemini-3.6-flash")
+    gemini_flash_model: str = Field("gemini-3.6-flash")
 
     @field_validator("gemini_api_key", mode="before")
     @classmethod

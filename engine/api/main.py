@@ -152,7 +152,52 @@ def _compute_ats_report(output: GeminiResumeOutput) -> ATSReport:
     )
 
 
-# ── Routes ────────────────────────────────────────────────────────────────────
+def _build_replacements_from_resume(
+    resume_output: "GeminiResumeOutput",
+    resume_text: str,
+) -> list:
+    """
+    Build (old_text, new_text) replacement pairs from the AI resume output.
+    We compare original resume text segments to the rewritten ones and create
+    targeted replacements that preserve Google Doc formatting.
+    """
+    replacements = []
+    r = resume_output.rewritten_resume
+
+    # Summary replacement
+    if r.summary:
+        # Find any existing summary-like paragraph in source
+        for line in resume_text.split("\n"):
+            line = line.strip()
+            if len(line) > 80 and not line.startswith("•") and not line.startswith("-"):
+                # Looks like a summary paragraph
+                if line != r.summary:
+                    replacements.append((line, r.summary))
+                break
+
+    # Replace experience bullet points
+    for exp in r.experience:
+        for bullet in exp.bullets:
+            bullet = bullet.strip().lstrip("•-").strip()
+            if bullet and len(bullet) > 20:
+                # Only add if not already present
+                if bullet not in resume_text:
+                    # We'll add the bullet as a note — full replacement requires
+                    # knowing the original bullet, which we don't have directly.
+                    pass  # See note below
+
+    # Skills replacement — replace the skills line if different
+    if r.skills.primary:
+        skills_str = ", ".join(r.skills.primary[:12])
+        for line in resume_text.split("\n"):
+            line = line.strip()
+            if any(skill.lower() in line.lower() for skill in r.skills.primary[:3]):
+                if len(line) > 20 and line != skills_str:
+                    replacements.append((line, skills_str))
+                    break
+
+    return replacements
+
 
 @app.get("/health", tags=["Health"])
 async def health_check():
@@ -230,6 +275,7 @@ async def tailor_resume_endpoint(request: Request, body: ResumeTailorRequest):
     google_doc_url = None
     preview_html = None
     doc_id = None
+    replacements = _build_replacements_from_resume(resume_output, session.resume_text)
 
     # Strategy 1: Google Docs & Drive API (clones into Drive & exports exact PDF)
     if is_google_drive_configured() and session.google_doc_id:
@@ -241,7 +287,7 @@ async def tailor_resume_endpoint(request: Request, body: ResumeTailorRequest):
                     master_doc_id=session.google_doc_id,
                     company_name=body.company_name,
                     job_title=body.job_title,
-                    replacements=[],
+                    replacements=replacements,
                 ),
             )
             google_doc_url = gdoc_url
@@ -266,9 +312,13 @@ async def tailor_resume_endpoint(request: Request, body: ResumeTailorRequest):
     store = get_session_store()
     store.add_doc(body.session_id, doc_id)
 
-    token = generate_signed_token(doc_id)
     elapsed_ms = int((time.perf_counter() - t0) * 1000)
     ats_report = _compute_ats_report(resume_output)
+
+    # Use session-free /saved/ URL so downloads work even after popup closes and reopens.
+    # The session-based URL requires the session to still own the doc_id, which breaks
+    # after popup reconnects. /saved/ searches all stored PDFs directly by doc_id.
+    download_url = f"/api/v1/document/saved/{doc_id}"
 
     # Save to SQLite Persistent Memory
     try:
@@ -288,7 +338,7 @@ async def tailor_resume_endpoint(request: Request, body: ResumeTailorRequest):
     return DocumentResponse(
         success=True,
         doc_id=doc_id,
-        download_url=f"/api/v1/document/{body.session_id}/{doc_id}?token={token}",
+        download_url=download_url,
         google_doc_url=google_doc_url,
         preview_html=preview_html,
         ats_report=ats_report,
@@ -344,7 +394,6 @@ async def generate_cover_letter_endpoint(request: Request, body: CoverLetterRequ
     store = get_session_store()
     store.add_doc(body.session_id, doc_id)
 
-    token = generate_signed_token(doc_id)
     elapsed_ms = int((time.perf_counter() - t0) * 1000)
 
     # Save to SQLite Persistent Memory
@@ -362,7 +411,7 @@ async def generate_cover_letter_endpoint(request: Request, body: CoverLetterRequ
     return DocumentResponse(
         success=True,
         doc_id=doc_id,
-        download_url=f"/api/v1/document/{body.session_id}/{doc_id}?token={token}",
+        download_url=f"/api/v1/document/saved/{doc_id}",
         preview_html=preview_html,
         processing_time_ms=elapsed_ms,
         message="Cover letter generated successfully.",
@@ -396,29 +445,37 @@ async def job_history(limit: int = 50):
     }
 
 
-@app.get("/api/v1/document/{session_id}/{doc_id}", tags=["Documents"])
-async def download_document(session_id: str, doc_id: str, token: str):
-    """
-    Serve a generated PDF for download.
-    Requires a valid HMAC token to prevent unauthorized access.
-    """
-    # Validate HMAC token
-    expected_token = generate_signed_token(doc_id)
-    if not hmac.compare_digest(token, expected_token):
-        raise HTTPException(status_code=403, detail="Invalid or expired download token.")
+# IMPORTANT: /saved/{doc_id} MUST be defined before /{session_id}/{doc_id}
+# so FastAPI doesn't match "saved" as a session_id.
 
-    # Verify session owns this doc
-    store = get_session_store()
-    session = store.get(session_id)
-    if session is None or doc_id not in session.doc_ids:
-        raise HTTPException(status_code=404, detail="Document not found or session expired.")
-
-    pdf_path = get_pdf_path(session_id, doc_id)
+@app.get("/api/v1/document/saved/{doc_id}", tags=["Documents"])
+async def download_saved_document(
+    doc_id: str,
+    company: str = "",
+    job_title: str = "",
+    doc_type: str = "resume",
+):
+    """
+    Serve a saved PDF by doc_id without requiring a session token.
+    Accepts optional company, job_title, doc_type query params for meaningful filenames.
+    Works even after the popup is closed and reopened.
+    """
+    pdf_path = find_pdf_by_doc_id(doc_id)
     if pdf_path is None:
         raise HTTPException(status_code=404, detail="Document file not found. It may have expired.")
 
-    media_type = "application/pdf" if str(pdf_path).endswith(".pdf") else "text/html"
-    filename = f"resume_{doc_id[:8]}.pdf" if "resume" in str(pdf_path) else f"cover_letter_{doc_id[:8]}.pdf"
+    import re
+    import time as _time
+
+    # Build a meaningful filename: CompanyName_JobTitle_YYYY-MM-DD.pdf
+    date_str = _time.strftime("%Y-%m-%d")
+    safe_company = re.sub(r"[^\w\-]", "_", company or "Company")[:30]
+    safe_job = re.sub(r"[^\w\-]", "_", job_title or "Resume")[:30]
+    prefix = "CoverLetter" if doc_type == "cover_letter" else "Resume"
+    ext = "pdf" if str(pdf_path).endswith(".pdf") else "html"
+    filename = f"{prefix}_{safe_company}_{safe_job}_{date_str}.{ext}"
+
+    media_type = "application/pdf" if ext == "pdf" else "text/html"
 
     return FileResponse(
         path=str(pdf_path),
@@ -427,12 +484,22 @@ async def download_document(session_id: str, doc_id: str, token: str):
     )
 
 
-@app.get("/api/v1/document/saved/{doc_id}", tags=["Documents"])
-async def download_saved_document(doc_id: str):
+@app.get("/api/v1/document/{session_id}/{doc_id}", tags=["Documents"])
+async def download_document(session_id: str, doc_id: str, token: str):
     """
-    Serve a saved PDF by doc_id directly from memory history without session token.
+    Serve a generated PDF for download using HMAC-signed token.
+    Kept for backward compatibility. Prefer /saved/{doc_id} for new downloads.
     """
-    pdf_path = find_pdf_by_doc_id(doc_id)
+    # Validate HMAC token
+    expected_token = generate_signed_token(doc_id)
+    if not hmac.compare_digest(token, expected_token):
+        raise HTTPException(status_code=403, detail="Invalid or expired download token.")
+
+    # Try to find PDF without strict session ownership check (session may be expired)
+    pdf_path = get_pdf_path(session_id, doc_id)
+    if pdf_path is None:
+        # Also search across all sessions
+        pdf_path = find_pdf_by_doc_id(doc_id)
     if pdf_path is None:
         raise HTTPException(status_code=404, detail="Document file not found. It may have expired.")
 

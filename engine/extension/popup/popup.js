@@ -308,11 +308,16 @@ function displayResumeResult(result) {
     $('ats-section').classList.add('hidden');
   }
 
-  // Store download URL
-  const downloadUrl = result.download_url || (result.resume_doc_id ? `/api/v1/document/saved/${result.resume_doc_id}` : '');
+  // Build download URL with naming params for a meaningful filename
+  const companyName = currentJobData?.companyName || result.company_name || 'Company';
+  const jobTitle = currentJobData?.jobTitle || result.job_title || 'Resume';
+  const baseUrl = result.download_url || (result.resume_doc_id ? `/api/v1/document/saved/${result.resume_doc_id}` : '');
+  const downloadUrl = baseUrl
+    ? `${baseUrl}?company=${encodeURIComponent(companyName)}&job_title=${encodeURIComponent(jobTitle)}&doc_type=resume`
+    : '';
   $('btn-download').dataset.url = downloadUrl;
   $('btn-download').dataset.filename =
-    `resume_${(currentJobData?.companyName || result.company_name || 'job').replace(/\s+/g, '_')}.pdf`;
+    `Resume_${companyName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
 
   // Google Doc link
   const btnGDoc = $('btn-open-gdoc');
@@ -355,10 +360,15 @@ function displayCoverLetterResult(result) {
     ? `Generated in ${(result.processing_time_ms / 1000).toFixed(1)}s`
     : '';
 
-  const downloadUrl = result.download_url || (result.cover_letter_doc_id ? `/api/v1/document/saved/${result.cover_letter_doc_id}` : '');
+  const companyName = currentJobData?.companyName || result.company_name || 'Company';
+  const jobTitle = currentJobData?.jobTitle || result.job_title || 'Role';
+  const baseUrl = result.download_url || (result.cover_letter_doc_id ? `/api/v1/document/saved/${result.cover_letter_doc_id}` : '');
+  const downloadUrl = baseUrl
+    ? `${baseUrl}?company=${encodeURIComponent(companyName)}&job_title=${encodeURIComponent(jobTitle)}&doc_type=cover_letter`
+    : '';
   $('btn-download').dataset.url = downloadUrl;
   $('btn-download').dataset.filename =
-    `cover_letter_${(currentJobData?.companyName || result.company_name || 'job').replace(/\s+/g, '_')}.pdf`;
+    `CoverLetter_${companyName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
 
   showState('result');
 }
@@ -422,12 +432,37 @@ async function init() {
       const { task } = await sendToBackground({ action: 'GET_TASK_STATUS', url: tab.url });
       
       if (task && task.status === 'RUNNING') {
+        // Restore job data context so back button and UI work correctly after reconnect
+        if (task.companyName || task.jobTitle) {
+          currentJobData = {
+            pageUrl: tab.url,
+            companyName: task.companyName || 'Unknown Company',
+            jobTitle: task.jobTitle || 'Unknown Role',
+            jobDescription: '',
+            charCount: 0,
+          };
+          updateJobBanner(currentJobData);
+        }
         showState('loading');
+        startProgressAnimation(task.startedAt || Date.now(),
+          task.type === 'cover_letter' ? 'Writing cover letter...' : 'Optimizing resume with Gemini...'
+        );
         pollTaskStatus(tab.url);
         return;
       }
       
       if (task && task.status === 'COMPLETED') {
+        // Restore job data context from saved task state
+        if (task.companyName || task.jobTitle) {
+          currentJobData = {
+            pageUrl: tab.url,
+            companyName: task.companyName || 'Unknown Company',
+            jobTitle: task.jobTitle || 'Unknown Role',
+            jobDescription: '',
+            charCount: 0,
+          };
+          updateJobBanner(currentJobData);
+        }
         if (task.type === 'cover_letter') {
           displayCoverLetterResult(task.result);
         } else {
