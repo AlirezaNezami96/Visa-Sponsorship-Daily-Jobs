@@ -73,6 +73,7 @@ class DocumentResponse(BaseModel):
     success: bool
     doc_id: str
     download_url: str
+    google_doc_url: Optional[str] = None
     preview_html: Optional[str] = None
     ats_report: Optional[ATSReport] = None
     processing_time_ms: int

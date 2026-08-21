@@ -19,6 +19,10 @@ node_modules/
 
 # Environment & Credentials
 .env
+engine/.env
+credentials.json
+engine/credentials.json
+*.json.key
 *.pem
 
 # OS generated files

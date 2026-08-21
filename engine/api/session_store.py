@@ -18,6 +18,7 @@ from typing import Dict, List, Optional
 class Session:
     session_id: str
     resume_text: str
+    google_doc_id: str = ""
     created_at: float = field(default_factory=time.time)
     doc_ids: List[str] = field(default_factory=list)
 
@@ -32,13 +33,14 @@ class SessionStore:
         self._store: Dict[str, Session] = {}
         self._ttl = ttl_seconds
 
-    def create(self, resume_text: str) -> str:
+    def create(self, resume_text: str, google_doc_id: str = "") -> str:
         """Create a new session and return its ID."""
         self._evict_expired()
         session_id = str(uuid.uuid4())
         self._store[session_id] = Session(
             session_id=session_id,
             resume_text=resume_text,
+            google_doc_id=google_doc_id,
         )
         return session_id
 

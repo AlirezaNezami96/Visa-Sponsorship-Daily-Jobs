@@ -34,6 +34,14 @@ class Settings(BaseSettings):
             return v.strip().strip("'\"").strip()
         return str(v or "").strip()
 
+    # ── Google Drive & Docs ──────────────────────────────────────────────────
+    google_credentials_path: str = Field(
+        default_factory=lambda: os.environ.get("GOOGLE_CREDENTIALS_PATH", "credentials.json")
+    )
+    google_drive_folder_id: str = Field(
+        default_factory=lambda: os.environ.get("GOOGLE_DRIVE_FOLDER_ID", "")
+    )
+
     # ── Session ──────────────────────────────────────────────────────────────
     session_ttl_seconds: int = Field(7200)
     session_secret: str = Field(

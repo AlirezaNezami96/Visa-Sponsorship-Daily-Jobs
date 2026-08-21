@@ -236,6 +236,15 @@ function displayResumeResult(result) {
   $('btn-download').dataset.filename =
     `resume_${(currentJobData?.companyName || 'job').replace(/\s+/g, '_')}.pdf`;
 
+  // Google Doc link
+  const btnGDoc = $('btn-open-gdoc');
+  if (result.google_doc_url) {
+    btnGDoc.href = result.google_doc_url;
+    btnGDoc.classList.remove('hidden');
+  } else {
+    btnGDoc.classList.add('hidden');
+  }
+
   showState('result');
 }
 
@@ -253,6 +262,7 @@ async function generateCoverLetter() {
     const { success, result, error } = await sendToBackground({
       action: 'GENERATE_COVER_LETTER',
       jobData: currentJobData,
+      options: { tone: 'professional' },
     });
 
     completeProgress();
@@ -266,6 +276,7 @@ async function generateCoverLetter() {
     currentResult = result;
     $('result-title').textContent = '✉️ Cover Letter Ready!';
     $('ats-section').classList.add('hidden');
+    $('btn-open-gdoc').classList.add('hidden');
     $('result-meta').textContent  = result.processing_time_ms
       ? `Generated in ${(result.processing_time_ms / 1000).toFixed(1)}s`
       : '';

@@ -93,11 +93,16 @@
       <div class="ats-keywords" id="ats-keywords"></div>
     </div>
 
-    <!-- Download Button -->
-    <button id="btn-download" class="btn btn-success btn-full">
-      <span class="btn-icon-inline">⬇️</span>
-      Download PDF
-    </button>
+    <!-- Action Buttons -->
+    <div class="result-actions" style="display: flex; flex-direction: column; gap: 8px; margin: 16px 0 8px 0;">
+      <a id="btn-open-gdoc" class="btn btn-primary btn-full hidden" target="_blank" rel="noopener noreferrer" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <span>📝</span> Open in Google Docs
+      </a>
+      <button id="btn-download" class="btn btn-success btn-full">
+        <span class="btn-icon-inline">⬇️</span>
+        Download PDF
+      </button>
+    </div>
 
     <div class="result-meta" id="result-meta"></div>
 

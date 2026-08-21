@@ -156,6 +156,17 @@ def generate_cover_letter_pdf(
     return doc_id, pdf_path, html
 
 
+def save_raw_pdf_bytes(pdf_bytes: bytes, session_id: str) -> tuple[str, str]:
+    """Save raw PDF bytes (e.g. from Google Drive export) and return (doc_id, pdf_path)."""
+    doc_id = str(uuid.uuid4())
+    out_dir = _ensure_output_dir() / session_id
+    out_dir.mkdir(parents=True, exist_ok=True)
+    pdf_path = str(out_dir / f"{doc_id}.pdf")
+    with open(pdf_path, "wb") as f:
+        f.write(pdf_bytes)
+    return doc_id, pdf_path
+
+
 def get_pdf_path(session_id: str, doc_id: str) -> Optional[Path]:
     """Return the full path to a generated PDF, or None if it doesn't exist."""
     out_dir = _ensure_output_dir() / session_id

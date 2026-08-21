@@ -23,6 +23,7 @@ from slowapi.util import get_remote_address
 from .config import get_settings
 from .gemini_client import generate_cover_letter, tailor_resume
 from .google_docs import fetch_resume_from_google_doc
+from .google_drive_docs import clone_and_tailor_doc, is_google_drive_configured
 from .models import (
     ATSReport,
     CoverLetterRequest,
@@ -39,12 +40,14 @@ from .pdf_service import (
     generate_resume_pdf,
     generate_signed_token,
     get_pdf_path,
+    save_raw_pdf_bytes,
 )
 from .session_store import get_session_store
 
 # ── Logging ───────────────────────────────────────────────────────────────────
+settings = get_settings()
 logging.basicConfig(
-    level=logging.INFO,
+    level=settings.log_level,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
@@ -115,26 +118,36 @@ def _require_session(session_id: str):
 
 
 def _compute_ats_report(output: GeminiResumeOutput) -> ATSReport:
-    required = output.ats_keywords.get("required", [])
-    preferred = output.ats_keywords.get("preferred", [])
+    """Calculate match metrics and estimated ATS score."""
+    req = output.ats_keywords.get("required", [])
+    pref = output.ats_keywords.get("preferred", [])
     matched = output.matched_keywords
     missing = output.missing_entirely
-    total_required = len(required)
-    score = int((len(matched) / max(total_required, 1)) * 100)
+
+    total_key = len(req) + len(pref)
+    if total_key == 0:
+        score = 85
+    else:
+        req_matched = len([k for k in req if k in matched])
+        pref_matched = len([k for k in pref if k in matched])
+        req_weight = (req_matched / max(len(req), 1)) * 70
+        pref_weight = (pref_matched / max(len(pref), 1)) * 30
+        score = int(min(100, max(0, req_weight + pref_weight)))
+
     return ATSReport(
-        required_keywords=required,
-        preferred_keywords=preferred,
+        required_keywords=req,
+        preferred_keywords=pref,
         matched_keywords=matched,
         missing_entirely=missing,
-        ats_score_estimate=min(score, 100),
+        ats_score_estimate=score,
     )
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
-@app.get("/health", tags=["System"])
+@app.get("/health", tags=["Health"])
 async def health_check():
-    """Liveness probe — no authentication required."""
+    """Liveness probe. Returns active session count and status."""
     store = get_session_store()
     return {
         "status": "ok",
@@ -163,7 +176,7 @@ async def session_init(request: Request, body: SessionInitRequest):
         raise HTTPException(status_code=502, detail=f"Could not fetch Google Doc: {exc}")
 
     store = get_session_store()
-    session_id = store.create(resume_text)
+    session_id = store.create(resume_text, google_doc_id=body.google_doc_id)
 
     return SessionInitResponse(
         success=True,
@@ -181,8 +194,9 @@ async def session_init(request: Request, body: SessionInitRequest):
 @limiter.limit(f"{settings.rate_limit_per_hour}/hour")
 async def tailor_resume_endpoint(request: Request, body: ResumeTailorRequest):
     """
-    Tailor the master resume to a specific job description using Gemini 2.5 Pro.
-    Returns a download URL for the generated ATS-optimized PDF.
+    Tailor the master resume to a specific job description using Gemini.
+    Clones into Google Drive with in-place text replacement if configured,
+    and returns a direct Google Doc URL + downloadable PDF.
     """
     session = _require_session(body.session_id)
     t0 = time.perf_counter()
@@ -204,16 +218,41 @@ async def tailor_resume_endpoint(request: Request, body: ResumeTailorRequest):
         logger.exception("Resume tailoring failed for session %s", body.session_id)
         raise HTTPException(status_code=502, detail=f"AI processing failed: {exc}")
 
-    try:
-        doc_id, _pdf_path, preview_html = generate_resume_pdf(
-            resume_output=resume_output,
-            session_id=body.session_id,
-            company_name=body.company_name,
-            job_title=body.job_title,
-        )
-    except Exception as exc:
-        logger.exception("PDF generation failed for session %s", body.session_id)
-        raise HTTPException(status_code=500, detail=f"PDF generation failed: {exc}")
+    google_doc_url = None
+    preview_html = None
+    doc_id = None
+
+    # Strategy 1: Google Docs & Drive API (clones into Drive & exports exact PDF)
+    if is_google_drive_configured() and session.google_doc_id:
+        try:
+            logger.info("Attempting Google Drive cloning for %s...", body.company_name)
+            new_doc_id, gdoc_url, pdf_bytes = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: clone_and_tailor_doc(
+                    master_doc_id=session.google_doc_id,
+                    company_name=body.company_name,
+                    job_title=body.job_title,
+                    replacements=[],
+                ),
+            )
+            google_doc_url = gdoc_url
+            if pdf_bytes:
+                doc_id, _pdf_path = save_raw_pdf_bytes(pdf_bytes, session_id=body.session_id)
+        except Exception as exc:
+            logger.warning("Google Drive clone/export failed (%s), falling back to template engine...", exc)
+
+    # Strategy 2: Built-in PDF generation engine (xhtml2pdf / WeasyPrint)
+    if not doc_id:
+        try:
+            doc_id, _pdf_path, preview_html = generate_resume_pdf(
+                resume_output=resume_output,
+                session_id=body.session_id,
+                company_name=body.company_name,
+                job_title=body.job_title,
+            )
+        except Exception as exc:
+            logger.exception("PDF generation failed for session %s", body.session_id)
+            raise HTTPException(status_code=500, detail=f"PDF generation failed: {exc}")
 
     store = get_session_store()
     store.add_doc(body.session_id, doc_id)
@@ -226,6 +265,7 @@ async def tailor_resume_endpoint(request: Request, body: ResumeTailorRequest):
         success=True,
         doc_id=doc_id,
         download_url=f"/api/v1/document/{body.session_id}/{doc_id}?token={token}",
+        google_doc_url=google_doc_url,
         preview_html=preview_html,
         ats_report=ats_report,
         processing_time_ms=elapsed_ms,
