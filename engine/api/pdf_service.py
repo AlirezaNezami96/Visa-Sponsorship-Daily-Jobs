@@ -26,10 +26,12 @@ logger = logging.getLogger(__name__)
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 
+import re
+
 def _get_jinja_env() -> Environment:
     return Environment(
         loader=FileSystemLoader(str(_TEMPLATES_DIR)),
-        autoescape=True,
+        autoescape=False,
     )
 
 
@@ -43,6 +45,82 @@ def _render_html(template_name: str, context: dict) -> str:
     env = _get_jinja_env()
     template = env.get_template(template_name)
     return template.render(**context)
+
+
+def _format_url(url_str: str) -> str:
+    url_str = (url_str or "").strip()
+    if not url_str:
+        return ""
+    if url_str.startswith("http://") or url_str.startswith("https://"):
+        return url_str
+    return f"https://{url_str}"
+
+
+def _convert_bold_tags(text: str) -> str:
+    if not isinstance(text, str):
+        return text
+    # Convert markdown **text** to <b>text</b>
+    return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", text)
+
+
+def _prepare_resume_dict(data: dict) -> dict:
+    """Normalize and format resume dictionary for template rendering."""
+    data["name"] = data.get("name") or "Alireza Nezami"
+    data["title"] = data.get("title") or "Senior Android & Flutter Developer"
+
+    # Contact info defaults from master resume
+    contact = data.get("contact") or {}
+    if not contact.get("email"):
+        contact["email"] = "alirezanezami1996@gmail.com"
+    if not contact.get("portfolio"):
+        contact["portfolio"] = "alirezanezami96.github.io/AlirezaNezami"
+    if not contact.get("linkedin"):
+        contact["linkedin"] = "linkedin.com/in/alireza-nezami"
+    if not contact.get("location"):
+        contact["location"] = "EU Remote / Istanbul, Türkiye"
+    if not contact.get("phone"):
+        contact["phone"] = "+90 (543) 743 7966"
+
+    contact["portfolio_url"] = _format_url(contact.get("portfolio", ""))
+    contact["linkedin_url"] = _format_url(contact.get("linkedin", ""))
+    contact["github_url"] = _format_url(contact.get("github", ""))
+    data["contact"] = contact
+
+    # Summary
+    if data.get("summary"):
+        data["summary"] = _convert_bold_tags(data["summary"])
+
+    # Technical skills
+    tech_skills = data.get("technical_skills") or []
+    if not tech_skills and data.get("skills"):
+        old_skills = data["skills"]
+        if isinstance(old_skills, dict):
+            if old_skills.get("languages"):
+                tech_skills.append({"category": "Languages", "skills": ", ".join(old_skills["languages"])})
+            if old_skills.get("primary"):
+                tech_skills.append({"category": "Mobile Frameworks", "skills": ", ".join(old_skills["primary"])})
+            if old_skills.get("secondary"):
+                tech_skills.append({"category": "Architecture & Tools", "skills": ", ".join(old_skills["secondary"])})
+
+    for cat in tech_skills:
+        if isinstance(cat, dict):
+            cat["skills"] = _convert_bold_tags(cat.get("skills", ""))
+    data["technical_skills"] = tech_skills
+
+    # Experience bullets
+    for job in data.get("experience", []):
+        if isinstance(job, dict) and "bullets" in job:
+            job["bullets"] = [_convert_bold_tags(b) for b in job["bullets"]]
+
+    # Project bullets
+    for proj in data.get("projects", []):
+        if isinstance(proj, dict):
+            if "bullets" in proj and proj["bullets"]:
+                proj["bullets"] = [_convert_bold_tags(b) for b in proj["bullets"]]
+            if "description" in proj and proj["description"]:
+                proj["description"] = _convert_bold_tags(proj["description"])
+
+    return data
 
 
 def _html_to_pdf(html: str, output_path: str) -> None:
@@ -106,8 +184,10 @@ def generate_resume_pdf(
     out_dir = _ensure_output_dir() / session_id
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    resume_dict = _prepare_resume_dict(resume_output.rewritten_resume.model_dump())
+
     context = {
-        "resume": resume_output.rewritten_resume.model_dump(),
+        "resume": resume_dict,
         "company_name": company_name,
         "job_title": job_title,
         "generated_at": time.strftime("%B %d, %Y"),

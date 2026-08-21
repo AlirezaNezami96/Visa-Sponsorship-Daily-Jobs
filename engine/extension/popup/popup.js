@@ -311,13 +311,13 @@ function displayResumeResult(result) {
   // Build download URL with naming params for a meaningful filename
   const companyName = currentJobData?.companyName || result.company_name || 'Company';
   const jobTitle = currentJobData?.jobTitle || result.job_title || 'Resume';
+  const safeCompany = (companyName || 'Company').replace(/[^\w\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'Company';
   const baseUrl = result.download_url || (result.resume_doc_id ? `/api/v1/document/saved/${result.resume_doc_id}` : '');
   const downloadUrl = baseUrl
     ? `${baseUrl}?company=${encodeURIComponent(companyName)}&job_title=${encodeURIComponent(jobTitle)}&doc_type=resume`
     : '';
   $('btn-download').dataset.url = downloadUrl;
-  $('btn-download').dataset.filename =
-    `Resume_${companyName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
+  $('btn-download').dataset.filename = `Resume_Alireza_Nezami_Senior_Android_Developer_${safeCompany}.pdf`;
 
   // Google Doc link
   const btnGDoc = $('btn-open-gdoc');
@@ -337,7 +337,7 @@ async function generateCoverLetter() {
   if (!currentJobData) return;
 
   showState('loading');
-  startProgressAnimation(Date.now(), 'Writing cover letter with Gemini 3.7 Flash...');
+  startProgressAnimation(Date.now(), 'Writing cover letter with Gemini...');
 
   try {
     await sendToBackground({
@@ -362,13 +362,13 @@ function displayCoverLetterResult(result) {
 
   const companyName = currentJobData?.companyName || result.company_name || 'Company';
   const jobTitle = currentJobData?.jobTitle || result.job_title || 'Role';
+  const safeCompany = (companyName || 'Company').replace(/[^\w\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'Company';
   const baseUrl = result.download_url || (result.cover_letter_doc_id ? `/api/v1/document/saved/${result.cover_letter_doc_id}` : '');
   const downloadUrl = baseUrl
     ? `${baseUrl}?company=${encodeURIComponent(companyName)}&job_title=${encodeURIComponent(jobTitle)}&doc_type=cover_letter`
     : '';
   $('btn-download').dataset.url = downloadUrl;
-  $('btn-download').dataset.filename =
-    `CoverLetter_${companyName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
+  $('btn-download').dataset.filename = `CoverLetter_Alireza_Nezami_Senior_Android_Developer_${safeCompany}.pdf`;
 
   showState('result');
 }

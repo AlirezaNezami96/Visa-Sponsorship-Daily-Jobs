@@ -465,15 +465,12 @@ async def download_saved_document(
         raise HTTPException(status_code=404, detail="Document file not found. It may have expired.")
 
     import re
-    import time as _time
 
-    # Build a meaningful filename: CompanyName_JobTitle_YYYY-MM-DD.pdf
-    date_str = _time.strftime("%Y-%m-%d")
-    safe_company = re.sub(r"[^\w\-]", "_", company or "Company")[:30]
-    safe_job = re.sub(r"[^\w\-]", "_", job_title or "Resume")[:30]
+    # Build filename: Resume_Alireza_Nezami_Senior_Android_Developer_[company_name].pdf
+    safe_company = re.sub(r"[^\w\-]", "_", company or "Company").strip("_") or "Company"
     prefix = "CoverLetter" if doc_type == "cover_letter" else "Resume"
     ext = "pdf" if str(pdf_path).endswith(".pdf") else "html"
-    filename = f"{prefix}_{safe_company}_{safe_job}_{date_str}.{ext}"
+    filename = f"{prefix}_Alireza_Nezami_Senior_Android_Developer_{safe_company}.{ext}"
 
     media_type = "application/pdf" if ext == "pdf" else "text/html"
 

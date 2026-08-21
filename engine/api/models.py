@@ -94,43 +94,61 @@ class ContactInfo(BaseModel):
     email: str = ""
     linkedin: str = ""
     github: str = ""
+    portfolio: str = ""
     phone: str = ""
     location: str = ""
 
 
+class SkillCategory(BaseModel):
+    category: str = ""
+    skills: str = ""
+
+
 class ExperienceEntry(BaseModel):
-    company: str
-    title: str
-    dates: str
+    company: str = ""
+    title: str = ""
+    dates: str = ""
     location: str = ""
-    bullets: List[str]
+    bullets: List[str] = Field(default_factory=list)
 
 
 class SkillsSection(BaseModel):
-    primary: List[str] = []
-    secondary: List[str] = []
-    languages: List[str] = []
+    primary: List[str] = Field(default_factory=list)
+    secondary: List[str] = Field(default_factory=list)
+    languages: List[str] = Field(default_factory=list)
 
 
 class ProjectEntry(BaseModel):
-    name: str
-    description: str
-    tech: List[str] = []
+    name: str = ""
+    subtitle: str = ""
+    description: str = ""
+    tech: List[str] = Field(default_factory=list)
     url: str = ""
+    bullets: List[str] = Field(default_factory=list)
+
+
+class EducationEntry(BaseModel):
+    degree: str = ""
+    school: str = ""
+    dates: str = ""
+    location: str = ""
 
 
 class RewrittenResume(BaseModel):
-    name: str
-    contact: ContactInfo
+    name: str = "Alireza Nezami"
+    title: str = "Senior Android & Flutter Developer"
+    contact: ContactInfo = Field(default_factory=ContactInfo)
     summary: str = ""
-    experience: List[ExperienceEntry]
-    education: List[Dict[str, Any]] = []
-    skills: SkillsSection
-    projects: List[ProjectEntry] = []
+    technical_skills: List[SkillCategory] = Field(default_factory=list)
+    skills: Optional[SkillsSection] = None
+    experience: List[ExperienceEntry] = Field(default_factory=list)
+    projects: List[ProjectEntry] = Field(default_factory=list)
+    education: List[Any] = Field(default_factory=list)
 
 
 class GeminiResumeOutput(BaseModel):
-    ats_keywords: Dict[str, List[str]]
-    matched_keywords: List[str]
-    missing_entirely: List[str]
+    ats_keywords: Dict[str, List[str]] = Field(default_factory=dict)
+    matched_keywords: List[str] = Field(default_factory=list)
+    missing_entirely: List[str] = Field(default_factory=list)
     rewritten_resume: RewrittenResume
+
