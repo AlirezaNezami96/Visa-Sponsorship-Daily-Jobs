@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Acquisition Engine</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">⚡</span>
+      <span class="logo-text">Job Engine</span>
+    </div>
+    <button id="btn-settings" class="btn-icon" title="Settings" aria-label="Open settings">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
+        <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.892 3.433-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.892-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319z"/>
+      </svg>
+    </button>
+  </header>
+
+  <!-- ── Job Info Banner ── -->
+  <div id="job-banner" class="job-banner hidden">
+    <div class="job-banner-meta">
+      <span id="job-title-display" class="job-title-text">—</span>
+      <span class="separator">·</span>
+      <span id="company-display" class="company-text">—</span>
+    </div>
+    <div id="jd-char-count" class="char-count"></div>
+  </div>
+
+  <!-- ── No JD State ── -->
+  <div id="state-no-jd" class="state-card">
+    <div class="state-icon">🔍</div>
+    <div class="state-title">No job description found</div>
+    <div class="state-body">Navigate to a job posting on LinkedIn, Greenhouse, Lever, Indeed, or any careers page, then click Scan.</div>
+    <button id="btn-scan" class="btn btn-secondary btn-full">
+      Scan This Page
+    </button>
+  </div>
+
+  <!-- ── JD Found State ── -->
+  <div id="state-jd-found" class="state-card hidden">
+    <div class="state-icon success-icon">✅</div>
+    <div class="state-title">Job Description Ready</div>
+    <div class="state-body" id="jd-preview">Loading preview...</div>
+
+    <div class="action-buttons">
+      <button id="btn-tailor-resume" class="btn btn-primary btn-full">
+        <span class="btn-icon-inline">📄</span>
+        Optimize Resume
+      </button>
+      <button id="btn-cover-letter" class="btn btn-secondary btn-full">
+        <span class="btn-icon-inline">✉️</span>
+        Write Cover Letter
+      </button>
+    </div>
+
+    <button id="btn-rescan" class="btn btn-ghost btn-full btn-small">
+      Rescan Page
+    </button>
+  </div>
+
+  <!-- ── Loading State ── -->
+  <div id="state-loading" class="state-card hidden">
+    <div class="spinner-wrap">
+      <div class="spinner"></div>
+    </div>
+    <div class="state-title" id="loading-title">Analyzing job description...</div>
+    <div class="state-body" id="loading-subtitle">Gemini is optimizing your documents. This usually takes 15–30 seconds.</div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+  </div>
+
+  <!-- ── Result State ── -->
+  <div id="state-result" class="state-card hidden">
+    <div class="state-icon">🎉</div>
+    <div class="state-title" id="result-title">Resume Optimized!</div>
+
+    <!-- ATS Score -->
+    <div id="ats-section" class="ats-section hidden">
+      <div class="ats-score-label">ATS Match Score</div>
+      <div class="ats-score-bar-wrap">
+        <div class="ats-score-bar">
+          <div class="ats-score-fill" id="ats-score-fill"></div>
+        </div>
+        <span class="ats-score-value" id="ats-score-value">—</span>
+      </div>
+      <div class="ats-keywords" id="ats-keywords"></div>
+    </div>
+
+    <!-- Download Button -->
+    <button id="btn-download" class="btn btn-success btn-full">
+      <span class="btn-icon-inline">⬇️</span>
+      Download PDF
+    </button>
+
+    <div class="result-meta" id="result-meta"></div>
+
+    <button id="btn-back" class="btn btn-ghost btn-full btn-small">
+      ← Back to Job
+    </button>
+  </div>
+
+  <!-- ── Error State ── -->
+  <div id="state-error" class="state-card hidden">
+    <div class="state-icon">⚠️</div>
+    <div class="state-title">Something went wrong</div>
+    <div class="state-body" id="error-message">An unexpected error occurred.</div>
+    <button id="btn-retry" class="btn btn-secondary btn-full">
+      Try Again
+    </button>
+  </div>
+
+  <!-- ── Settings Panel (Overlay) ── -->
+  <div id="settings-panel" class="settings-panel hidden">
+    <div class="settings-header">
+      <span class="settings-title">⚙️ Settings</span>
+      <button id="btn-close-settings" class="btn-icon">✕</button>
+    </div>
+
+    <div class="settings-group">
+      <label for="input-doc-id" class="settings-label">Google Doc ID</label>
+      <input
+        id="input-doc-id"
+        type="text"
+        class="settings-input"
+        placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <p class="settings-hint">
+        The ID from your Google Doc URL: <code>docs.google.com/document/d/<strong>{ID}</strong>/edit</code>.
+        Must be shared as "Anyone with the link can view".
+      </p>
+    </div>
+
+    <div class="settings-group">
+      <label for="input-user-name" class="settings-label">Your Full Name</label>
+      <input
+        id="input-user-name"
+        type="text"
+        class="settings-input"
+        placeholder="Alireza Nezami"
+        autocomplete="name"
+      />
+      <p class="settings-hint">Used in the cover letter sign-off.</p>
+    </div>
+
+    <div class="settings-group">
+      <label for="input-api-base" class="settings-label">Backend URL</label>
+      <input
+        id="input-api-base"
+        type="url"
+        class="settings-input"
+        placeholder="http://localhost:8000"
+        autocomplete="off"
+      />
+      <p class="settings-hint">The URL of your FastAPI backend server.</p>
+    </div>
+
+    <button id="btn-save-settings" class="btn btn-primary btn-full">
+      Save Settings
+    </button>
+    <div id="settings-status" class="settings-status"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ resume.name }} — Resume</title>
+  <style>
+    /* ── Reset & Base ── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 10.5pt;
+      line-height: 1.45;
+      color: #1a1a1a;
+      background: #fff;
+      padding: 0.6in 0.7in;
+      max-width: 8.5in;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #1a1a1a;
+      margin-bottom: 12px;
+    }
+
+    .header h1 {
+      font-size: 22pt;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #000;
+    }
+
+    .contact-line {
+      margin-top: 5px;
+      font-size: 9pt;
+      color: #444;
+    }
+
+    .contact-line a { color: #2563eb; text-decoration: none; }
+
+    /* ── Section Headers ── */
+    .section-title {
+      font-size: 10pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #000;
+      border-bottom: 1px solid #aaa;
+      margin: 12px 0 6px 0;
+      padding-bottom: 2px;
+    }
+
+    /* ── Experience ── */
+    .job-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 2px;
+    }
+
+    .job-title-company {
+      font-weight: bold;
+      font-size: 10.5pt;
+    }
+
+    .job-title-company .company { font-style: italic; font-weight: normal; }
+    .job-dates { font-size: 9.5pt; color: #555; white-space: nowrap; }
+    .job-location { font-size: 9pt; color: #777; margin-bottom: 3px; }
+
+    .job-bullets {
+      list-style: disc;
+      padding-left: 16px;
+      margin-top: 2px;
+    }
+
+    .job-bullets li {
+      margin-bottom: 2px;
+      font-size: 10pt;
+      line-height: 1.4;
+    }
+
+    /* ── Skills ── */
+    .skills-table {
+      width: 100%;
+      font-size: 9.5pt;
+    }
+
+    .skills-table td { vertical-align: top; padding: 1px 4px 1px 0; }
+    .skills-table .label { font-weight: bold; width: 30%; color: #333; }
+
+    /* ── Education ── */
+    .edu-entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 10pt;
+      margin-bottom: 4px;
+    }
+
+    .edu-degree { font-weight: bold; }
+    .edu-school { font-style: italic; font-weight: normal; }
+    .edu-dates { font-size: 9pt; color: #666; }
+
+    /* ── Projects ── */
+    .project-name { font-weight: bold; font-size: 10pt; }
+    .project-tech { font-size: 9pt; color: #555; font-style: italic; }
+    .project-desc { font-size: 10pt; margin-top: 1px; }
+
+    /* ── Summary ── */
+    .summary-text { font-size: 10pt; line-height: 1.5; color: #222; }
+
+    /* ── ATS Note (hidden in print) ── */
+    .ats-note {
+      margin-top: 14px;
+      padding: 6px 10px;
+      background: #f0f4ff;
+      border-left: 3px solid #2563eb;
+      font-size: 8.5pt;
+      color: #3730a3;
+      page-break-inside: avoid;
+    }
+
+    @media print {
+      .ats-note { display: none; }
+      body { padding: 0.5in; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <div class="header">
+    <h1>{{ resume.name }}</h1>
+    <div class="contact-line">
+      {% if resume.contact.email %}<a href="mailto:{{ resume.contact.email }}">{{ resume.contact.email }}</a>{% endif %}
+      {% if resume.contact.phone %} · {{ resume.contact.phone }}{% endif %}
+      {% if resume.contact.linkedin %} · <a href="{{ resume.contact.linkedin }}">LinkedIn</a>{% endif %}
+      {% if resume.contact.github %} · <a href="{{ resume.contact.github }}">GitHub</a>{% endif %}
+      {% if resume.contact.location %} · {{ resume.contact.location }}{% endif %}
+    </div>
+  </div>
+
+  <!-- ── Summary ── -->
+  {% if resume.summary %}
+  <div class="section-title">Summary</div>
+  <p class="summary-text">{{ resume.summary }}</p>
+  {% endif %}
+
+  <!-- ── Experience ── -->
+  {% if resume.experience %}
+  <div class="section-title">Experience</div>
+  {% for job in resume.experience %}
+  <div style="margin-bottom: 10px;">
+    <div class="job-header">
+      <div class="job-title-company">
+        {{ job.title }} · <span class="company">{{ job.company }}</span>
+      </div>
+      <div class="job-dates">{{ job.dates }}</div>
+    </div>
+    {% if job.location %}<div class="job-location">{{ job.location }}</div>{% endif %}
+    <ul class="job-bullets">
+      {% for bullet in job.bullets %}
+      <li>{{ bullet }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- ── Projects ── -->
+  {% if resume.projects %}
+  <div class="section-title">Projects</div>
+  {% for proj in resume.projects %}
+  <div style="margin-bottom: 8px;">
+    <span class="project-name">{{ proj.name }}</span>
+    {% if proj.tech %}<span class="project-tech"> — {{ proj.tech | join(', ') }}</span>{% endif %}
+    <div class="project-desc">{{ proj.description }}</div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- ── Skills ── -->
+  {% if resume.skills.primary or resume.skills.secondary %}
+  <div class="section-title">Skills</div>
+  <table class="skills-table">
+    {% if resume.skills.primary %}
+    <tr>
+      <td class="label">Core / Primary</td>
+      <td>{{ resume.skills.primary | join(' · ') }}</td>
+    </tr>
+    {% endif %}
+    {% if resume.skills.secondary %}
+    <tr>
+      <td class="label">Tools & Frameworks</td>
+      <td>{{ resume.skills.secondary | join(' · ') }}</td>
+    </tr>
+    {% endif %}
+    {% if resume.skills.languages %}
+    <tr>
+      <td class="label">Languages</td>
+      <td>{{ resume.skills.languages | join(' · ') }}</td>
+    </tr>
+    {% endif %}
+  </table>
+  {% endif %}
+
+  <!-- ── Education ── -->
+  {% if resume.education %}
+  <div class="section-title">Education</div>
+  {% for edu in resume.education %}
+  <div class="edu-entry">
+    <span>
+      <span class="edu-degree">{{ edu.get('degree', '') }}</span>
+      {% if edu.get('school') %}, <span class="edu-school">{{ edu.school }}</span>{% endif %}
+    </span>
+    <span class="edu-dates">{{ edu.get('dates', '') }}</span>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- ── ATS Note (hidden on print) ── -->
+  <div class="ats-note">
+    ✅ ATS-optimized resume · Tailored for <strong>{{ job_title }}</strong> at <strong>{{ company_name }}</strong> · Generated {{ generated_at }}
+  </div>
+
+</body>
+</html>
