@@ -1,16 +1,16 @@
 /**
- * select.js — Robust Option Matching & Custom Combobox Clicker
+ * select.js — Robust Select & Custom Combobox Matcher
  */
 
 export function normalizeStr(str) {
   if (!str) return '';
-  return str
+  return String(str)
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]/g, ' ')
     .replace(/\s+/g, ' ')
-    .strip ? str.strip() : str.trim();
+    .trim();
 }
 
 export function findMatchingOption(options, targetValues, aliases = []) {
@@ -24,7 +24,7 @@ export function findMatchingOption(options, targetValues, aliases = []) {
     const text = (opt.text || opt.textContent || opt.innerText || '').trim();
     const val = (opt.value || '').trim();
     for (const target of allAliases) {
-      if (text === target || val === target) {
+      if (text.toLowerCase() === target.toLowerCase() || val.toLowerCase() === target.toLowerCase()) {
         return opt;
       }
     }
@@ -74,9 +74,8 @@ export async function selectNativeOrCustom(el, targets, aliases = []) {
   // 2. Custom ARIA combobox / listbox / custom dropdown
   if (el.getAttribute('role') === 'combobox' || el.classList.contains('select__control') || el.dataset.automationId) {
     el.click();
-    await new Promise((r) => setTimeout(r, 200));
+    await new Promise((r) => setTimeout(r, 220));
 
-    // Search for popup list options
     const candidates = Array.from(
       document.querySelectorAll('[role="option"], .select__option, [data-automation-id*="menu-item"], li')
     ).filter((o) => o.offsetParent !== null);

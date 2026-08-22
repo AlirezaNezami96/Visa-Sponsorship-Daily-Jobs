@@ -272,93 +272,6 @@ function extractCompany() {
   return '';
 }
 
-// ── Form Autofill Assist (Non-Submitting) ───────────────────────────────────
-
-function autofillApplicationForm(candidateData) {
-  if (!candidateData) return { count: 0 };
-  let filledCount = 0;
-
-  const setInputValue = (input, value) => {
-    if (!input || !value) return;
-    input.value = value;
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-    filledCount++;
-  };
-
-  const inputs = Array.from(document.querySelectorAll('input, textarea, select'));
-
-  for (const el of inputs) {
-    const name = (el.name || '').toLowerCase();
-    const id = (el.id || '').toLowerCase();
-    const placeholder = (el.placeholder || '').toLowerCase();
-    const label = (el.labels && el.labels[0] ? el.labels[0].textContent : '').toLowerCase();
-    const combined = `${name} ${id} ${placeholder} ${label}`;
-
-    // Full name
-    if (combined.includes('full name') || (combined.includes('name') && !combined.includes('first') && !combined.includes('last') && !combined.includes('company'))) {
-      if (candidateData.full_name) setInputValue(el, candidateData.full_name);
-    }
-    // First name
-    else if (combined.includes('first name') || combined.includes('firstname') || combined.includes('fname')) {
-      const first = (candidateData.full_name || '').split(' ')[0];
-      if (first) setInputValue(el, first);
-    }
-    // Last name
-    else if (combined.includes('last name') || combined.includes('lastname') || combined.includes('lname')) {
-      const parts = (candidateData.full_name || '').split(' ');
-      const last = parts.length > 1 ? parts.slice(1).join(' ') : '';
-      if (last) setInputValue(el, last);
-    }
-    // Email
-    else if (combined.includes('email') || el.type === 'email') {
-      if (candidateData.email) setInputValue(el, candidateData.email);
-    }
-    // Phone
-    else if (combined.includes('phone') || combined.includes('mobile') || combined.includes('tel') || el.type === 'tel') {
-      if (candidateData.phone) setInputValue(el, candidateData.phone);
-    }
-    // LinkedIn
-    else if (combined.includes('linkedin')) {
-      if (candidateData.linkedin) setInputValue(el, candidateData.linkedin);
-    }
-    // GitHub
-    else if (combined.includes('github') || combined.includes('git')) {
-      if (candidateData.github) setInputValue(el, candidateData.github);
-    }
-    // Portfolio / Website
-    else if (combined.includes('portfolio') || combined.includes('website') || combined.includes('url')) {
-      if (candidateData.portfolio) setInputValue(el, candidateData.portfolio);
-    }
-    // Location / City
-    else if (combined.includes('location') || combined.includes('city') || combined.includes('address')) {
-      if (candidateData.location) setInputValue(el, candidateData.location);
-    }
-    // Visa sponsorship screening questions (Honest answers)
-    else if (combined.includes('sponsorship') || combined.includes('visa') || combined.includes('authorized')) {
-      if (combined.includes('require') || combined.includes('need') || combined.includes('future')) {
-        // Will you require sponsorship? -> Yes
-        if (el.tagName === 'SELECT') {
-          for (const opt of el.options) {
-            if (opt.text.toLowerCase().includes('yes') || opt.value.toLowerCase().includes('yes')) {
-              el.value = opt.value;
-              el.dispatchEvent(new Event('change', { bubbles: true }));
-              filledCount++;
-              break;
-            }
-          }
-        } else if (el.type === 'radio' && el.value.toLowerCase().includes('yes')) {
-          el.checked = true;
-          el.dispatchEvent(new Event('change', { bubbles: true }));
-          filledCount++;
-        }
-      }
-    }
-  }
-
-  return { count: filledCount };
-}
-
 // ── Message Handler ───────────────────────────────────────────────────────────
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -390,24 +303,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  if (message.action === 'AUTOFILL_FORM') {
-    try {
-      const res = autofillApplicationForm(message.candidateData);
-      sendResponse({ success: true, filledFields: res.count });
-    } catch (err) {
-      sendResponse({ success: false, error: err.message });
-    }
-    return true;
-  }
-
   if (message.action === 'TRIGGER_AUTOFILL') {
     (async () => {
       try {
         const src = chrome.runtime.getURL('autofill/engine.js');
         const { detectAndMountAutofill } = await import(src);
         await detectAndMountAutofill();
-        const startBtn = document.getElementById('job-os-btn-autofill');
+        const startBtn = document.getElementById('job-os-btn-autofill-drawer') || document.getElementById('job-os-btn-autofill');
         if (startBtn) startBtn.click();
+        const drawer = document.getElementById('job-os-copilot-drawer');
+        if (drawer) drawer.classList.add('open');
         sendResponse({ success: true });
       } catch (err) {
         sendResponse({ success: false, error: err.message });
@@ -419,27 +324,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-// Broadcast readiness & initialize Copilot on apply pages
+// Broadcast readiness
 try {
   chrome.runtime.sendMessage({ action: 'CONTENT_READY', url: window.location.href });
 } catch (_) { /* Background worker might be inactive */ }
 
-// Initialize Job OS Copilot Overlay on apply forms
-(async () => {
+// Initialize Job OS Copilot on apply forms
+async function tryMountCopilot() {
   try {
-    const isApplyForm = (
-      window.location.href.includes('/apply') ||
-      window.location.href.includes('/application') ||
-      window.location.hostname.includes('myworkdayjobs.com') ||
-      document.querySelector('#application_form, .application-form, [data-testid="application-form"], [data-automation-id="workdayApplication"]') !== null
-    );
-
-    if (isApplyForm) {
-      const src = chrome.runtime.getURL('autofill/engine.js');
-      const { detectAndMountAutofill } = await import(src);
-      detectAndMountAutofill();
-    }
+    const src = chrome.runtime.getURL('autofill/engine.js');
+    const { detectAndMountAutofill } = await import(src);
+    await detectAndMountAutofill();
   } catch (err) {
-    console.debug('Job OS Copilot mount skipped or delayed:', err);
+    console.debug('Copilot mount:', err);
   }
-})();
+}
+
+// Mount on idle + watch for SPA navigations
+tryMountCopilot();
+setInterval(tryMountCopilot, 1800);
+

@@ -1,22 +1,27 @@
 /**
- * background.js — Service Worker
+ * background.js — Service Worker & Secure API Gateway
  *
- * Manages:
- *  1. Background async task lifecycle (tasks persist even if popup closes)
- *  2. Persistent memory & history caching per job URL
- *  3. Session lifecycle (init, auto-recovery on 401)
- *  4. API calls to the FastAPI backend
- *  5. Downloads of generated PDFs
+ * All external network / HTTP API requests MUST pass through this worker.
+ * Content scripts communicate solely via chrome.runtime.sendMessage.
  */
 
 'use strict';
 
-// ── Config ─────────────────────────────────────────────────────────────────
 const API_BASE = 'http://localhost:8000';
 
 async function getApiBase() {
   const result = await chrome.storage.sync.get(['apiBase']);
   return result.apiBase || API_BASE;
+}
+
+function arrayBufferToBase64(buffer) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
 }
 
 function normalizeUrl(rawUrl) {
@@ -70,7 +75,7 @@ async function getOrCreateSession(googleDocId, forceNew = false) {
   return { sessionId, fromCache: false };
 }
 
-// ── API Call Helpers ──────────────────────────────────────────────────────────
+// ── API Gateway Calls ─────────────────────────────────────────────────────────
 
 async function callResumeApi(payload) {
   const base = await getApiBase();
@@ -104,6 +109,145 @@ async function callCoverLetterApi(payload) {
   return response.json();
 }
 
+async function getApplicantProfile() {
+  const base = await getApiBase();
+  const response = await fetch(`${base}/api/v1/profile`);
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch profile: ${response.status}`);
+  }
+  return response.json();
+}
+
+async function answerQuestionApi(payload) {
+  const base = await getApiBase();
+  const response = await fetch(`${base}/api/v1/autofill/answer`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `Answer generation failed: ${response.status}`);
+  }
+  return response.json();
+}
+
+async function tailorResumeDirect(jobData, options = {}) {
+  const settings = await chrome.storage.sync.get(['googleDocId']);
+  const googleDocId = settings.googleDocId || '1a0qvUX6B2hqSdTT2EoKJF1e3L_m5ee4LxIZaMbU5FNA';
+  let { sessionId } = await getOrCreateSession(googleDocId);
+
+  let result;
+  try {
+    result = await callResumeApi({
+      session_id: sessionId,
+      job_description: jobData.jobDescription || 'Software Engineer',
+      job_url: jobData.pageUrl,
+      company_name: jobData.companyName || 'Company',
+      job_title: jobData.jobTitle || 'Software Engineer',
+      options,
+    });
+  } catch (err) {
+    if (err.status === 401 || err.message.includes('Session not found') || err.message.includes('expired')) {
+      const reinit = await getOrCreateSession(googleDocId, true);
+      result = await callResumeApi({
+        session_id: reinit.sessionId,
+        job_description: jobData.jobDescription || 'Software Engineer',
+        job_url: jobData.pageUrl,
+        company_name: jobData.companyName || 'Company',
+        job_title: jobData.jobTitle || 'Software Engineer',
+        options,
+      });
+    } else {
+      throw err;
+    }
+  }
+
+  const base = await getApiBase();
+  let pdfBase64 = null;
+  const downloadUrl = result.download_url ? `${base}${result.download_url}` : `${base}/api/v1/document/saved/${result.resume_doc_id}`;
+  try {
+    const pdfRes = await fetch(downloadUrl);
+    if (pdfRes.ok) {
+      const arrayBuf = await pdfRes.arrayBuffer();
+      pdfBase64 = arrayBufferToBase64(arrayBuf);
+    }
+  } catch (e) {
+    console.warn('Could not fetch PDF bytes:', e);
+  }
+
+  const safeCompany = (jobData.companyName || 'Company').replace(/[^\w\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'Company';
+  const filename = `Resume_Alireza_Nezami_Senior_Android_Developer_${safeCompany}.pdf`;
+
+  return {
+    success: true,
+    result,
+    pdfBase64,
+    filename,
+    ats_report: result.ats_report,
+  };
+}
+
+async function generateCoverLetterDirect(jobData, options = {}) {
+  const settings = await chrome.storage.sync.get(['googleDocId', 'userName']);
+  const googleDocId = settings.googleDocId || '1a0qvUX6B2hqSdTT2EoKJF1e3L_m5ee4LxIZaMbU5FNA';
+  const userName = settings.userName || 'Alireza Nezami';
+  let { sessionId } = await getOrCreateSession(googleDocId);
+
+  let result;
+  try {
+    result = await callCoverLetterApi({
+      session_id: sessionId,
+      job_description: jobData.jobDescription || 'Software Engineer',
+      job_url: jobData.pageUrl,
+      company_name: jobData.companyName || 'Company',
+      job_title: jobData.jobTitle || 'Software Engineer',
+      user_name: userName,
+      tone: options?.tone || 'professional',
+    });
+  } catch (err) {
+    if (err.status === 401 || err.message.includes('Session not found') || err.message.includes('expired')) {
+      const reinit = await getOrCreateSession(googleDocId, true);
+      result = await callCoverLetterApi({
+        session_id: reinit.sessionId,
+        job_description: jobData.jobDescription || 'Software Engineer',
+        job_url: jobData.pageUrl,
+        company_name: jobData.companyName || 'Company',
+        job_title: jobData.jobTitle || 'Software Engineer',
+        user_name: userName,
+        tone: options?.tone || 'professional',
+      });
+    } else {
+      throw err;
+    }
+  }
+
+  const base = await getApiBase();
+  let pdfBase64 = null;
+  const downloadUrl = result.download_url ? `${base}${result.download_url}` : `${base}/api/v1/document/saved/${result.cover_letter_doc_id}`;
+  try {
+    const pdfRes = await fetch(downloadUrl);
+    if (pdfRes.ok) {
+      const arrayBuf = await pdfRes.arrayBuffer();
+      pdfBase64 = arrayBufferToBase64(arrayBuf);
+    }
+  } catch (e) {
+    console.warn('Could not fetch cover letter PDF bytes:', e);
+  }
+
+  const safeCompany = (jobData.companyName || 'Company').replace(/[^\w\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'Company';
+  const filename = `CoverLetter_Alireza_Nezami_Senior_Android_Developer_${safeCompany}.pdf`;
+
+  return {
+    success: true,
+    result,
+    cover_letter_text: result.cover_letter_text || '',
+    pdfBase64,
+    filename,
+  };
+}
+
 async function lookupJobMemoryApi(url) {
   try {
     const base = await getApiBase();
@@ -118,43 +262,100 @@ async function lookupJobMemoryApi(url) {
   return { found: false };
 }
 
-// ── Download Helper ───────────────────────────────────────────────────────────
-
-async function downloadDocument(downloadUrl, filename) {
-  const base = await getApiBase();
-  const fullUrl = downloadUrl.startsWith('http') ? downloadUrl : `${base}${downloadUrl}`;
-  await chrome.downloads.download({ url: fullUrl, filename, saveAs: false });
-}
-
-// ── Task Management (Background Persistence) ──────────────────────────────────
-
-async function setTaskState(url, taskObj) {
-  const key = `task_${normalizeUrl(url)}`;
-  await chrome.storage.local.set({ [key]: taskObj });
-}
+// ── State Persistence ─────────────────────────────────────────────────────────
 
 async function getTaskState(url) {
-  const key = `task_${normalizeUrl(url)}`;
-  const stored = await chrome.storage.local.get([key]);
-  return stored[key] || null;
+  const norm = normalizeUrl(url);
+  const key = `task_${norm}`;
+  const data = await chrome.storage.local.get([key]);
+  return data[key] || null;
+}
+
+async function setTaskState(url, state) {
+  const norm = normalizeUrl(url);
+  const key = `task_${norm}`;
+  await chrome.storage.local.set({ [key]: state });
 }
 
 async function clearTaskState(url) {
-  const key = `task_${normalizeUrl(url)}`;
+  const norm = normalizeUrl(url);
+  const key = `task_${norm}`;
   await chrome.storage.local.remove([key]);
 }
 
-// ── Message Router ────────────────────────────────────────────────────────────
+// ── Document Downloader ───────────────────────────────────────────────────────
+
+async function downloadDocument(downloadUrl, filename) {
+  const base = await getApiBase();
+  const absoluteUrl = downloadUrl.startsWith('http') ? downloadUrl : `${base}${downloadUrl}`;
+  return new Promise((resolve, reject) => {
+    chrome.downloads.download(
+      {
+        url: absoluteUrl,
+        filename: filename || 'resume.pdf',
+        saveAs: false,
+      },
+      (downloadId) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+        } else {
+          resolve(downloadId);
+        }
+      }
+    );
+  });
+}
+
+// ── Message Dispatcher ────────────────────────────────────────────────────────
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  handleMessage(message).then(sendResponse).catch((err) => {
-    sendResponse({ success: false, error: err.message });
-  });
-  return true; // Keep async channel open
+  handleMessage(message, sender)
+    .then((res) => sendResponse(res))
+    .catch((err) => sendResponse({ success: false, error: err.message }));
+  return true; // Keep channel open for async response
 });
 
-async function handleMessage(message) {
+async function handleMessage(message, sender) {
   const { action } = message;
+
+  if (action === 'GET_PROFILE') {
+    const profile = await getApplicantProfile();
+    return { success: true, profile };
+  }
+
+  if (action === 'TAILOR_RESUME_DIRECT') {
+    const res = await tailorResumeDirect(message.jobData, message.options);
+    return res;
+  }
+
+  if (action === 'GENERATE_COVER_DIRECT') {
+    const res = await generateCoverLetterDirect(message.jobData, message.options);
+    return res;
+  }
+
+  if (action === 'ANSWER_QUESTION') {
+    const res = await answerQuestionApi({
+      question: message.question,
+      job_title: message.jobTitle || 'Software Engineer',
+      company_name: message.companyName || 'Company',
+      jd_text: message.jobDescription || '',
+    });
+    return { success: true, answer: res.answer };
+  }
+
+  if (action === 'CHECK_JOB_MEMORY') {
+    const { url } = message;
+    const norm = normalizeUrl(url);
+    const task = await getTaskState(norm);
+    if (task && task.status === 'COMPLETED') {
+      return { found: true, data: task.result };
+    }
+    const backendData = await lookupJobMemoryApi(norm);
+    if (backendData && backendData.found) {
+      return { found: true, data: backendData.data };
+    }
+    return { found: false };
+  }
 
   if (action === 'GET_TASK_STATUS') {
     const { url } = message;
@@ -162,33 +363,15 @@ async function handleMessage(message) {
     return { success: true, task };
   }
 
-  if (action === 'CHECK_JOB_MEMORY') {
-    const { url } = message;
-    // Check local task memory first
-    const localTask = await getTaskState(url);
-    if (localTask && localTask.status === 'COMPLETED') {
-      return { success: true, found: true, source: 'local', data: localTask.result };
-    }
-
-    // Check backend SQLite database
-    const dbResult = await lookupJobMemoryApi(url);
-    if (dbResult && dbResult.found) {
-      return { success: true, found: true, source: 'backend', data: dbResult.job };
-    }
-
-    return { success: true, found: false };
-  }
-
-  if (action === 'TAILOR_RESUME') {
+  if (action === 'START_TAILOR_TASK') {
     const { jobData, options } = message;
     const pageUrl = jobData.pageUrl;
-    const settings = await chrome.storage.sync.get(['googleDocId', 'userName']);
+    const settings = await chrome.storage.sync.get(['googleDocId']);
 
     if (!settings.googleDocId) {
-      throw new Error('No Google Doc ID configured. Please open the extension settings.');
+      settings.googleDocId = '1a0qvUX6B2hqSdTT2EoKJF1e3L_m5ee4LxIZaMbU5FNA';
     }
 
-    // Set task to RUNNING in storage so popup can disconnect & reconnect safely
     await setTaskState(pageUrl, {
       status: 'RUNNING',
       type: 'resume',
@@ -197,7 +380,6 @@ async function handleMessage(message) {
       jobTitle: jobData.jobTitle,
     });
 
-    // Execute tailoring asynchronously
     (async () => {
       try {
         let { sessionId } = await getOrCreateSession(settings.googleDocId);
@@ -255,7 +437,6 @@ async function handleMessage(message) {
     const googleDocId = settings.googleDocId || '1a0qvUX6B2hqSdTT2EoKJF1e3L_m5ee4LxIZaMbU5FNA';
     const userName = settings.userName || 'Alireza Nezami';
 
-    // Set task to RUNNING
     await setTaskState(pageUrl, {
       status: 'RUNNING',
       type: 'cover_letter',

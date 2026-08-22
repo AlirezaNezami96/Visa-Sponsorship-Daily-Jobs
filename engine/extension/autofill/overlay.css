@@ -1,38 +1,92 @@
-/* overlay.css — Job OS Floating Copilot Overlay */
+/* overlay.css — Job OS Floating Handle & Slide-Out Drawer Styles */
 
-#job-os-copilot-overlay {
+/* ── 1. Slim Right-Edge Handle ── */
+#job-os-copilot-handle {
   position: fixed;
-  top: 20px;
-  right: 20px;
-  width: 320px;
+  top: 120px;
+  right: 0;
+  width: 38px;
+  height: 110px;
+  background: #1e293b;
+  color: #f8fafc;
+  border: 1px solid #334155;
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  z-index: 2147483646;
+  box-shadow: -4px 0 15px rgba(0, 0, 0, 0.3);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  user-select: none;
+  transition: background 0.15s, transform 0.15s;
+}
+
+#job-os-copilot-handle:hover {
+  background: #2563eb;
+  transform: translateX(-2px);
+}
+
+.job-os-handle-icon {
+  font-size: 16px;
+}
+
+.job-os-handle-text {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #93c5fd;
+}
+
+/* ── 2. Slide-Out Right Drawer ── */
+#job-os-copilot-drawer {
+  position: fixed;
+  top: 0;
+  right: -400px;
+  width: 380px;
+  height: 100vh;
   background: #0f172a;
   color: #f1f5f9;
-  border: 1px solid #334155;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  border-left: 1px solid #334155;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  z-index: 999999;
   font-size: 13px;
-  overflow: hidden;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  z-index: 2147483647;
+  display: flex;
+  flex-direction: column;
+  transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
 }
 
-#job-os-copilot-overlay.minimized {
-  transform: translateY(-80%);
-  opacity: 0.7;
+#job-os-copilot-drawer.open {
+  right: 0;
 }
 
-.job-os-header {
+.job-os-drawer-header {
+  padding: 16px;
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 14px;
-  background: #1e293b;
-  border-bottom: 1px solid #334155;
 }
 
-.job-os-badge {
-  font-size: 11px;
+.job-os-drawer-title {
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.job-os-drawer-badge {
+  font-size: 10px;
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 9999px;
@@ -41,58 +95,106 @@
   border: 1px solid rgba(59, 130, 246, 0.4);
 }
 
-.job-os-body {
-  padding: 14px;
+.job-os-drawer-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.job-os-drawer-close:hover {
+  color: #ffffff;
+}
+
+.job-os-drawer-body {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
-.job-os-progress {
-  height: 6px;
-  background: #334155;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.job-os-progress-fill {
-  height: 100%;
-  width: 0%;
+.job-os-btn-autofill {
   background: #10b981;
-  transition: width 0.3s ease;
-}
-
-.job-os-btn-primary {
-  background: #2563eb;
   color: #ffffff;
   border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   transition: background 0.15s;
 }
 
-.job-os-btn-primary:hover {
-  background: #1d4ed8;
+.job-os-btn-autofill:hover {
+  background: #059669;
 }
 
-.job-os-skipped-list {
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  padding: 8px;
+.job-os-btn-autofill:disabled {
+  background: #475569;
+  cursor: not-allowed;
+}
+
+.job-os-field-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.job-os-field-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  background: #1e293b;
+  border: 1px solid #334155;
   border-radius: 6px;
-  color: #fbbf24;
-  font-size: 11px;
-  max-height: 80px;
-  overflow-y: auto;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
 }
 
+.job-os-field-row:hover {
+  border-color: #60a5fa;
+  background: #273549;
+}
+
+.job-os-field-row.success {
+  border-left: 3px solid #10b981;
+}
+
+.job-os-field-row.skipped {
+  border-left: 3px solid #f59e0b;
+}
+
+.job-os-field-row.active {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.job-os-drawer-footer {
+  padding: 12px 16px;
+  background: #1e293b;
+  border-top: 1px solid #334155;
+  font-size: 11px;
+  color: #94a3b8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ── 3. Form Field Active Highlight ── */
 .job-os-highlight-field {
-  outline: 2px solid #3b82f6 !important;
-  background-color: rgba(59, 130, 246, 0.08) !important;
+  outline: 3px solid #2563eb !important;
+  outline-offset: 2px !important;
+  background-color: rgba(37, 99, 235, 0.1) !important;
+  transition: outline 0.2s, background-color 0.2s;
 }

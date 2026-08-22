@@ -3,7 +3,7 @@
   "name": "Job Acquisition Engine & Copilot",
   "short_name": "JobEngine",
   "description": "Simplify-class ATS autofill, AI-powered resume tailoring, and cover letter generator for job applications.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "icons": {
     "16":  "icons/icon16.png",
     "48":  "icons/icon48.png",
@@ -25,6 +25,7 @@
     {
       "matches": [
         "*://*.greenhouse.io/*",
+        "*://boards-api.greenhouse.io/*",
         "*://*.lever.co/*",
         "*://*.ashbyhq.com/*",
         "*://*.myworkdayjobs.com/*",
@@ -43,11 +44,10 @@
         "*://*.indeed.com/*",
         "*://*.allegro.eu/*",
         "*://*.nofluffjobs.com/*",
-        "*://*.justjoin.it/*",
-        "http://localhost:8000/*",
-        "http://127.0.0.1:8000/*"
+        "*://*.justjoin.it/*"
       ],
       "js": ["content.js"],
+      "css": ["autofill/overlay.css"],
       "run_at": "document_idle",
       "all_frames": true
     }
@@ -66,20 +66,27 @@
     "activeTab",
     "storage",
     "scripting",
-    "downloads"
+    "downloads",
+    "sidePanel"
   ],
   "host_permissions": [
+    "http://127.0.0.1:8000/*",
+    "http://localhost:8000/*",
+    "https://*.up.railway.app/*",
     "*://*.greenhouse.io/*",
+    "*://boards-api.greenhouse.io/*",
     "*://*.lever.co/*",
     "*://*.ashbyhq.com/*",
     "*://*.myworkdayjobs.com/*",
     "*://*.myworkday.com/*",
+    "*://*.myworkdaysite.com/*",
     "*://*.smartrecruiters.com/*",
+    "*://*.workable.com/*",
     "*://*.linkedin.com/*",
-    "*://*.indeed.com/*",
-    "https://*.up.railway.app/*",
-    "http://localhost:8000/*",
-    "http://127.0.0.1:8000/*"
+    "*://*.indeed.com/*"
+  ],
+  "optional_host_permissions": [
+    "*://*/*"
   ],
   "options_ui": {
     "page": "popup/options.html",

@@ -1,56 +1,51 @@
 /**
- * engine.js — Master Autofill Orchestrator
+ * engine.js — Master Copilot Bootstrapper & Lifecycle Controller
  */
 
-import { GreenhouseAdapter } from './adapters/greenhouse.js';
-import { LeverAdapter } from './adapters/lever.js';
-import { AshbyAdapter } from './adapters/ashby.js';
-import { WorkdayAdapter } from './adapters/workday.js';
-import { LinkedInAdapter } from './adapters/linkedin.js';
-import { GenericAdapter } from './adapters/generic.js';
-import { AutofillOverlay } from './overlay.js';
-import { attachPdfToFileInput, findResumeFileInput } from './files.js';
+import { isApplicationFormPresent } from './detect.js';
+import { CopilotHandle } from './handle.js';
+import { CopilotDrawer } from './drawer.js';
+import { runAutofillSequence } from './runner.js';
 
-const ADAPTERS = [
-  GreenhouseAdapter,
-  LeverAdapter,
-  AshbyAdapter,
-  WorkdayAdapter,
-  LinkedInAdapter,
-  GenericAdapter,
-];
+function detectAtsName() {
+  const host = window.location.hostname.toLowerCase();
+  if (host.includes('greenhouse.io') || document.querySelector('#application_form')) return 'Greenhouse';
+  if (host.includes('lever.co') || document.querySelector('.application-form')) return 'Lever';
+  if (host.includes('ashbyhq.com') || document.querySelector('[data-testid="application-form"]')) return 'Ashby';
+  if (host.includes('myworkday') || document.querySelector('[data-automation-id="workdayApplication"]')) return 'Workday';
+  if (host.includes('linkedin.com')) return 'LinkedIn Easy Apply';
+  if (host.includes('smartrecruiters.com')) return 'SmartRecruiters';
+  if (host.includes('workable.com')) return 'Workable';
+  return 'Application Form';
+}
 
-export async function detectAndMountAutofill(apiBase = 'http://127.0.0.1:8000') {
-  // Check if current page is an apply form
-  const isApplyPage = (
-    window.location.href.includes('/apply') ||
-    window.location.href.includes('/application') ||
-    window.location.hostname.includes('myworkdayjobs.com') ||
-    document.querySelector('#application_form, .application-form, [data-testid="application-form"], [data-automation-id="workdayApplication"]') !== null
-  );
+export async function detectAndMountAutofill() {
+  // Prevent duplicate mounts on the same frame
+  if (window.__JOB_OS_COPILOT__) return;
 
-  if (!isApplyPage) return;
+  const isFormHere = isApplicationFormPresent(document);
+  if (!isFormHere) return;
 
-  const activeAdapter = ADAPTERS.find((a) => a.matches()) || GenericAdapter;
+  window.__JOB_OS_COPILOT__ = true;
+  const atsName = detectAtsName();
 
-  const overlay = new AutofillOverlay(activeAdapter.name, async () => {
-    try {
-      // 1. Fetch applicant profile
-      const profileRes = await fetch(`${apiBase}/api/v1/profile`);
-      if (!profileRes.ok) throw new Error('Could not load applicant profile from engine backend.');
-      const profile = await profileRes.json();
-
-      // 2. Fill form via active adapter
-      const res = await activeAdapter.fillForm(profile, {}, (progress) => {
-        overlay.updateProgress(progress.current, progress.total, progress.field);
-      });
-
-      overlay.showComplete(res.filled, res.skipped);
-    } catch (err) {
-      console.error('Autofill execution failed:', err);
-      alert(`Autofill Error: ${err.message}`);
-    }
+  let drawer = null;
+  const handle = new CopilotHandle(() => {
+    if (drawer) drawer.toggle();
   });
 
-  overlay.mount();
+  drawer = new CopilotDrawer(atsName, async () => {
+    // Extract job details from page context if available
+    const jobData = {
+      pageUrl: window.location.href,
+      companyName: document.querySelector('.company-name, [data-automation-id="companyName"]')?.textContent?.trim() || 'Company',
+      jobTitle: document.querySelector('h1, .job-title, [data-automation-id="jobTitle"]')?.textContent?.trim() || 'Software Engineer',
+      jobDescription: document.body.innerText?.slice(0, 5000) || '',
+    };
+
+    await runAutofillSequence(drawer, jobData);
+  });
+
+  await handle.mount();
+  drawer.mount();
 }

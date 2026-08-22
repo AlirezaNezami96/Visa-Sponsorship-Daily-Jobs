@@ -57,21 +57,17 @@ export function getDeterministicAnswer(classification, profile) {
   }
 }
 
-export async function fetchUniqueQuestionAnswer(apiBase, question, jobData) {
+export async function fetchUniqueQuestionAnswer(question, jobData) {
   try {
-    const res = await fetch(`${apiBase}/api/v1/autofill/answer`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        question,
-        job_title: jobData?.jobTitle || 'Software Engineer',
-        company_name: jobData?.companyName || 'Company',
-        jd_text: jobData?.jobDescription || '',
-      }),
+    const res = await chrome.runtime.sendMessage({
+      action: 'ANSWER_QUESTION',
+      question,
+      jobTitle: jobData?.jobTitle || 'Software Engineer',
+      companyName: jobData?.companyName || 'Company',
+      jobDescription: jobData?.jobDescription || '',
     });
-    if (res.ok) {
-      const data = await res.json();
-      return data.answer || '';
+    if (res && res.success) {
+      return res.answer || '';
     }
   } catch (err) {
     console.warn('Failed to generate unique answer:', err);
