@@ -753,9 +753,12 @@ QUESTIONS TO ANSWER:
             system_instruction=system_prompt,
             max_tokens=600,
             temperature=0.2,
-            json_mode=True,
         )
         raw_text = (res.text or "").strip()
+        if "```json" in raw_text:
+            raw_text = raw_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in raw_text:
+            raw_text = raw_text.split("```")[1].split("```")[0].strip()
         parsed = json.loads(raw_text)
         answers = parsed.get("answers", [])
         return {"success": True, "answers": answers}

@@ -12,14 +12,18 @@ LINKEDIN_PEOPLE_SEARCH_BASE = "https://www.linkedin.com/search/results/people/"
 
 def build_linkedin_people_search_url(
     names: List[str],
-    company_linkedin_id: str,
+    company_linkedin_id: str = "",
+    company_name: str = "",
 ) -> str:
     """
     Build a safe, properly encoded LinkedIn People Search URL scoped to the company
     containing all contact names combined with Boolean OR.
 
-    Example URL:
+    Example URL with Company ID:
     https://www.linkedin.com/search/results/people/?keywords=%22Ertan%20Bera%22%20OR%20%22Jane%20Smith%22&origin=GLOBAL_SEARCH_HEADER&currentCompany=%5B%22101649602%22%5D
+
+    Example URL fallback without Company ID:
+    https://www.linkedin.com/search/results/people/?keywords=%22Ertan%20Bera%22%20OR%20%22Jane%20Smith%22&origin=GLOBAL_SEARCH_HEADER
     """
     if not names:
         return ""
@@ -29,7 +33,6 @@ def build_linkedin_people_search_url(
     for n in names:
         if not n:
             continue
-        # Strip existing quotes if any
         clean = n.strip().strip('"').strip("'")
         if clean:
             cleaned_names.append(f'"{clean}"')
@@ -41,16 +44,22 @@ def build_linkedin_people_search_url(
     boolean_query = " OR ".join(cleaned_names)
     encoded_keywords = quote(boolean_query, safe="")
 
-    # Build company parameter: ["companyId"] -> %5B%22companyId%22%5D
-    clean_company_id = str(company_linkedin_id).strip()
-    encoded_company = quote(f'["{clean_company_id}"]', safe="")
+    clean_company_id = str(company_linkedin_id).strip() if company_linkedin_id else ""
 
-    search_url = (
-        f"{LINKEDIN_PEOPLE_SEARCH_BASE}"
-        f"?keywords={encoded_keywords}"
-        f"&origin=GLOBAL_SEARCH_HEADER"
-        f"&currentCompany={encoded_company}"
-    )
+    if clean_company_id:
+        encoded_company = quote(f'["{clean_company_id}"]', safe="")
+        search_url = (
+            f"{LINKEDIN_PEOPLE_SEARCH_BASE}"
+            f"?keywords={encoded_keywords}"
+            f"&origin=GLOBAL_SEARCH_HEADER"
+            f"&currentCompany={encoded_company}"
+        )
+    else:
+        search_url = (
+            f"{LINKEDIN_PEOPLE_SEARCH_BASE}"
+            f"?keywords={encoded_keywords}"
+            f"&origin=GLOBAL_SEARCH_HEADER"
+        )
 
     logger.info("[HiringContacts] LinkedIn search URL generated: %s", search_url)
     return search_url

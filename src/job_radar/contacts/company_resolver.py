@@ -73,6 +73,8 @@ def clean_company_name(raw_name: str) -> str:
     name = re.sub(r"^(about|at|for|working at)\s+", "", name, flags=re.IGNORECASE)
     # Clean excessive whitespace
     name = re.sub(r"\s+", " ", name).strip()
+    if name.lower() in {"company", "unknown company", "unknown", "n/a", "null", "none", "company name"}:
+        return ""
     return name
 
 

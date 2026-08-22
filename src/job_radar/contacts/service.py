@@ -62,7 +62,7 @@ class HiringContactsService:
         """
         Main entry point for finding hiring contacts at the company for a job posting.
         """
-        logger.info("[HiringContacts] Workflow started")
+        logger.info("[HiringContacts] Slider opened / Request received")
 
         # 1. Resolve Company and Domain
         resolved_company, resolved_domain = resolve_company_and_domain(
@@ -71,8 +71,8 @@ class HiringContactsService:
             jd_text=jd_text,
         )
 
-        if not resolved_company:
-            logger.warning("[HiringContacts] Unable to identify company")
+        if not resolved_company and not resolved_domain:
+            logger.warning("[HiringContacts] Unable to identify company or domain")
             return {
                 "success": False,
                 "error": "Unable to identify company from job posting",
@@ -80,8 +80,8 @@ class HiringContactsService:
                 "count": 0,
             }
 
-        logger.info("[HiringContacts] Company detected: %s", resolved_company)
-        logger.info("[HiringContacts] Domain detected: %s", resolved_domain or "unknown")
+        logger.info("[HiringContacts] Company detected: %s", resolved_company or "Unknown")
+        logger.info("[HiringContacts] Domain detected: %s", resolved_domain or "Unknown")
 
         # 2. Check 24-hour Cache
         cache_key = self._get_cache_key(resolved_domain or resolved_company, job_title)
@@ -91,31 +91,35 @@ class HiringContactsService:
                 logger.info("[HiringContacts] Returning cached contacts for '%s'", cache_key)
                 return entry.get("data", {})
 
-        # 3. Find Company LinkedIn Page & Company ID
-        linkedin_info = find_company_linkedin_info(
-            company_name=resolved_company,
-            company_domain=resolved_domain,
-        )
-
-        if not linkedin_info or not linkedin_info.get("linkedinUrl"):
-            logger.warning("[HiringContacts] Unable to find company LinkedIn page for %s", resolved_company)
-            return {
-                "success": False,
-                "company_name": resolved_company,
-                "company_domain": resolved_domain,
-                "error": "Unable to find company LinkedIn page",
-                "contacts": [],
-                "count": 0,
-            }
-
-        linkedin_url = linkedin_info["linkedinUrl"]
-        linkedin_company_id = linkedin_info.get("linkedinCompanyId") or ""
+        # 3. Discover Company LinkedIn Page & Company ID (best-effort)
+        linkedin_url = ""
+        linkedin_company_id = ""
+        if resolved_company or resolved_domain:
+            try:
+                linkedin_info = find_company_linkedin_info(
+                    company_name=resolved_company,
+                    company_domain=resolved_domain,
+                )
+                if linkedin_info:
+                    linkedin_url = linkedin_info.get("linkedinUrl") or ""
+                    linkedin_company_id = linkedin_info.get("linkedinCompanyId") or ""
+                    if linkedin_url:
+                        logger.info("[HiringContacts] LinkedIn company found: %s", linkedin_url)
+                    if linkedin_company_id:
+                        logger.info("[HiringContacts] LinkedIn company ID: %s", linkedin_company_id)
+            except Exception as e:
+                logger.debug("[HiringContacts] LinkedIn discovery warning: %s", e)
 
         # 4. Search Apollo for Relevant Contacts (0 Credits)
-        raw_people = search_apollo_people(
-            company_domain=resolved_domain or f"{resolved_company.lower().replace(' ', '')}.com",
-            job_title=job_title,
-        )
+        apollo_domain = resolved_domain or (f"{resolved_company.lower().replace(' ', '')}.com" if resolved_company else "")
+        raw_people = []
+        if apollo_domain:
+            logger.info("[HiringContacts] Apollo search started for domain '%s'", apollo_domain)
+            raw_people = search_apollo_people(
+                company_domain=apollo_domain,
+                job_title=job_title,
+            )
+            logger.info("[HiringContacts] Apollo returned %d candidates", len(raw_people))
 
         # 5. Rank and Deduplicate Contacts
         ranked_contacts = rank_and_deduplicate_contacts(
@@ -123,14 +127,16 @@ class HiringContactsService:
             job_title=job_title,
             max_results=5,
         )
+        logger.info("[HiringContacts] Ranked top %d candidates", len(ranked_contacts))
 
         # 6. Build LinkedIn People Search URL
         contact_names = [c["name"] for c in ranked_contacts if c.get("name")]
         linkedin_search_url = ""
-        if contact_names and linkedin_company_id:
+        if contact_names:
             linkedin_search_url = build_linkedin_people_search_url(
                 names=contact_names,
                 company_linkedin_id=linkedin_company_id,
+                company_name=resolved_company,
             )
 
         result_data = {
@@ -159,5 +165,5 @@ class HiringContactsService:
         }
         self._save_cache()
 
-        logger.info("[HiringContacts] Completed successfully with %d contacts", len(ranked_contacts))
+        logger.info("[HiringContacts] Completed")
         return result_data
