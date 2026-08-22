@@ -40,12 +40,19 @@
     <button id="btn-scan" class="btn btn-secondary btn-full">
       Scan This Page
     </button>
+    <button id="btn-autofill-direct" class="btn btn-primary btn-full" style="margin-top: 8px; background: #10b981;">
+      <span class="btn-icon-inline">⚡</span>
+      Autofill Form On Page
+    </button>
   </div>
 
   <!-- ── JD Found State ── -->
   <div id="state-jd-found" class="state-card hidden">
     <div class="state-icon success-icon">✅</div>
     <div class="state-title">Job Description Ready</div>
+    
+    <div id="jd-preview" class="jd-preview" style="font-size: 11px; color: #94a3b8; background: #0f172a; border-radius: 6px; padding: 8px; margin-bottom: 12px; max-height: 70px; overflow-y: auto; text-align: left; line-height: 1.4;"></div>
+
     <!-- Memory Notice (if previously tailored) -->
     <div id="memory-badge" class="memory-badge hidden" style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 12px; color: #a5b4fc; text-align: left;">
       <div style="font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
@@ -59,7 +66,11 @@
       </div>
     </div>
 
-    <div class="action-buttons">
+    <div class="action-buttons" style="display: flex; flex-direction: column; gap: 8px;">
+      <button id="btn-autofill-app" class="btn btn-primary btn-full" style="background: #10b981;">
+        <span class="btn-icon-inline">⚡</span>
+        Autofill Application
+      </button>
       <button id="btn-tailor-resume" class="btn btn-primary btn-full">
         <span class="btn-icon-inline">📄</span>
         Optimize Resume
@@ -70,7 +81,7 @@
       </button>
     </div>
 
-    <button id="btn-rescan" class="btn btn-ghost btn-full btn-small">
+    <button id="btn-rescan" class="btn btn-ghost btn-full btn-small" style="margin-top: 6px;">
       Rescan Page
     </button>
   </div>

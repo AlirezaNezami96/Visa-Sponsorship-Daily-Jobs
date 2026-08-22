@@ -400,6 +400,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.action === 'TRIGGER_AUTOFILL') {
+    (async () => {
+      try {
+        const src = chrome.runtime.getURL('autofill/engine.js');
+        const { detectAndMountAutofill } = await import(src);
+        await detectAndMountAutofill();
+        const startBtn = document.getElementById('job-os-btn-autofill');
+        if (startBtn) startBtn.click();
+        sendResponse({ success: true });
+      } catch (err) {
+        sendResponse({ success: false, error: err.message });
+      }
+    })();
+    return true;
+  }
+
   return true;
 });
 

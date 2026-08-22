@@ -190,7 +190,9 @@ async function scanPage() {
     await new Promise((r) => setTimeout(r, 150));
 
     updateJobBanner(currentJobData);
-    $('jd-preview').textContent = truncate(currentJobData.jobDescription, 260);
+    if ($('jd-preview')) {
+      $('jd-preview').textContent = truncate(currentJobData.jobDescription, 260);
+    }
 
     // Check persistent memory for this URL
     await checkJobMemory(currentJobData.pageUrl);
@@ -415,6 +417,25 @@ function sendToBackground(message) {
   });
 }
 
+async function triggerAutofill() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab || !tab.id) throw new Error('No active tab found.');
+
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['content.js'],
+      });
+    } catch (_) { /* Injected */ }
+
+    await chrome.tabs.sendMessage(tab.id, { action: 'TRIGGER_AUTOFILL' });
+    window.close(); // Close popup so user sees the live on-page autofill
+  } catch (err) {
+    showError(`Could not start autofill: ${err.message}`);
+  }
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 async function init() {
@@ -429,6 +450,9 @@ async function init() {
   $('btn-rescan').addEventListener('click', scanPage);
   $('btn-retry').addEventListener('click', () => showState(currentJobData ? 'jd-found' : 'no-jd'));
   $('btn-back').addEventListener('click', () => showState('jd-found'));
+
+  if ($('btn-autofill-app')) $('btn-autofill-app').addEventListener('click', triggerAutofill);
+  if ($('btn-autofill-direct')) $('btn-autofill-direct').addEventListener('click', triggerAutofill);
 
   $('btn-tailor-resume').addEventListener('click', tailorResume);
   $('btn-cover-letter').addEventListener('click', generateCoverLetter);
