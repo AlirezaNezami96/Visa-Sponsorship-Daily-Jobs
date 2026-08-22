@@ -19,6 +19,15 @@ function detectAtsName() {
   return 'Application Form';
 }
 
+function extractCurrentJobData() {
+  return {
+    pageUrl: window.location.href,
+    companyName: document.querySelector('.company-name, [data-automation-id="companyName"], .app-title, .posting-headline h2')?.textContent?.trim() || '',
+    jobTitle: document.querySelector('h1, .job-title, [data-automation-id="jobTitle"], .posting-headline h2')?.textContent?.trim() || 'Software Engineer',
+    jobDescription: document.body.innerText?.slice(0, 5000) || '',
+  };
+}
+
 export async function detectAndMountAutofill() {
   // Prevent duplicate mounts on the same frame
   if (window.__JOB_OS_COPILOT__) return;
@@ -34,17 +43,14 @@ export async function detectAndMountAutofill() {
     if (drawer) drawer.toggle();
   });
 
-  drawer = new CopilotDrawer(atsName, async () => {
-    // Extract job details from page context if available
-    const jobData = {
-      pageUrl: window.location.href,
-      companyName: document.querySelector('.company-name, [data-automation-id="companyName"]')?.textContent?.trim() || 'Company',
-      jobTitle: document.querySelector('h1, .job-title, [data-automation-id="jobTitle"]')?.textContent?.trim() || 'Software Engineer',
-      jobDescription: document.body.innerText?.slice(0, 5000) || '',
-    };
-
-    await runAutofillSequence(drawer, jobData);
-  });
+  drawer = new CopilotDrawer(
+    atsName,
+    async () => {
+      const jobData = extractCurrentJobData();
+      await runAutofillSequence(drawer, jobData);
+    },
+    () => extractCurrentJobData()
+  );
 
   await handle.mount();
   drawer.mount();

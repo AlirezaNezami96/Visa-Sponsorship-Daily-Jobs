@@ -42,10 +42,14 @@ state/*.db
 state/*.jsonl
 state/llm_cache.json
 state/llm_daily_tracker.json
+state/hiring_contacts_cache.json
+state/company_linkedin_id_cache.json
 data/sponsors/*.db
 data/sponsors/*.parquet
 data/sponsors/*.csv
 data/sponsors/*.xlsx
 !state/.gitkeep
 engine/data/
+engine/state/
 *.db
+

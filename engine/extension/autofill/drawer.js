@@ -1,13 +1,16 @@
 /**
- * drawer.js — In-Page Slide-Out Right Panel & Field Progress Tracker
+ * drawer.js — In-Page Slide-Out Right Panel & Field Progress Tracker with Hiring Contacts
  */
 
 export class CopilotDrawer {
-  constructor(atsName, onStartAutofill) {
+  constructor(atsName, onStartAutofill, getJobData) {
     this.atsName = atsName;
     this.onStartAutofill = onStartAutofill;
+    this.getJobData = getJobData || (() => ({}));
     this.el = null;
     this.fieldRows = new Map();
+    this.contactsCache = null;
+    this.isContactsLoading = false;
   }
 
   mount() {
@@ -25,6 +28,24 @@ export class CopilotDrawer {
       </div>
 
       <div class="job-os-drawer-body">
+        <!-- ── Hiring Contacts Button (Immediately ABOVE Autofill) ── -->
+        <button class="job-os-btn-contacts" id="job-os-btn-contacts-drawer">
+          <span class="btn-icon-inline">👥</span>
+          <span id="job-os-btn-contacts-text">Find Hiring Contacts</span>
+        </button>
+
+        <div id="job-os-contacts-card" class="job-os-contacts-card hidden">
+          <div class="job-os-contacts-header">
+            <span id="job-os-contacts-count-text">Hiring Contacts</span>
+          </div>
+          <div class="job-os-contacts-list" id="job-os-contacts-list"></div>
+          <button class="job-os-btn-linkedin-search" id="job-os-btn-linkedin-search">
+            <span>💼</span>
+            <span>Find on LinkedIn</span>
+          </button>
+        </div>
+
+        <!-- ── Autofill Application Button ── -->
         <button class="job-os-btn-autofill" id="job-os-btn-autofill-drawer">
           <span>⚡</span>
           <span>Autofill Application</span>
@@ -56,10 +77,32 @@ export class CopilotDrawer {
         this.onStartAutofill();
       }
     });
+
+    const contactsBtn = document.getElementById('job-os-btn-contacts-drawer');
+    contactsBtn.addEventListener('click', () => {
+      if (this.contactsCache && this.contactsCache.linkedin_search_url) {
+        window.open(this.contactsCache.linkedin_search_url, '_blank');
+      } else {
+        this.fetchHiringContacts(true);
+      }
+    });
+
+    const searchBtn = document.getElementById('job-os-btn-linkedin-search');
+    searchBtn.addEventListener('click', () => {
+      if (this.contactsCache && this.contactsCache.linkedin_search_url) {
+        window.open(this.contactsCache.linkedin_search_url, '_blank');
+      }
+    });
+
+    // Automatically trigger hiring contacts discovery in the background
+    this.fetchHiringContacts(false);
   }
 
   open() {
-    if (this.el) this.el.classList.add('open');
+    if (this.el) {
+      this.el.classList.add('open');
+      this.fetchHiringContacts(false);
+    }
   }
 
   close() {
@@ -67,7 +110,83 @@ export class CopilotDrawer {
   }
 
   toggle() {
-    if (this.el) this.el.classList.toggle('open');
+    if (this.el) {
+      this.el.classList.toggle('open');
+      if (this.el.classList.contains('open')) {
+        this.fetchHiringContacts(false);
+      }
+    }
+  }
+
+  async fetchHiringContacts(forceRefresh = false) {
+    if (this.isContactsLoading) return;
+    if (!forceRefresh && this.contactsCache) return;
+
+    const btn = document.getElementById('job-os-btn-contacts-drawer');
+    const textSpan = document.getElementById('job-os-btn-contacts-text');
+    const card = document.getElementById('job-os-contacts-card');
+    const list = document.getElementById('job-os-contacts-list');
+    const countText = document.getElementById('job-os-contacts-count-text');
+
+    if (!btn || !textSpan) return;
+
+    this.isContactsLoading = true;
+    btn.classList.add('loading');
+    textSpan.textContent = 'Finding Hiring Contacts...';
+
+    const jobData = this.getJobData();
+
+    try {
+      const resp = await chrome.runtime.sendMessage({
+        action: 'FIND_HIRING_CONTACTS',
+        payload: {
+          company_name: jobData.companyName || '',
+          job_title: jobData.jobTitle || '',
+          page_url: jobData.pageUrl || window.location.href,
+          jd_text: jobData.jobDescription || '',
+          force_refresh: forceRefresh,
+        },
+      });
+
+      this.isContactsLoading = false;
+      btn.classList.remove('loading');
+
+      if (resp && resp.success && Array.isArray(resp.contacts) && resp.contacts.length > 0) {
+        this.contactsCache = resp;
+        const count = resp.contacts.length;
+        btn.classList.add('success');
+        textSpan.textContent = `${count} Contact${count > 1 ? 's' : ''} Found`;
+
+        if (countText) {
+          countText.textContent = `${count} relevant contact${count > 1 ? 's' : ''} found`;
+        }
+
+        if (list) {
+          list.innerHTML = '';
+          resp.contacts.forEach((c) => {
+            const item = document.createElement('div');
+            item.className = 'job-os-contact-item';
+            item.innerHTML = `
+              <div class="job-os-contact-name">${c.name}</div>
+              <div class="job-os-contact-title">${c.title}</div>
+            `;
+            list.appendChild(item);
+          });
+        }
+
+        if (card) card.classList.remove('hidden');
+      } else if (resp && resp.success && resp.contacts && resp.contacts.length === 0) {
+        textSpan.textContent = 'No hiring contacts found';
+      } else {
+        const errorMsg = resp?.error || 'Find Hiring Contacts';
+        textSpan.textContent = errorMsg.includes('identify') ? 'Unable to identify company' : 'Find Hiring Contacts (Retry)';
+      }
+    } catch (err) {
+      this.isContactsLoading = false;
+      if (btn) btn.classList.remove('loading');
+      if (textSpan) textSpan.textContent = 'Find Hiring Contacts (Retry)';
+      console.debug('[HiringContacts] Discovery error:', err);
+    }
   }
 
   setStatus(msg) {

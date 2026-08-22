@@ -763,3 +763,32 @@ QUESTIONS TO ANSWER:
         logger.warning(f"Batch question answering failed: {err}")
         return {"success": False, "answers": [], "error": str(err)}
 
+
+@app.post("/api/v1/contacts/find", tags=["Contacts"])
+@limiter.limit("60/hour")
+async def find_hiring_contacts_endpoint(request: Request, body: dict):
+    """
+    Finds relevant hiring contacts (recruiters, talent acquisition, engineering managers)
+    for a job posting and generates a scoped LinkedIn people search URL.
+    """
+    from job_radar.contacts.service import HiringContactsService
+
+    service = HiringContactsService()
+    company_name = body.get("company_name", "") or body.get("company", "")
+    company_domain = body.get("company_domain", "") or body.get("domain", "")
+    job_title = body.get("job_title", "")
+    page_url = body.get("page_url", "")
+    jd_text = body.get("jd_text", "") or body.get("job_description", "")
+    force_refresh = bool(body.get("force_refresh", False))
+
+    res = service.find_hiring_contacts(
+        job_data=body,
+        company_name=company_name,
+        company_domain=company_domain,
+        job_title=job_title,
+        page_url=page_url,
+        jd_text=jd_text,
+        force_refresh=force_refresh,
+    )
+    return res
+

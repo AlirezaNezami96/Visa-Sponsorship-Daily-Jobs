@@ -130,6 +130,17 @@ async function batchAnswerQuestionsApi(payload) {
     const err = await response.json().catch(() => ({}));
     throw new Error(err.detail || `Batch answer failed: ${response.status}`);
   }
+async function findHiringContactsApi(payload) {
+  const base = await getApiBase();
+  const response = await fetch(`${base}/api/v1/contacts/find`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `Hiring contacts search failed: ${response.status}`);
+  }
   return response.json();
 }
 
@@ -335,6 +346,11 @@ async function handleMessage(message, sender) {
 
   if (action === 'BATCH_ANSWER') {
     const res = await batchAnswerQuestionsApi(message.payload);
+    return res;
+  }
+
+  if (action === 'FIND_HIRING_CONTACTS') {
+    const res = await findHiringContactsApi(message.payload);
     return res;
   }
 

@@ -198,8 +198,80 @@ async function scanPage() {
     await checkJobMemory(currentJobData.pageUrl);
 
     showState('jd-found');
+
+    // Automatically trigger hiring contacts discovery in background
+    fetchPopupHiringContacts(false);
   } catch (err) {
     showError(`Scan failed: ${err.message}`);
+  }
+}
+
+let popupContactsCache = null;
+
+async function fetchPopupHiringContacts(forceRefresh = false) {
+  if (!currentJobData) return;
+  if (!forceRefresh && popupContactsCache) return;
+
+  const btn = $('btn-find-contacts');
+  const textSpan = $('btn-find-contacts-text');
+  const card = $('popup-contacts-card');
+  const list = $('popup-contacts-list');
+  const countText = $('popup-contacts-count');
+
+  if (!btn || !textSpan) return;
+
+  textSpan.textContent = 'Finding Hiring Contacts...';
+  btn.style.opacity = '0.85';
+
+  try {
+    const resp = await sendToBackground({
+      action: 'FIND_HIRING_CONTACTS',
+      payload: {
+        company_name: currentJobData.companyName,
+        job_title: currentJobData.jobTitle,
+        page_url: currentJobData.pageUrl,
+        jd_text: currentJobData.jobDescription,
+        force_refresh: forceRefresh,
+      },
+    });
+
+    btn.style.opacity = '1';
+
+    if (resp && resp.success && Array.isArray(resp.contacts) && resp.contacts.length > 0) {
+      popupContactsCache = resp;
+      const count = resp.contacts.length;
+      textSpan.textContent = `${count} Contact${count > 1 ? 's' : ''} Found`;
+      btn.style.background = '#0a66c2';
+      btn.style.color = '#ffffff';
+      btn.style.borderColor = '#0a66c2';
+
+      if (countText) {
+        countText.textContent = `${count} relevant contact${count > 1 ? 's' : ''} found`;
+      }
+
+      if (list) {
+        list.innerHTML = '';
+        resp.contacts.forEach((c) => {
+          const item = document.createElement('div');
+          item.style.cssText = 'background: #1e293b; border: 1px solid #334155; border-radius: 4px; padding: 6px 8px; font-size: 11px;';
+          item.innerHTML = `
+            <div style="font-weight: 600; color: #f8fafc;">${c.name}</div>
+            <div style="color: #94a3b8; font-size: 10px;">${c.title}</div>
+          `;
+          list.appendChild(item);
+        });
+      }
+
+      if (card) card.classList.remove('hidden');
+    } else if (resp && resp.success && resp.contacts && resp.contacts.length === 0) {
+      textSpan.textContent = 'No hiring contacts found';
+    } else {
+      const errorMsg = resp?.error || 'Find Hiring Contacts';
+      textSpan.textContent = errorMsg.includes('identify') ? 'Unable to identify company' : 'Find Hiring Contacts (Retry)';
+    }
+  } catch (err) {
+    btn.style.opacity = '1';
+    textSpan.textContent = 'Find Hiring Contacts (Retry)';
   }
 }
 
@@ -450,6 +522,24 @@ async function init() {
   $('btn-rescan').addEventListener('click', scanPage);
   $('btn-retry').addEventListener('click', () => showState(currentJobData ? 'jd-found' : 'no-jd'));
   $('btn-back').addEventListener('click', () => showState('jd-found'));
+
+  if ($('btn-find-contacts')) {
+    $('btn-find-contacts').addEventListener('click', () => {
+      if (popupContactsCache && popupContactsCache.linkedin_search_url) {
+        window.open(popupContactsCache.linkedin_search_url, '_blank');
+      } else {
+        fetchPopupHiringContacts(true);
+      }
+    });
+  }
+
+  if ($('btn-popup-linkedin-search')) {
+    $('btn-popup-linkedin-search').addEventListener('click', () => {
+      if (popupContactsCache && popupContactsCache.linkedin_search_url) {
+        window.open(popupContactsCache.linkedin_search_url, '_blank');
+      }
+    });
+  }
 
   if ($('btn-autofill-app')) $('btn-autofill-app').addEventListener('click', triggerAutofill);
   if ($('btn-autofill-direct')) $('btn-autofill-direct').addEventListener('click', triggerAutofill);
