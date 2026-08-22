@@ -119,16 +119,16 @@ async function getApplicantProfile() {
   return response.json();
 }
 
-async function answerQuestionApi(payload) {
+async function batchAnswerQuestionsApi(payload) {
   const base = await getApiBase();
-  const response = await fetch(`${base}/api/v1/autofill/answer`, {
+  const response = await fetch(`${base}/api/v1/autofill/batch`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(err.detail || `Answer generation failed: ${response.status}`);
+    throw new Error(err.detail || `Batch answer failed: ${response.status}`);
   }
   return response.json();
 }
@@ -333,14 +333,9 @@ async function handleMessage(message, sender) {
     return res;
   }
 
-  if (action === 'ANSWER_QUESTION') {
-    const res = await answerQuestionApi({
-      question: message.question,
-      job_title: message.jobTitle || 'Software Engineer',
-      company_name: message.companyName || 'Company',
-      jd_text: message.jobDescription || '',
-    });
-    return { success: true, answer: res.answer };
+  if (action === 'BATCH_ANSWER') {
+    const res = await batchAnswerQuestionsApi(message.payload);
+    return res;
   }
 
   if (action === 'CHECK_JOB_MEMORY') {

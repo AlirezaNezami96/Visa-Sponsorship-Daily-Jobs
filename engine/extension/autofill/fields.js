@@ -38,52 +38,102 @@ export function getFieldDescriptor(el) {
 
 export function classifyFieldType(field) {
   const c = field.combined;
+  const label = field.labelText;
 
-  // 1. Files
-  if (field.type === 'file' || c.includes('resume') || c.includes('cv')) {
+  // 1. Consent / Terms / GDPR
+  if (
+    field.type === 'checkbox' ||
+    c.includes('agree') ||
+    c.includes('consent') ||
+    c.includes('terms') ||
+    c.includes('privacy') ||
+    c.includes('certify') ||
+    c.includes('acknowledge') ||
+    c.includes('gdpr') ||
+    c.includes('data processing') ||
+    c.includes('truthful') ||
+    c.includes('accurate')
+  ) {
+    if (field.type === 'checkbox' || c.includes('checkbox') || c.includes('terms')) {
+      return 'CONSENT';
+    }
+  }
+
+  // 2. Files
+  if (field.type === 'file' || c.includes('resume') || c.includes('cv') || c.includes('curriculum vitae')) {
     if (c.includes('cover') && c.includes('letter')) return 'FILE_COVER_LETTER';
     return 'FILE_RESUME';
   }
+  if (field.type === 'file' && c.includes('cover')) {
+    return 'FILE_COVER_LETTER';
+  }
 
-  // 2. Names
+  // 3. Names
   if (c.includes('first name') || c.includes('firstname') || c.includes('given-name') || c.includes('fname')) return 'FIRST_NAME';
   if (c.includes('last name') || c.includes('lastname') || c.includes('family-name') || c.includes('lname') || c.includes('surname')) return 'LAST_NAME';
-  if (c.includes('full name') || c.includes('fullname') || (c.includes('name') && !c.includes('company') && !c.includes('user') && !c.includes('file'))) return 'FULL_NAME';
+  if (c.includes('full name') || c.includes('fullname') || (c.includes('name') && !c.includes('company') && !c.includes('user') && !c.includes('file') && !c.includes('country') && !c.includes('school'))) return 'FULL_NAME';
 
-  // 3. Contact
+  // 4. Contact
   if (c.includes('email') || field.type === 'email') return 'EMAIL';
+  if (c.includes('phone country') || c.includes('country code') || c.includes('dialing code') || c.includes('dial code')) return 'PHONE_COUNTRY';
   if (c.includes('phone') || c.includes('mobile') || c.includes('telephone') || c.includes('tel') || field.type === 'tel') return 'PHONE';
 
-  // 4. Links
+  // 5. Links (Fixed: avoid false positive git on digital/legitimate, url on hourly)
   if (c.includes('linkedin')) return 'LINK_LINKEDIN';
-  if (c.includes('github') || c.includes('git')) return 'LINK_GITHUB';
-  if (c.includes('portfolio') || c.includes('website') || c.includes('personal site') || c.includes('blog') || c.includes('url')) return 'LINK_PORTFOLIO';
+  if (c.includes('github') || /\bgit\b/.test(c)) return 'LINK_GITHUB';
+  if (c.includes('portfolio') || c.includes('personal site') || c.includes('blog') || (/\b(website|portfolio_url|web_url)\b/.test(c) && !c.includes('hourly'))) return 'LINK_PORTFOLIO';
 
-  // 5. Address
-  if (c.includes('country')) return 'COUNTRY';
-  if (c.includes('city') || c.includes('location')) return 'CITY';
-  if (c.includes('postal') || c.includes('zip')) return 'POSTAL_CODE';
+  // 6. Address / Location
+  if (c.includes('country') && !c.includes('phone')) return 'COUNTRY';
+  if (c.includes('work location preference') || c.includes('remote preference') || c.includes('workplace preference')) return 'LOCATION_PREFERENCE';
+  if (c.includes('city') || c.includes('location') || c.includes('where do you live') || c.includes('current location') || c.includes('residence')) return 'LOCATION_CITY';
+  if (c.includes('postal') || c.includes('zip') || c.includes('postcode')) return 'POSTAL_CODE';
+  if (c.includes('address line') || c.includes('street address')) return 'ADDRESS_LINE';
 
-  // 6. Work Auth & Sponsorship
-  if (c.includes('authorized to work in the united states') || c.includes('authorized to work in the u.s.') || c.includes('work authorization (us)')) return 'WORK_AUTH_US';
-  if (c.includes('authorized to work in canada')) return 'WORK_AUTH_CA';
-  if (c.includes('authorized to work in the united kingdom') || c.includes('authorized to work in the uk')) return 'WORK_AUTH_UK';
-  if (c.includes('sponsorship') || c.includes('require visa') || c.includes('visa sponsorship') || c.includes('immigration status')) return 'SPONSORSHIP_REQUIRED';
-  if (c.includes('legally authorized') || c.includes('right to work') || c.includes('work permit')) return 'WORK_AUTH_GENERAL';
+  // 7. Work Authorization & Sponsorship (Polarity handled in answerWorkAuth)
+  if (
+    c.includes('authorized') ||
+    c.includes('authorisation') ||
+    c.includes('sponsorship') ||
+    c.includes('visa') ||
+    c.includes('right to work') ||
+    c.includes('work permit') ||
+    c.includes('eligibility to work') ||
+    c.includes('eligible to work') ||
+    c.includes('immigration')
+  ) {
+    return 'WORK_AUTH';
+  }
 
-  // 7. EEO / Voluntary Disclosures
-  if (c.includes('gender') || c.includes('sex')) return 'EEO_GENDER';
+  // 8. EEO / Voluntary Disclosures
+  if (c.includes('gender') || c.includes('sex') || c.includes('pronoun')) return 'EEO_GENDER';
   if (c.includes('ethnicity') || c.includes('race') || c.includes('hispanic') || c.includes('latino')) return 'EEO_ETHNICITY';
   if (c.includes('veteran')) return 'EEO_VETERAN';
   if (c.includes('disability') || c.includes('handicap')) return 'EEO_DISABILITY';
   if (c.includes('lgbtq') || c.includes('sexual orientation')) return 'EEO_LGBTQ';
 
-  // 8. Compensation & Preferences
-  if (c.includes('salary') || c.includes('compensation') || c.includes('expected pay') || c.includes('desired pay')) return 'SALARY_EXPECTATION';
-  if (c.includes('years of experience') || c.includes('years of') || c.includes('experience with')) return 'YEARS_EXPERIENCE';
-  if (c.includes('hear about') || c.includes('source') || c.includes('how did you')) return 'HOW_HEARD';
+  // 9. Compensation & Experience
+  if (
+    c.includes('salary') ||
+    c.includes('compensation') ||
+    c.includes('pay') ||
+    c.includes('ctc') ||
+    c.includes('wage') ||
+    c.includes('stipend') ||
+    c.includes('day rate') ||
+    c.includes('b2b') ||
+    c.includes('contractor rate') ||
+    c.includes('remuneration') ||
+    c.includes('desired rate') ||
+    c.includes('hourly rate')
+  ) {
+    return 'SALARY_EXPECTATION';
+  }
 
-  // 9. Free-text Unique Questions
+  if (c.includes('years of experience') || c.includes('years of') || c.includes('experience with')) return 'YEARS_EXPERIENCE';
+  if (c.includes('hear about') || c.includes('source') || c.includes('how did you hear')) return 'HOW_HEARD';
+
+  // 10. Free-text Unique Questions
   if (field.el.tagName === 'TEXTAREA' || field.type === 'textarea') return 'UNIQUE_FREE_TEXT';
 
   return 'UNKNOWN';

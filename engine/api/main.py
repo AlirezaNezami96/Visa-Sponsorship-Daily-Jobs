@@ -693,3 +693,73 @@ APPLICATION QUESTION TO ANSWER:
     cleaned_answer = re.sub(r"\s+", " ", cleaned_answer).strip()
     return {"success": True, "answer": cleaned_answer}
 
+
+@app.post("/api/v1/autofill/batch", tags=["Autofill"])
+@limiter.limit("60/hour")
+async def answer_batch_questions(request: Request, body: dict):
+    """
+    Answers a batch of custom application questions and checklists
+    in one fast LLM request before the sequential form walk begins.
+    """
+    questions = body.get("questions", [])
+    if not questions:
+        return {"success": True, "answers": []}
+
+    job_title = body.get("job_title", "Software Engineer")
+    company_name = body.get("company_name", "Company")
+    jd_text = body.get("job_description", "") or body.get("jd_text", "")
+    profile = _load_profile_data()
+
+    profile_bullets = []
+    for exp in profile.get("experience", []):
+        for b in exp.get("bullets", []):
+            profile_bullets.append(f"- {b}")
+
+    system_prompt = """You are an AI assistant helping fill job application form questions for Alireza Nezami.
+Candidate rules:
+- Senior Android & Flutter Developer with 9 years experience (since 2017).
+- Location: Istanbul, Turkey.
+- Work Authorization: Legally authorized in US/UK/EU/Canada = NO. Legally authorized in Turkey = YES.
+- Visa/Sponsorship: Requires visa sponsorship = YES. Can work without sponsorship = NO.
+- Target Salary: 3000 USD gross per month (convert accurately if currency or frequency like annual EUR/hourly PLN is specified).
+- How heard: LinkedIn.
+- Notice period: 2 weeks / Immediate.
+- Skills: Android SDK, Kotlin, Flutter, Dart, Jetpack Compose, Coroutines, MVI/MVVM, Clean Architecture, Fastlane, CI/CD.
+- Tone rules: Direct, honest, engineering-focused. Avoid hype or buzzwords ('passionate', 'excited', 'leverage', 'thrilled').
+- Multiple choice rule: If options are provided, you MUST select from the provided options (return exact option label or best matching option). If multi-select checklist, return a JSON array of matching options.
+
+Output format: Return ONLY a valid JSON object with the key "answers", which is a list of objects with "id", "value", and optionally "option":
+{
+  "answers": [
+    { "id": "field_0", "value": "Answer text or selected option", "option": "Matching option string" }
+  ]
+}"""
+
+    questions_formatted = json.dumps(questions, indent=2)
+    user_prompt = f"""TARGET COMPANY: {company_name}
+TARGET ROLE: {job_title}
+JOB DESCRIPTION: {jd_text[:1500]}
+
+CANDIDATE BULLETS:
+{"\n".join(profile_bullets[:10])}
+
+QUESTIONS TO ANSWER:
+{questions_formatted}"""
+
+    from job_radar.llm.router import complete
+    try:
+        res = complete(
+            prompt=user_prompt,
+            system_instruction=system_prompt,
+            max_tokens=600,
+            temperature=0.2,
+            json_mode=True,
+        )
+        raw_text = (res.text or "").strip()
+        parsed = json.loads(raw_text)
+        answers = parsed.get("answers", [])
+        return {"success": True, "answers": answers}
+    except Exception as err:
+        logger.warning(f"Batch question answering failed: {err}")
+        return {"success": False, "answers": [], "error": str(err)}
+

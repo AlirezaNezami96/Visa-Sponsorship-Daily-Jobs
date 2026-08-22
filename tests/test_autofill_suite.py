@@ -40,9 +40,11 @@ def test_applicant_profile_contains_real_candidate_and_aliases():
 
 def test_eeo_and_work_auth_answers():
     profile = _load_profile_data()
-    assert profile["work_authorization"]["authorized_us"] == "Yes"
-    assert profile["work_authorization"]["authorized_uk"] == "Yes"
-    assert profile["work_authorization"]["requires_sponsorship_now_or_future"] == "No"
+    assert profile["work_authorization"]["authorized_us"] == "No"
+    assert profile["work_authorization"]["authorized_uk"] == "No"
+    assert profile["work_authorization"]["legally_authorized_default"] == "No"
+    assert profile["work_authorization"]["legally_authorized_in_turkey"] == "Yes"
+    assert profile["work_authorization"]["requires_sponsorship_now_or_future"] == "Yes"
     assert profile["eeo_and_screening"]["disability"] == "No"
     assert profile["eeo_and_screening"]["gender"] == "Male"
     assert profile["eeo_and_screening"]["ethnicity"] == "Middle Eastern"

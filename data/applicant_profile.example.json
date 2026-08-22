@@ -8,19 +8,22 @@
     "phone_e164": "+15550199000",
     "phone_display": "+1 (555) 019-9000",
     "phone_country": "US",
+    "phone_country_aliases": ["United States", "USA", "US"],
     "phone_national": "5550199000",
     "linkedin": "https://www.linkedin.com/in/alex-doe",
     "github": "https://github.com/alexdoe",
     "portfolio": "https://alexdoe.dev",
     "website": "https://alexdoe.dev",
     "twitter": null,
-    "birthday": null,
+    "birthday": "1996-01-01",
     "gender": "Male"
   },
   "address": {
     "line1": null,
     "line2": null,
     "city": "London",
+    "city_query": "London",
+    "city_display": "London, United Kingdom",
     "city_aliases": ["London", "Greater London"],
     "region": "London",
     "postal_code": null,
@@ -30,12 +33,14 @@
     "residence_display": "London, UK"
   },
   "work_authorization": {
-    "authorized_us": "Yes",
-    "authorized_canada": "Yes",
-    "authorized_uk": "Yes",
-    "requires_sponsorship_now_or_future": "No",
-    "citizenship": [],
-    "work_permit_notes": "Use the Yes/No answers above verbatim when the question matches."
+    "legally_authorized_default": "No",
+    "legally_authorized_in_turkey": "Yes",
+    "requires_visa_or_sponsorship": "Yes",
+    "authorized_us": "No",
+    "authorized_canada": "No",
+    "authorized_uk": "No",
+    "requires_sponsorship_now_or_future": "Yes",
+    "citizenship": []
   },
   "eeo_and_screening": {
     "ethnicity": "White",
@@ -50,14 +55,21 @@
     "industry_preference": "Any"
   },
   "compensation": {
-    "min_expected_usd": 2000,
-    "period": "as_stated_on_form",
+    "monthly_usd": 3000,
+    "min_expected_usd": 3000,
+    "hours_per_month": 173.33,
+    "hours_per_week": 40,
+    "period": "monthly",
     "convert_to_form_currency": true,
     "fx_fallback": {
+      "USD": 1.0,
       "EUR": 0.92,
       "GBP": 0.78,
+      "PLN": 4.00,
       "CAD": 1.36,
-      "TRY": 41.0
+      "TRY": 41.0,
+      "INR": 83.0,
+      "AUD": 1.52
     }
   },
   "languages": [
