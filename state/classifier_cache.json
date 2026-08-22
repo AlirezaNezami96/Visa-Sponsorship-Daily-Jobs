@@ -3706,5 +3706,101 @@
     "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
     "_fallback": true,
     "_cached_at": 1787285254
+  },
+  "7635a09554815b378fb868972272d264d25db4ed99ba33a9490e497816417ccb": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      ""
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787371341
+  },
+  "0e61d54c67fd198fd6c39de617ac18529a76c709aa919c2035510f5b6b236b0a": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      ""
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787371341
+  },
+  "b73e0847fc15952cf44500baff6e38bb09ece098fd462c243fa216edc94369aa": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "London"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787371341
+  },
+  "f86acfd1bb2ca108a70f63ac280f56437f8626cfbc89f401c06ebd3bc66930f8": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "Guadalajara, Mexico"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787371341
+  },
+  "05ffc497ccddbb0676ccab63ff78d1ca3b1822157152798315e89a87426fc774": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      ""
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787371342
+  },
+  "f16233040d8b96f25d9fab6bbed0b65ed2e1dbc8f3d9863eb1a1bb710dad9c74": {
+    "is_ai_ml_role": true,
+    "track": "internship",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "Parsdorf, Bavaria"
+    ],
+    "relevance_score": 40,
+    "why": "Internship role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787371342
+  },
+  "c64f9950450e05d144c2b86545fbea940c1df7797a3dd6c5a059da5908014369": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "London - The River Building HQ"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787371342
+  },
+  "2c25a4a17353a2f735da6e8007f13f4baa370dd2f2f1a848246ff3390f2ee2e4": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "London - The River Building HQ"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787371342
   }
 }
