@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Greenhouse Test Fixture</title>
+</head>
+<body>
+  <form id="application_form">
+    <label for="first_name">First Name *</label>
+    <input type="text" id="first_name" name="first_name" required>
+
+    <label for="last_name">Last Name *</label>
+    <input type="text" id="last_name" name="last_name" required>
+
+    <label for="email">Email *</label>
+    <input type="email" id="email" name="email" required>
+
+    <label for="phone">Phone *</label>
+    <input type="tel" id="phone" name="phone" required>
+
+    <label for="job_application_location">Location *</label>
+    <input type="text" id="job_application_location" name="job_application_location">
+
+    <label for="urls_LinkedIn">LinkedIn Profile *</label>
+    <input type="text" id="urls_LinkedIn" name="urls[LinkedIn]">
+
+    <label for="urls_GitHub">GitHub Profile</label>
+    <input type="text" id="urls_GitHub" name="urls[GitHub]">
+
+    <label for="country_select">Country *</label>
+    <select id="country_select" name="country">
+      <option value="">Select country</option>
+      <option value="US">United States</option>
+      <option value="UK">United Kingdom</option>
+      <option value="TR">Türkiye</option>
+      <option value="DE">Germany</option>
+    </select>
+
+    <label for="resume">Resume / CV *</label>
+    <input type="file" id="resume" name="resume">
+
+    <button type="submit" id="submit_app">Submit Application</button>
+  </form>
+</body>
+</html>

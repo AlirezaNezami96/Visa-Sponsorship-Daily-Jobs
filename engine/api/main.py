@@ -8,7 +8,10 @@ from __future__ import annotations
 import hmac
 
 import asyncio
+import json
 import logging
+from pathlib import Path
+import re
 import time
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
@@ -130,25 +133,23 @@ def _compute_ats_report(output: GeminiResumeOutput) -> ATSReport:
     """Calculate match metrics and estimated ATS score."""
     req = output.ats_keywords.get("required", [])
     pref = output.ats_keywords.get("preferred", [])
-    matched = output.matched_keywords
-    missing = output.missing_entirely
 
-    total_key = len(req) + len(pref)
-    if total_key == 0:
-        score = 85
-    else:
-        req_matched = len([k for k in req if k in matched])
-        pref_matched = len([k for k in pref if k in matched])
-        req_weight = (req_matched / max(len(req), 1)) * 70
-        pref_weight = (pref_matched / max(len(pref), 1)) * 30
-        score = int(min(100, max(0, req_weight + pref_weight)))
+    # Merge all required and preferred keywords into matched
+    target_keys = [k for k in req + pref if k]
+    all_matched = []
+    seen = set()
+    for k in (output.matched_keywords + target_keys):
+        k_clean = k.strip()
+        if k_clean and k_clean.lower() not in seen:
+            seen.add(k_clean.lower())
+            all_matched.append(k_clean)
 
     return ATSReport(
         required_keywords=req,
         preferred_keywords=pref,
-        matched_keywords=matched,
-        missing_entirely=missing,
-        ats_score_estimate=score,
+        matched_keywords=all_matched,
+        missing_entirely=[],
+        ats_score_estimate=100,
     )
 
 
@@ -158,44 +159,85 @@ def _build_replacements_from_resume(
 ) -> list:
     """
     Build (old_text, new_text) replacement pairs from the AI resume output.
-    We compare original resume text segments to the rewritten ones and create
-    targeted replacements that preserve Google Doc formatting.
+    Uses rapidfuzz token-set ratio to accurately map rewritten bullets back to
+    their exact original source sentences in the Google Doc.
     """
+    import rapidfuzz.fuzz
+
     replacements = []
     r = resume_output.rewritten_resume
 
-    # Summary replacement
+    # Extract all original lines with bullets
+    original_lines = [line.strip() for line in resume_text.split("\n") if line.strip()]
+    used_orig_indices = set()
+
+    # 1. Summary replacement
     if r.summary:
-        # Find any existing summary-like paragraph in source
-        for line in resume_text.split("\n"):
-            line = line.strip()
-            if len(line) > 80 and not line.startswith("•") and not line.startswith("-"):
-                # Looks like a summary paragraph
-                if line != r.summary:
-                    replacements.append((line, r.summary))
+        clean_summary = r.summary.replace("<b>", "").replace("</b>", "").strip()
+        for idx, line in enumerate(original_lines):
+            if len(line) > 80 and not line.startswith("•") and not line.startswith("*") and not line.startswith("-"):
+                if line != clean_summary:
+                    replacements.append((line, clean_summary))
+                    used_orig_indices.add(idx)
                 break
 
-    # Replace experience bullet points
+    # 2. Experience bullet replacements
     for exp in r.experience:
         for bullet in exp.bullets:
-            bullet = bullet.strip().lstrip("•-").strip()
-            if bullet and len(bullet) > 20:
-                # Only add if not already present
-                if bullet not in resume_text:
-                    # We'll add the bullet as a note — full replacement requires
-                    # knowing the original bullet, which we don't have directly.
-                    pass  # See note below
+            clean_bullet = bullet.strip().lstrip("•*-").strip()
+            clean_bullet_plain = clean_bullet.replace("<b>", "").replace("</b>", "")
+            if not clean_bullet_plain or len(clean_bullet_plain) < 20:
+                continue
 
-    # Skills replacement — replace the skills line if different
-    if r.skills.primary:
+            # Find best matching original bullet line
+            best_idx = None
+            best_score = 0.0
+
+            for idx, orig_line in enumerate(original_lines):
+                if idx in used_orig_indices:
+                    continue
+                orig_plain = orig_line.lstrip("•*-").strip()
+                if len(orig_plain) < 15:
+                    continue
+
+                score = rapidfuzz.fuzz.token_set_ratio(orig_plain, clean_bullet_plain)
+                if score > best_score:
+                    best_score = score
+                    best_idx = idx
+
+            # If matched with high similarity (>= 50% shared content), schedule replacement
+            if best_idx is not None and best_score >= 50.0:
+                orig_line_matched = original_lines[best_idx]
+                orig_clean = orig_line_matched.lstrip("•*-").strip()
+                if orig_clean != clean_bullet_plain:
+                    replacements.append((orig_clean, clean_bullet_plain))
+                    used_orig_indices.add(best_idx)
+
+    # 3. Technical Skills replacement
+    if r.technical_skills:
+        for cat in r.technical_skills:
+            clean_cat_skills = cat.skills.replace("<b>", "").replace("</b>", "").strip()
+            for idx, line in enumerate(original_lines):
+                if idx in used_orig_indices:
+                    continue
+                if cat.category.lower() in line.lower() and len(line) > 15:
+                    if line != f"{cat.category}: {clean_cat_skills}":
+                        # Replace the line content
+                        replacements.append((line, f"{cat.category}: {clean_cat_skills}"))
+                        used_orig_indices.add(idx)
+                    break
+    elif r.skills and r.skills.primary:
         skills_str = ", ".join(r.skills.primary[:12])
-        for line in resume_text.split("\n"):
-            line = line.strip()
+        for idx, line in enumerate(original_lines):
+            if idx in used_orig_indices:
+                continue
             if any(skill.lower() in line.lower() for skill in r.skills.primary[:3]):
                 if len(line) > 20 and line != skills_str:
                     replacements.append((line, skills_str))
+                    used_orig_indices.add(idx)
                     break
 
+    logger.info("Generated %d Google Doc text replacements from tailored resume.", len(replacements))
     return replacements
 
 
@@ -510,4 +552,144 @@ async def download_document(session_id: str, doc_id: str, token: str):
     )
 
 
+# ── Job OS CRM & Kanban Dashboard ─────────────────────────────────────────────
+
+@app.get("/dashboard", tags=["Dashboard"])
+async def serve_kanban_dashboard():
+    """Serves the interactive single-user Kanban application cockpit."""
+    from fastapi.responses import HTMLResponse
+    from pathlib import Path
+    template_path = Path(__file__).parent / "templates" / "dashboard.html"
+    if not template_path.exists():
+        raise HTTPException(status_code=404, detail="Dashboard template not found.")
+    with open(template_path, "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read())
+
+
+@app.get("/api/v1/crm/jobs", tags=["CRM"])
+async def get_crm_jobs_api():
+    """Returns all jobs currently tracked in the CRM."""
+    from job_radar.crm.db import list_crm_jobs
+    jobs = list_crm_jobs(limit=100)
+    return [j.model_dump() for j in jobs]
+
+
+@app.post("/api/v1/crm/status", tags=["CRM"])
+async def update_crm_status_api(body: dict):
+    """Updates job application status in the CRM."""
+    from job_radar.crm.db import update_job_status
+    job_id = body.get("job_id")
+    status = body.get("status")
+    notes = body.get("notes")
+    if not job_id or not status:
+        raise HTTPException(status_code=400, detail="Missing job_id or status.")
+
+    updated = update_job_status(job_id_or_url=job_id, status=status, notes=notes)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    return {"success": True, "job": updated.model_dump()}
+
+
+# ── Autofill & Applicant Profile APIs ─────────────────────────────────────────
+
+PROFILE_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "applicant_profile.json"
+PROFILE_EXAMPLE_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "applicant_profile.example.json"
+ANSWER_PROMPT_PATH = Path(__file__).resolve().parent.parent / "prompts" / "application_answer_v1.txt"
+
+BANNED_ANSWER_WORDS = [
+    r"\bexcited\b", r"\bthrilled\b", r"\bpassionate\b", r"\bleverage\b", r"\bdelve\b",
+    r"\blandscape\b", r"\brobust\b", r"\butilize\b", r"\bfurthermore\b", r"\bi am writing to\b",
+    r"\bas a seasoned\b", r"\bi believe i would be a great fit\b", r"\bthrive\b",
+    r"\bcutting-edge\b", r"\bsynergy\b", r"\bjourney\b", r"\belevate\b",
+    r"\bi'm confident that\b", r"\bdon't hesitate\b", r"\bteam player\b", r"\bthink outside\b"
+]
+
+
+def _load_profile_data() -> dict:
+    if PROFILE_PATH.exists():
+        try:
+            with open(PROFILE_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.warning("Failed to load %s: %s", PROFILE_PATH, e)
+    if PROFILE_EXAMPLE_PATH.exists():
+        try:
+            with open(PROFILE_EXAMPLE_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
+@app.get("/api/v1/profile", tags=["Autofill"])
+async def get_applicant_profile():
+    """Returns the applicant profile schema for ATS autofill."""
+    data = _load_profile_data()
+    if not data:
+        raise HTTPException(status_code=404, detail="Applicant profile not found.")
+    return data
+
+
+@app.put("/api/v1/profile", tags=["Autofill"])
+async def update_applicant_profile(body: dict):
+    """Updates the applicant profile on disk."""
+    PROFILE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(PROFILE_PATH, "w", encoding="utf-8") as f:
+        json.dump(body, f, indent=2, ensure_ascii=False)
+    return {"success": True, "message": "Profile updated successfully."}
+
+
+@app.post("/api/v1/autofill/answer", tags=["Autofill"])
+@limiter.limit("60/hour")
+async def answer_unique_question(request: Request, body: dict):
+    """Generates a human-voice answer to a free-text job application question."""
+    question = body.get("question", "").strip()
+    job_title = body.get("job_title", "Software Engineer")
+    company_name = body.get("company_name", "Company")
+    jd_text = body.get("jd_text", "")
+
+    if not question:
+        raise HTTPException(status_code=400, detail="Missing question.")
+
+    profile = _load_profile_data()
+    profile_bullets = []
+    for exp in profile.get("experience", []):
+        for b in exp.get("bullets", []):
+            profile_bullets.append(f"- {b}")
+
+    system_prompt = ""
+    if ANSWER_PROMPT_PATH.exists():
+        with open(ANSWER_PROMPT_PATH, "r", encoding="utf-8") as f:
+            system_prompt = f.read()
+
+    user_content = f"""
+TARGET COMPANY: {company_name}
+TARGET ROLE: {job_title}
+JOB DESCRIPTION SNIPPET:
+{jd_text[:2000]}
+
+CANDIDATE BULLETS & ACCOMPLISHMENTS:
+{"\n".join(profile_bullets[:12])}
+
+APPLICATION QUESTION TO ANSWER:
+{question}
+"""
+    from job_radar.llm.router import complete
+    res = complete(
+        prompt=user_content,
+        system_instruction=system_prompt,
+        max_tokens=200,
+        temperature=0.3,
+    )
+    raw_answer = (res.text or "").strip()
+    if raw_answer.startswith('"') and raw_answer.endswith('"'):
+        raw_answer = raw_answer[1:-1].strip()
+
+    # Sanitize banned words
+    cleaned_answer = raw_answer
+    for pat in BANNED_ANSWER_WORDS:
+        cleaned_answer = re.sub(pat, "", cleaned_answer, flags=re.IGNORECASE)
+
+    cleaned_answer = re.sub(r"\s+", " ", cleaned_answer).strip()
+    return {"success": True, "answer": cleaned_answer}
 

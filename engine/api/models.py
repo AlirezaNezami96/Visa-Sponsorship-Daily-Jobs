@@ -43,12 +43,12 @@ class ResumeTailorRequest(BaseModel):
 class CoverLetterRequest(BaseModel):
     """Generate a human-toned cover letter for a specific job."""
     session_id: str = Field(..., description="Session ID returned from /session/init.")
-    job_description: str = Field(..., min_length=100, max_length=16000)
+    job_description: str = Field(..., min_length=1, max_length=50000)
     job_url: Optional[str] = None
-    company_name: str = Field(..., min_length=1, max_length=200)
-    job_title: str = Field(..., min_length=1, max_length=200)
-    user_name: str = Field(..., min_length=1, max_length=200)
-    tone: str = Field("professional", pattern="^(professional|casual|startup)$")
+    company_name: Optional[str] = "Company"
+    job_title: Optional[str] = "Software Engineer"
+    user_name: Optional[str] = "Alireza Nezami"
+    tone: Optional[str] = "professional"
 
 
 # ── Responses ─────────────────────────────────────────────────────────────────

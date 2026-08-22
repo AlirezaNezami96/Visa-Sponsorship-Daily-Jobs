@@ -1,0 +1,98 @@
+/* overlay.css — Job OS Floating Copilot Overlay */
+
+#job-os-copilot-overlay {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 320px;
+  background: #0f172a;
+  color: #f1f5f9;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  z-index: 999999;
+  font-size: 13px;
+  overflow: hidden;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+#job-os-copilot-overlay.minimized {
+  transform: translateY(-80%);
+  opacity: 0.7;
+}
+
+.job-os-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+}
+
+.job-os-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.job-os-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.job-os-progress {
+  height: 6px;
+  background: #334155;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.job-os-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: #10b981;
+  transition: width 0.3s ease;
+}
+
+.job-os-btn-primary {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s;
+}
+
+.job-os-btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.job-os-skipped-list {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 8px;
+  border-radius: 6px;
+  color: #fbbf24;
+  font-size: 11px;
+  max-height: 80px;
+  overflow-y: auto;
+}
+
+.job-os-highlight-field {
+  outline: 2px solid #3b82f6 !important;
+  background-color: rgba(59, 130, 246, 0.08) !important;
+}

@@ -1,0 +1,59 @@
+# Visa Salary Thresholds and National Rules (2026)
+
+DE:
+  name: "Germany"
+  currency: "EUR"
+  routes:
+    eu_blue_card_general:
+      min_salary_annual: 50700
+      source: "Make it in Germany (2026)"
+    eu_blue_card_it_shortage:
+      min_salary_annual: 45934.20
+      source: "Make it in Germany (2026)"
+    opportunity_card:
+      points_based: true
+
+NL:
+  name: "Netherlands"
+  currency: "EUR"
+  routes:
+    highly_skilled_migrant_over_30:
+      min_salary_monthly: 5456
+      min_salary_annual: 65472
+      source: "IND (2026)"
+    highly_skilled_migrant_under_30:
+      min_salary_monthly: 4000
+      min_salary_annual: 48000
+      source: "IND (2026)"
+    orientation_year_graduate:
+      min_salary_monthly: 2866
+      min_salary_annual: 34392
+
+IE:
+  name: "Ireland"
+  currency: "EUR"
+  routes:
+    critical_skills_permit:
+      min_salary_annual: 38500
+      eligible_occupations:
+        - "Software Engineer"
+        - "AI Engineer"
+        - "Machine Learning"
+        - "Data Scientist"
+        - "Mobile Developer"
+
+UK:
+  name: "United Kingdom"
+  currency: "GBP"
+  routes:
+    skilled_worker:
+      min_salary_annual: 38700
+      source: "GOV.UK"
+
+CA:
+  name: "Canada"
+  currency: "CAD"
+  routes:
+    global_talent_stream:
+      designated_fast_track: true
+      keywords: ["LMIA", "GTS", "Global Talent Stream"]

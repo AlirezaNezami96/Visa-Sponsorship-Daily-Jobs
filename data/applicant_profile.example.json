@@ -1,0 +1,102 @@
+{
+  "identity": {
+    "first_name": "Alex",
+    "last_name": "Doe",
+    "full_name": "Alex Doe",
+    "preferred_name": "Alex",
+    "email": "alex.doe@example.com",
+    "phone_e164": "+15550199000",
+    "phone_display": "+1 (555) 019-9000",
+    "phone_country": "US",
+    "phone_national": "5550199000",
+    "linkedin": "https://www.linkedin.com/in/alex-doe",
+    "github": "https://github.com/alexdoe",
+    "portfolio": "https://alexdoe.dev",
+    "website": "https://alexdoe.dev",
+    "twitter": null,
+    "birthday": null,
+    "gender": "Male"
+  },
+  "address": {
+    "line1": null,
+    "line2": null,
+    "city": "London",
+    "city_aliases": ["London", "Greater London"],
+    "region": "London",
+    "postal_code": null,
+    "country": "United Kingdom",
+    "country_code": "UK",
+    "country_aliases": ["UK", "United Kingdom", "Great Britain", "GB"],
+    "residence_display": "London, UK"
+  },
+  "work_authorization": {
+    "authorized_us": "Yes",
+    "authorized_canada": "Yes",
+    "authorized_uk": "Yes",
+    "requires_sponsorship_now_or_future": "No",
+    "citizenship": [],
+    "work_permit_notes": "Use the Yes/No answers above verbatim when the question matches."
+  },
+  "eeo_and_screening": {
+    "ethnicity": "White",
+    "ethnicity_aliases": ["White", "European", "Decline to self-identify"],
+    "disability": "No",
+    "lgbtq": "No",
+    "veteran": "No",
+    "gender": "Male",
+    "job_search_status": "Actively looking",
+    "how_heard_default": "LinkedIn",
+    "company_size_preference": "Any",
+    "industry_preference": "Any"
+  },
+  "compensation": {
+    "min_expected_usd": 2000,
+    "period": "as_stated_on_form",
+    "convert_to_form_currency": true,
+    "fx_fallback": {
+      "EUR": 0.92,
+      "GBP": 0.78,
+      "CAD": 1.36,
+      "TRY": 41.0
+    }
+  },
+  "languages": [
+    { "name": "English", "proficiency": "Native" }
+  ],
+  "skills": {
+    "core": [
+      "Android Development", "Kotlin", "Flutter", "Clean Architecture", "Coroutines", "Jetpack Compose", "Fastlane"
+    ]
+  },
+  "education": [
+    {
+      "school": "University of Technology",
+      "school_aliases": ["University of Technology"],
+      "degree": "Bachelor of Science",
+      "degree_aliases": ["Bachelor's Degree", "Bachelor of Science", "BSc", "BS"],
+      "discipline": "Computer Science",
+      "discipline_aliases": ["Computer Science", "CS"],
+      "start": null,
+      "end": null,
+      "city": "London",
+      "country": "UK"
+    }
+  ],
+  "experience": [
+    {
+      "company": "Tech Corp",
+      "title": "Senior Software Engineer",
+      "title_aliases": ["Senior Software Engineer", "Software Engineer"],
+      "start": "2023-01",
+      "end": null,
+      "current": true,
+      "location": "Remote",
+      "employment_type": "Full-time",
+      "bullets": [
+        "Led mobile architecture for high-scale app serving 200K+ MAU",
+        "Implemented Clean Architecture and CI/CD pipelines cut build times by 30%"
+      ]
+    }
+  ],
+  "projects": []
+}

@@ -29,9 +29,23 @@ engine/credentials.json
 .DS_Store
 Thumbs.db
 
-# Temporary artifacts (preserve state/.gitkeep)
+# Candidate & Local Configuration
+config/candidate.yaml
+!config/candidate.example.yaml
+data/applicant_profile.json
+!data/applicant_profile.example.json
+
+# Temporary artifacts and caches (preserve state/.gitkeep)
 state/pending_post.json
 state/cover_image.jpg
+state/*.db
+state/*.jsonl
+state/llm_cache.json
+state/llm_daily_tracker.json
+data/sponsors/*.db
+data/sponsors/*.parquet
+data/sponsors/*.csv
+data/sponsors/*.xlsx
 !state/.gitkeep
 engine/data/
 *.db

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job OS — Application Cockpit & Kanban CRM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #131b2e;
+      --card-border: #1e293b;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --purple: #8b5cf6;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: rgba(19, 27, 46, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 1.5rem;
+      padding: 1.25rem 2rem;
+      background: #0d1322;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .stat-pill {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .stat-val {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .stat-lbl {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .board {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(280px, 1fr));
+      gap: 1.25rem;
+      padding: 1.5rem 2rem;
+      overflow-x: auto;
+      align-items: start;
+    }
+
+    .column {
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      min-height: calc(100vh - 180px);
+    }
+
+    .col-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--card-border);
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .col-count {
+      background: var(--card-bg);
+      padding: 0.15rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: var(--text);
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: #334155;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      line-height: 1.3;
+    }
+
+    .card-company {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .score-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.8rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+    }
+
+    .meta-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      font-size: 0.75rem;
+    }
+
+    .meta-tag {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      color: var(--text-muted);
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.4rem;
+      padding-top: 0.6rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .btn-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .btn-link:hover {
+      text-decoration: underline;
+    }
+
+    select.status-select {
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span>🚀</span>
+      <span>Job OS Cockpit</span>
+      <span class="badge">Closed-Loop Radar</span>
+    </div>
+    <div>
+      <span style="font-size: 0.85rem; color: var(--text-muted);">Self-Hosted Local Engine</span>
+    </div>
+  </header>
+
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-pill">
+      <div>
+        <div class="stat-val" id="statTotal">0</div>
+        <div class="stat-lbl">Discovered</div>
+      </div>
+    </div>
+    <div class="stat-pill">
+      <div>
+        <div class="stat-val" id="statApplying" style="color: var(--purple);">0</div>
+        <div class="stat-lbl">Applying</div>
+      </div>
+    </div>
+    <div class="stat-pill">
+      <div>
+        <div class="stat-val" id="statApplied" style="color: var(--accent);">0</div>
+        <div class="stat-lbl">Applied</div>
+      </div>
+    </div>
+    <div class="stat-pill">
+      <div>
+        <div class="stat-val" id="statInterview" style="color: var(--warning);">0</div>
+        <div class="stat-lbl">Interviews</div>
+      </div>
+    </div>
+    <div class="stat-pill">
+      <div>
+        <div class="stat-val" id="statDue" style="color: var(--danger);">0</div>
+        <div class="stat-lbl">Follow-ups Due</div>
+      </div>
+    </div>
+  </div>
+
+  <main class="board" id="kanbanBoard">
+    <!-- Columns: new, maybe, applying, applied, interview -->
+    <div class="column" id="col-new">
+      <div class="col-header">
+        <span>📥 NEW DISCOVERIES</span>
+        <span class="col-count" id="count-new">0</span>
+      </div>
+      <div class="card-list" id="list-new"></div>
+    </div>
+
+    <div class="column" id="col-maybe">
+      <div class="col-header">
+        <span>🤔 MAYBE / REVIEW</span>
+        <span class="col-count" id="count-maybe">0</span>
+      </div>
+      <div class="card-list" id="list-maybe"></div>
+    </div>
+
+    <div class="column" id="col-applying">
+      <div class="col-header">
+        <span>📝 APPLYING / TAILORING</span>
+        <span class="col-count" id="count-applying">0</span>
+      </div>
+      <div class="card-list" id="list-applying"></div>
+    </div>
+
+    <div class="column" id="col-applied">
+      <div class="col-header">
+        <span>🚀 APPLIED</span>
+        <span class="col-count" id="count-applied">0</span>
+      </div>
+      <div class="card-list" id="list-applied"></div>
+    </div>
+
+    <div class="column" id="col-interview">
+      <div class="col-header">
+        <span>💼 INTERVIEWS</span>
+        <span class="col-count" id="count-interview">0</span>
+      </div>
+      <div class="card-list" id="list-interview"></div>
+    </div>
+  </main>
+
+  <script>
+    async function loadJobs() {
+      try {
+        const res = await fetch('/api/v1/crm/jobs');
+        if (!res.ok) return;
+        const jobs = await res.json();
+        renderBoard(jobs);
+      } catch (err) {
+        console.error('Failed to load CRM jobs:', err);
+      }
+    }
+
+    function renderBoard(jobs) {
+      const lists = {
+        'new': document.getElementById('list-new'),
+        'maybe': document.getElementById('list-maybe'),
+        'applying': document.getElementById('list-applying'),
+        'applied': document.getElementById('list-applied'),
+        'interview': document.getElementById('list-interview'),
+      };
+
+      Object.values(lists).forEach(l => { if (l) l.innerHTML = ''; });
+
+      const counts = { 'new': 0, 'maybe': 0, 'applying': 0, 'applied': 0, 'interview': 0 };
+
+      jobs.forEach(job => {
+        const status = job.status || 'new';
+        if (counts[status] !== undefined) counts[status]++;
+
+        const list = lists[status];
+        if (!list) return;
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        const score = job.composite ? job.composite.toFixed(1) : '—';
+        const vConf = (job.visa_confidence || 'unknown').toUpperCase();
+
+        card.innerHTML = `
+          <div class="card-top">
+            <div>
+              <div class="card-title">${escapeHtml(job.title)}</div>
+              <div class="card-company">${escapeHtml(job.company)}</div>
+            </div>
+            <div class="score-badge">${score}</div>
+          </div>
+          <div class="meta-row">
+            <span class="meta-tag">📍 ${escapeHtml(job.location || 'Remote')}</span>
+            <span class="meta-tag">🛡️ ${vConf}</span>
+          </div>
+          <div class="actions">
+            <a href="${escapeHtml(job.url)}" target="_blank" class="btn-link">View JD ↗</a>
+            <select class="status-select" onchange="changeStatus(${job.id}, this.value)">
+              <option value="new" ${status === 'new' ? 'selected' : ''}>New</option>
+              <option value="maybe" ${status === 'maybe' ? 'selected' : ''}>Maybe</option>
+              <option value="applying" ${status === 'applying' ? 'selected' : ''}>Applying</option>
+              <option value="applied" ${status === 'applied' ? 'selected' : ''}>Applied</option>
+              <option value="interview" ${status === 'interview' ? 'selected' : ''}>Interview</option>
+              <option value="rejected" ${status === 'rejected' ? 'selected' : ''}>Rejected</option>
+              <option value="skipped" ${status === 'skipped' ? 'selected' : ''}>Skip</option>
+            </select>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+
+      // Update counters
+      document.getElementById('statTotal').textContent = jobs.length;
+      document.getElementById('statApplying').textContent = counts['applying'];
+      document.getElementById('statApplied').textContent = counts['applied'];
+      document.getElementById('statInterview').textContent = counts['interview'];
+      
+      Object.keys(counts).forEach(k => {
+        const el = document.getElementById(`count-${k}`);
+        if (el) el.textContent = counts[k];
+      });
+    }
+
+    async function changeStatus(jobId, newStatus) {
+      try {
+        await fetch('/api/v1/crm/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ job_id: jobId, status: newStatus }),
+        });
+        loadJobs();
+      } catch (err) {
+        console.error('Failed to change status:', err);
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    loadJobs();
+    setInterval(loadJobs, 15000);
+  </script>
+</body>
+</html>

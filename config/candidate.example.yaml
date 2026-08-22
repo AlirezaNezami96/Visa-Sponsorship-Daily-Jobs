@@ -1,0 +1,118 @@
+# Candidate Profile Configuration
+# Copy this file to config/candidate.yaml and customize with your own details.
+# config/candidate.yaml is gitignored and will never be committed to git.
+
+identity:
+  full_name: "Alireza Nezami"
+  email: "alireza.nezami75@gmail.com"
+  phone: "+905437437966"
+  location: "Istanbul, Turkey / Remote"
+  portfolio: "https://alirezanezami96.github.io/AlirezaNezami"
+  linkedin: "https://linkedin.com/in/alirezanezami"
+  github: "https://github.com/alirezanezami96"
+  work_authorization:
+    citizenship: ["TR"]
+    residence: "TR"
+    need_sponsorship: true
+    willing_to_relocate: ["DE", "NL", "IE", "UK", "CA", "SE", "PT", "PL", "remote-worldwide"]
+    cannot_work: ["US-onsite-no-visa"]
+    preferred_visa_routes:
+      - "UK Skilled Worker"
+      - "DE EU Blue Card"
+      - "NL Highly Skilled Migrant"
+      - "IE Critical Skills"
+      - "CA GTS / LMIA"
+      - "PL Work Permit"
+      - "Worldwide remote (no visa)"
+
+targets:
+  titles:
+    # --- Mobile Engineering (Senior & Mid) ---
+    - "Senior Android Developer"
+    - "Senior Android Engineer"
+    - "Android Engineer"
+    - "Android Developer"
+    - "Senior Mobile Engineer"
+    - "Mobile Software Engineer"
+    - "Senior Flutter Developer"
+    - "Flutter Developer"
+    - "Mobile Platform Engineer"
+    - "Kotlin Multiplatform Engineer"
+
+    # --- AI & Machine Learning (Junior & Entry-Level) ---
+    - "Junior AI Engineer"
+    - "Junior Machine Learning Engineer"
+    - "Associate AI Engineer"
+    - "Entry Level AI Engineer"
+    - "AI Engineer"
+    - "Machine Learning Engineer"
+    - "Generative AI Developer"
+    - "AI Agent Engineer"
+    - "AI / ML Intern"
+
+  seniority:
+    - "senior"
+    - "mid"
+    - "junior"
+    - "entry_level"
+    - "associate"
+    - "intern"
+
+  excluded_seniority:
+    - "director"
+    - "vp"
+    - "head of"
+    - "chief"
+
+  skills_primary:
+    - "Kotlin"
+    - "Android SDK"
+    - "Jetpack Compose"
+    - "Flutter"
+    - "Dart"
+    - "Clean Architecture"
+    - "Python"
+    - "PyTorch"
+    - "FastAPI"
+    - "LLMs & Prompt Engineering"
+
+  skills_adjacent:
+    - "Kotlin Multiplatform (KMM)"
+    - "Coroutines & Flow"
+    - "Dagger Hilt / Koin"
+    - "Bloc / Provider"
+    - "Docker"
+    - "LangChain"
+    - "CI/CD & GitHub Actions"
+    - "SQL"
+    - "GCP"
+    - "Git"
+
+  salary_floor_usd: 70000
+  remote_ok: true
+  onsite_ok_countries:
+    - "UK"
+    - "DE"
+    - "NL"
+    - "IE"
+    - "PL"
+    - "SE"
+    - "PT"
+    - "CA"
+
+resume:
+  master_doc_id: "1a0qvUX6B2hqSdTT2EoKJF1e3L_m5ee4LxIZaMbU5FNA"
+  access_method: "link_shared" # link_shared or service_account
+  variants:
+    - id: mobile_senior
+      header_title: "Senior Android & Mobile Engineer"
+    - id: mobile_flutter
+      header_title: "Senior Flutter & Mobile Developer"
+    - id: ai_junior
+      header_title: "Junior AI & Machine Learning Engineer"
+    - id: general_swe
+      header_title: "Software Engineer"
+
+cover_letter:
+  default_tone: "professional" # professional | startup | casual
+  max_words: 180

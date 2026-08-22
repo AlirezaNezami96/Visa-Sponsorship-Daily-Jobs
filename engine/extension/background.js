@@ -252,13 +252,8 @@ async function handleMessage(message) {
     const { jobData, options } = message;
     const pageUrl = jobData.pageUrl;
     const settings = await chrome.storage.sync.get(['googleDocId', 'userName']);
-
-    if (!settings.googleDocId) {
-      throw new Error('No Google Doc ID configured. Please open the extension settings.');
-    }
-    if (!settings.userName) {
-      throw new Error('Please set your name in the extension settings.');
-    }
+    const googleDocId = settings.googleDocId || '1a0qvUX6B2hqSdTT2EoKJF1e3L_m5ee4LxIZaMbU5FNA';
+    const userName = settings.userName || 'Alireza Nezami';
 
     // Set task to RUNNING
     await setTaskState(pageUrl, {
@@ -271,7 +266,7 @@ async function handleMessage(message) {
 
     (async () => {
       try {
-        let { sessionId } = await getOrCreateSession(settings.googleDocId);
+        let { sessionId } = await getOrCreateSession(googleDocId);
         let result;
         try {
           result = await callCoverLetterApi({
@@ -280,19 +275,19 @@ async function handleMessage(message) {
             job_url: pageUrl,
             company_name: jobData.companyName || 'Unknown Company',
             job_title: jobData.jobTitle || 'Unknown Role',
-            user_name: settings.userName,
+            user_name: userName,
             tone: options?.tone || 'professional',
           });
         } catch (err) {
           if (err.status === 401 || err.message.includes('Session not found') || err.message.includes('expired')) {
-            const reinit = await getOrCreateSession(settings.googleDocId, true);
+            const reinit = await getOrCreateSession(googleDocId, true);
             result = await callCoverLetterApi({
               session_id: reinit.sessionId,
               job_description: jobData.jobDescription,
               job_url: pageUrl,
               company_name: jobData.companyName || 'Unknown Company',
               job_title: jobData.jobTitle || 'Unknown Role',
-              user_name: settings.userName,
+              user_name: userName,
               tone: options?.tone || 'professional',
             });
           } else {

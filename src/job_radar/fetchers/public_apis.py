@@ -284,6 +284,127 @@ def fetch_hn_who_is_hiring() -> List[dict]:
     return jobs
 
 
+def fetch_jobicy(count: int = 50) -> List[dict]:
+    """Fetch remote tech jobs from Jobicy public API."""
+    url = f"https://jobicy.com/api/v2/remote-jobs?count={count}&industry=engineering"
+    jobs = []
+    try:
+        r = _session().get(url, timeout=DEFAULT_TIMEOUT)
+        if r.status_code == 200:
+            data = r.json()
+            for item in data.get("jobs", []):
+                title = item.get("jobTitle", "").strip()
+                company = item.get("companyName", "").strip()
+                apply_url = item.get("url", "")
+                if not title or not apply_url:
+                    continue
+
+                geo = item.get("jobGeo") or "Worldwide"
+                remote_scope = "worldwide" if "anywhere" in geo.lower() or "worldwide" in geo.lower() else "region_restricted"
+
+                jobs.append({
+                    "title": title,
+                    "company": company,
+                    "location": geo,
+                    "url": apply_url,
+                    "source": "jobicy",
+                    "snippet": item.get("jobExcerpt", ""),
+                    "description": item.get("jobDescription", ""),
+                    "date_posted": item.get("pubDate"),
+                    "remote_scope": remote_scope,
+                    "allowed_regions": [geo],
+                    "raw_source": "Jobicy",
+                })
+    except Exception as exc:
+        logger.warning("Jobicy fetch error: %s", exc)
+
+    return jobs
+
+
+def fetch_arbeitnow_uk() -> List[dict]:
+    """Fetch UK jobs from Arbeitnow UK API."""
+    url = "https://www.arbeitnow.co.uk/api/job-board-api"
+    jobs = []
+    try:
+        r = _session().get(url, timeout=DEFAULT_TIMEOUT)
+        if r.status_code == 200:
+            data = r.json()
+            for item in data.get("data", []):
+                title = item.get("title", "").strip()
+                company = item.get("company_name", "").strip()
+                apply_url = item.get("url", "")
+                if not title or not apply_url:
+                    continue
+
+                is_remote = item.get("remote", False)
+                location = item.get("location", "UK")
+
+                jobs.append({
+                    "title": title,
+                    "company": company,
+                    "location": f"{location} (Remote)" if is_remote else location,
+                    "url": apply_url,
+                    "source": "arbeitnow_uk",
+                    "snippet": item.get("description", "")[:400],
+                    "description": item.get("description", ""),
+                    "remote_scope": "region_restricted" if is_remote else "hybrid",
+                    "allowed_regions": ["UK"],
+                    "raw_source": "Arbeitnow-UK",
+                })
+    except Exception as exc:
+        logger.warning("Arbeitnow UK fetch error: %s", exc)
+
+    return jobs
+
+
+def fetch_adzuna(country: str = "gb", query: str = "software engineer") -> List[dict]:
+    """Fetch jobs from Adzuna API (free tier, requires ADZUNA_APP_ID & ADZUNA_APP_KEY)."""
+    import os
+    app_id = os.getenv("ADZUNA_APP_ID")
+    app_key = os.getenv("ADZUNA_APP_KEY")
+    if not app_id or not app_key:
+        return []
+
+    url = f"https://api.adzuna.com/v1/api/jobs/{country}/search/1"
+    params = {
+        "app_id": app_id,
+        "app_key": app_key,
+        "what": query,
+        "results_per_page": 25,
+        "content-type": "application/json",
+    }
+    jobs = []
+    try:
+        r = _session().get(url, params=params, timeout=DEFAULT_TIMEOUT)
+        if r.status_code == 200:
+            data = r.json()
+            for item in data.get("results", []):
+                title = item.get("title", "").strip()
+                company = item.get("company", {}).get("display_name", "").strip()
+                apply_url = item.get("redirect_url", "")
+                if not title or not apply_url:
+                    continue
+
+                jobs.append({
+                    "title": title,
+                    "company": company,
+                    "location": item.get("location", {}).get("display_name", country.upper()),
+                    "url": apply_url,
+                    "source": "adzuna",
+                    "snippet": item.get("description", "")[:400],
+                    "description": item.get("description", ""),
+                    "salary_min": item.get("salary_min"),
+                    "salary_max": item.get("salary_max"),
+                    "date_posted": item.get("created"),
+                    "remote_scope": "unclear",
+                    "raw_source": "Adzuna",
+                })
+    except Exception as exc:
+        logger.warning("Adzuna fetch error: %s", exc)
+
+    return jobs
+
+
 def fetch_all_public_apis(config_apis: Optional[Dict[str, bool]] = None) -> List[dict]:
     """Fetch all enabled public job APIs concurrently and return normalized jobs."""
     from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -292,8 +413,11 @@ def fetch_all_public_apis(config_apis: Optional[Dict[str, bool]] = None) -> List
         "remoteok": True,
         "remotive": True,
         "arbeitnow": True,
+        "arbeitnow_uk": True,
+        "jobicy": True,
         "himalayas": True,
         "hn_hiring": True,
+        "adzuna": True,
     }
 
     tasks = []
@@ -303,10 +427,16 @@ def fetch_all_public_apis(config_apis: Optional[Dict[str, bool]] = None) -> List
         tasks.append(("Remotive", fetch_remotive))
     if api_flags.get("arbeitnow", True):
         tasks.append(("Arbeitnow", fetch_arbeitnow))
+    if api_flags.get("arbeitnow_uk", True):
+        tasks.append(("Arbeitnow-UK", fetch_arbeitnow_uk))
+    if api_flags.get("jobicy", True):
+        tasks.append(("Jobicy", fetch_jobicy))
     if api_flags.get("himalayas", True):
         tasks.append(("Himalayas", fetch_himalayas))
     if api_flags.get("hn_hiring", True):
         tasks.append(("HackerNews", fetch_hn_who_is_hiring))
+    if api_flags.get("adzuna", False):
+        tasks.append(("Adzuna", fetch_adzuna))
 
     all_jobs = []
     logger.info("Fetching %d public job APIs concurrently...", len(tasks))
@@ -329,6 +459,9 @@ FETCHERS_PUBLIC_REGISTRY = {
     "remoteok": fetch_remoteok,
     "remotive": fetch_remotive,
     "arbeitnow": fetch_arbeitnow,
+    "arbeitnow_uk": fetch_arbeitnow_uk,
+    "jobicy": fetch_jobicy,
     "himalayas": fetch_himalayas,
     "hn_hiring": fetch_hn_who_is_hiring,
+    "adzuna": fetch_adzuna,
 }
