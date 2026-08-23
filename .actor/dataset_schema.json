@@ -1,0 +1,24 @@
+{
+  "title": "Visa Sponsorship Jobs Output",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "title": { "type": "string", "title": "Job Title" },
+    "company": { "type": "string", "title": "Company" },
+    "location": { "type": "string", "title": "Location" },
+    "remote": { "type": "boolean", "title": "Remote" },
+    "visaSponsorship": { "type": "boolean", "title": "Visa Sponsorship" },
+    "visaConfidence": { "type": "string", "title": "Visa Confidence" },
+    "relevanceScore": { "type": "number", "title": "AI Score" },
+    "compositeScore": { "type": "number", "title": "Composite" },
+    "seniority": { "type": "string", "title": "Seniority" },
+    "salaryMin": { "type": "number", "title": "Salary Min" },
+    "salaryMax": { "type": "number", "title": "Salary Max" },
+    "salaryCurrency": { "type": "string", "title": "Currency" },
+    "postedAt": { "type": "string", "title": "Posted" },
+    "applyUrl": { "type": "string", "title": "Apply URL" },
+    "source": { "type": "string", "title": "Source" },
+    "technologies": { "type": "array", "title": "Technologies" }
+  },
+  "displayOrder": ["title", "company", "location", "visaConfidence", "relevanceScore", "compositeScore", "postedAt", "applyUrl", "source"]
+}

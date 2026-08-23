@@ -1,0 +1,18 @@
+{
+  "actorSpecification": 1,
+  "name": "visa-sponsorship-jobs",
+  "title": "Visa Sponsorship Jobs Scraper & API",
+  "description": "Find jobs where visa sponsorship is actually available. Cross-references official government sponsor registries (UK, US, EU) with live ATS job boards.",
+  "version": "0.1.0",
+  "dockerfile": "Dockerfile",
+  "input": "input_schema.json",
+  "readme": "README.md",
+  "pricing": {
+    "pricingModel": "PAY_PER_EVENT",
+    "events": [
+      { "name": "job-result", "title": "Job result" },
+      { "name": "ai-classified-job", "title": "AI-classified job" },
+      { "name": "visa-enriched-job", "title": "Visa-enriched job" }
+    ]
+  }
+}

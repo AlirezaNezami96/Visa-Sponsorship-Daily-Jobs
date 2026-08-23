@@ -1,6 +1,7 @@
 """Dataclass models for Radar configuration."""
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
@@ -55,7 +56,7 @@ class SourcesConfig:
 @dataclass
 class ResumeConfig:
     """Configuration for resume fetching."""
-    doc_id: str = "1a0qvUX6B2hqSdTT2EoKJF1e3L_m5ee4LxIZaMbU5FNA"
+    doc_id: str = field(default_factory=lambda: os.getenv("RESUME_DOC_ID", ""))
     access_method: str = "link_shared"  # "link_shared" or "service_account"
 
 

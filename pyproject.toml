@@ -37,9 +37,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+apify = [
+    "apify>=2.0.0",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.20.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
 ]

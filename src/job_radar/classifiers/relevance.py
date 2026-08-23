@@ -79,27 +79,22 @@ def _cache_key(company: str, title: str, location: str, url: str) -> str:
 
 
 def _call_gemini(user_prompt: str, model_name: str) -> str:
-    """Call Google GenAI with client.interactions.create."""
+    """Call LLM via router with waterfall fallback."""
     import sys
     if "classify_relevance" in sys.modules:
         cr = sys.modules["classify_relevance"]
         if hasattr(cr, "_call_gemini") and cr._call_gemini is not _call_gemini:
             return cr._call_gemini(user_prompt, model_name)
 
-    from google import genai
+    from job_radar.llm.router import complete
 
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        raise ValueError("GEMINI_API_KEY is not set")
-
-    client = genai.Client(api_key=api_key)
     full_input = f"{SYSTEM_PROMPT}\n\n---\n\n{user_prompt}"
-    interaction = client.interactions.create(
-        model=model_name,
-        input=full_input,
-        response_mime_type="application/json",
+    res = complete(
+        prompt=full_input,
+        json_schema={"type": "object"},
+        max_tokens=1000,
     )
-    return (interaction.output_text or "").strip()
+    return (res.text or "").strip()
 
 
 def _call_anthropic(user_prompt: str, model_name: str) -> str:

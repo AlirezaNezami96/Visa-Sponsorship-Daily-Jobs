@@ -1,0 +1,326 @@
+{
+  "title": "Visa Sponsorship Jobs Scraper - Input",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "searchCriteria": {
+      "title": "🔍 Search Criteria",
+      "type": "object",
+      "sectionCaption": "Define what jobs to search for",
+      "properties": {
+        "keywords": {
+          "title": "Keywords",
+          "type": "array",
+          "description": "Job title or skill keywords to search for. Leave empty to fetch all jobs.",
+          "items": { "type": "string" },
+          "default": [],
+          "prefill": ["Software Engineer", "Machine Learning", "Android"]
+        },
+        "excludeKeywords": {
+          "title": "Exclude Keywords",
+          "type": "array",
+          "description": "Jobs containing these keywords will be excluded.",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "countries": {
+          "title": "Countries",
+          "type": "array",
+          "description": "Filter jobs by country. Leave empty for all countries.",
+          "items": { "type": "string" },
+          "default": [],
+          "prefill": ["Germany", "United Kingdom", "Netherlands", "Canada"]
+        },
+        "cities": {
+          "title": "Cities",
+          "type": "array",
+          "description": "Filter jobs by specific cities.",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "remoteOnly": {
+          "title": "Remote Only",
+          "type": "boolean",
+          "description": "Only return remote jobs.",
+          "default": false
+        },
+        "remoteRegions": {
+          "title": "Remote Regions",
+          "type": "array",
+          "description": "For remote jobs, filter by allowed regions (e.g., 'EU', 'US', 'Worldwide').",
+          "items": { "type": "string" },
+          "default": []
+        }
+      }
+    },
+    "visaFilters": {
+      "title": "🛂 Visa Sponsorship Filters",
+      "type": "object",
+      "sectionCaption": "The moat: filter by actual visa sponsorship availability",
+      "properties": {
+        "visaSponsorshipOnly": {
+          "title": "Visa Sponsorship Only",
+          "type": "boolean",
+          "description": "Only return jobs where visa sponsorship is likely available (based on official registries and JD analysis).",
+          "default": true
+        },
+        "visaRegistryCountries": {
+          "title": "Visa Registry Countries",
+          "type": "array",
+          "description": "Which official sponsor registries to check against.",
+          "items": {
+            "type": "string",
+            "enum": ["UK", "US", "DE", "NL", "IE", "CA", "AU"],
+            "enumTitles": ["United Kingdom", "United States", "Germany", "Netherlands", "Ireland", "Canada", "Australia"]
+          },
+          "default": ["UK", "US"]
+        },
+        "minVisaConfidence": {
+          "title": "Minimum Visa Confidence",
+          "type": "string",
+          "description": "Minimum visa confidence level to include in results.",
+          "enum": ["unknown", "historical_filings", "on_sponsor_list", "stated_in_jd"],
+          "enumTitles": ["Unknown (include all)", "Historical Filings+", "On Sponsor List+", "Stated in JD only"],
+          "default": "unknown"
+        },
+        "excludeExplicitNoSponsorship": {
+          "title": "Exclude 'No Sponsorship' Jobs",
+          "type": "boolean",
+          "description": "Exclude jobs that explicitly state they do NOT offer visa sponsorship.",
+          "default": true
+        }
+      }
+    },
+    "sources": {
+      "title": "📡 Data Sources",
+      "type": "object",
+      "sectionCaption": "Choose which job sources to scrape",
+      "properties": {
+        "sources": {
+          "title": "Sources",
+          "type": "array",
+          "description": "Which job sources to fetch from. Leave empty for all.",
+          "items": {
+            "type": "string",
+            "enum": ["greenhouse", "lever", "ashby", "workable", "smartrecruiters", "personio", "remoteok", "remotive", "arbeitnow", "himalayas", "hn_whoshiring", "jobicy"],
+            "enumTitles": ["Greenhouse", "Lever", "Ashby", "Workable", "SmartRecruiters", "Personio", "RemoteOK", "Remotive", "Arbeitnow", "Himalayas", "HN Who's Hiring", "Jobicy"]
+          },
+          "default": []
+        },
+        "companyUrls": {
+          "title": "Company Career URLs",
+          "type": "array",
+          "description": "Specific company career page URLs to scrape. The Actor will auto-detect the ATS and fetch all jobs.",
+          "items": { "type": "string" },
+          "default": [],
+          "prefill": ["https://boards.greenhouse.io/stripe", "https://jobs.lever.co/company"]
+        },
+        "companyNames": {
+          "title": "Company Names",
+          "type": "array",
+          "description": "Company names to search for. The Actor will attempt to find their career pages.",
+          "items": { "type": "string" },
+          "default": []
+        }
+      }
+    },
+    "jobFilters": {
+      "title": "🎯 Job Filters",
+      "type": "object",
+      "sectionCaption": "Fine-tune which jobs to include",
+      "properties": {
+        "seniorityLevels": {
+          "title": "Seniority Levels",
+          "type": "array",
+          "description": "Filter by seniority level.",
+          "items": {
+            "type": "string",
+            "enum": ["intern", "new_grad", "junior", "mid", "senior", "lead", "executive"],
+            "enumTitles": ["Intern", "New Grad", "Junior", "Mid", "Senior", "Lead", "Executive"]
+          },
+          "default": []
+        },
+        "employmentTypes": {
+          "title": "Employment Types",
+          "type": "array",
+          "description": "Filter by employment type.",
+          "items": {
+            "type": "string",
+            "enum": ["full_time", "part_time", "contract", "internship", "temporary"],
+            "enumTitles": ["Full-time", "Part-time", "Contract", "Internship", "Temporary"]
+          },
+          "default": []
+        },
+        "postedWithinDays": {
+          "title": "Posted Within (Days)",
+          "type": "integer",
+          "description": "Only include jobs posted within the last N days.",
+          "default": 30,
+          "minimum": 1,
+          "maximum": 365
+        },
+        "minSalary": {
+          "title": "Minimum Salary",
+          "type": "number",
+          "description": "Minimum salary (in salary currency). Jobs without salary info are still included.",
+          "default": null
+        },
+        "salaryCurrency": {
+          "title": "Salary Currency",
+          "type": "string",
+          "description": "Currency for salary filtering.",
+          "enum": ["USD", "EUR", "GBP", "CAD", "AUD"],
+          "default": "USD"
+        },
+        "technologies": {
+          "title": "Required Technologies",
+          "type": "array",
+          "description": "Only include jobs mentioning these technologies.",
+          "items": { "type": "string" },
+          "default": []
+        }
+      }
+    },
+    "aiClassification": {
+      "title": "🤖 AI Classification (Optional)",
+      "type": "object",
+      "sectionCaption": "Enable AI-powered relevance scoring and job analysis",
+      "properties": {
+        "enableAIClassification": {
+          "title": "Enable AI Classification",
+          "type": "boolean",
+          "description": "Use AI to score job relevance, detect AI/ML roles, and analyze job descriptions. Costs extra per job.",
+          "default": false
+        },
+        "minimumRelevanceScore": {
+          "title": "Minimum Relevance Score",
+          "type": "number",
+          "description": "Only include jobs with AI relevance score above this threshold (0.0-1.0). Only applies if AI is enabled.",
+          "default": 0.5,
+          "minimum": 0,
+          "maximum": 1
+        },
+        "maxAICalls": {
+          "title": "Max AI Calls Per Run",
+          "type": "integer",
+          "description": "Budget limit for AI classification calls in this run. Prevents unexpected costs.",
+          "default": 200,
+          "minimum": 0,
+          "maximum": 5000
+        },
+        "classificationPrompt": {
+          "title": "Custom Classification Prompt",
+          "type": "string",
+          "description": "Optional: override the default AI classification prompt with your own criteria.",
+          "editor": "textarea",
+          "default": null
+        }
+      }
+    },
+    "outputOptions": {
+      "title": "📦 Output Options",
+      "type": "object",
+      "sectionCaption": "Control the output format and volume",
+      "properties": {
+        "maxResults": {
+          "title": "Max Results",
+          "type": "integer",
+          "description": "Maximum number of jobs to return.",
+          "default": 200,
+          "minimum": 1,
+          "maximum": 5000
+        },
+        "sortBy": {
+          "title": "Sort By",
+          "type": "string",
+          "description": "How to sort the results.",
+          "enum": ["composite_score", "relevance_score", "posted_at", "visa_confidence", "salary_max"],
+          "enumTitles": ["Composite Score (Recommended)", "AI Relevance", "Most Recent", "Visa Confidence", "Highest Salary"],
+          "default": "composite_score"
+        },
+        "sortOrder": {
+          "title": "Sort Order",
+          "type": "string",
+          "enum": ["desc", "asc"],
+          "enumTitles": ["Descending (best first)", "Ascending"],
+          "default": "desc"
+        },
+        "includeDescription": {
+          "title": "Include Full Description",
+          "type": "boolean",
+          "description": "Include the full job description text in output. Disable to reduce output size.",
+          "default": true
+        },
+        "includeRawMetadata": {
+          "title": "Include Raw Source Metadata",
+          "type": "boolean",
+          "description": "Include source-specific raw metadata in output.",
+          "default": false
+        },
+        "deduplicateWithinRun": {
+          "title": "Deduplicate Within Run",
+          "type": "boolean",
+          "description": "Remove duplicate jobs across sources within this run.",
+          "default": true
+        }
+      }
+    },
+    "advancedOptions": {
+      "title": "⚙️ Advanced Options",
+      "type": "object",
+      "sectionCaption": "Advanced configuration for power users",
+      "properties": {
+        "maxPerSource": {
+          "title": "Max Jobs Per Source",
+          "type": "integer",
+          "description": "Maximum jobs to fetch from each individual source.",
+          "default": 500,
+          "minimum": 10,
+          "maximum": 5000
+        },
+        "concurrency": {
+          "title": "Concurrency",
+          "type": "integer",
+          "description": "Number of concurrent source fetches.",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 20
+        },
+        "timeoutPerSourceSecs": {
+          "title": "Timeout Per Source (seconds)",
+          "type": "integer",
+          "description": "Maximum time to wait for each source before skipping it.",
+          "default": 30,
+          "minimum": 5,
+          "maximum": 120
+        },
+        "maxRuntimeSecs": {
+          "title": "Max Runtime (seconds)",
+          "type": "integer",
+          "description": "Hard limit on total Actor runtime. Prevents runaway costs.",
+          "default": 300,
+          "minimum": 60,
+          "maximum": 3600
+        },
+        "useBrowserFallback": {
+          "title": "Use Browser Fallback",
+          "type": "boolean",
+          "description": "If HTTP API fails, try Playwright browser automation. WARNING: Significantly increases compute cost.",
+          "default": false
+        },
+        "proxyConfiguration": {
+          "title": "Proxy Configuration",
+          "type": "object",
+          "description": "Optional proxy configuration. Not needed for v1 (all sources are public APIs).",
+          "properties": {
+            "useApifyProxy": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": []
+}

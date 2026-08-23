@@ -1,0 +1,15 @@
+{
+  "keywords": ["Android", "Machine Learning", "Kotlin", "Python"],
+  "countries": ["Germany", "United Kingdom", "Netherlands"],
+  "visaSponsorshipOnly": true,
+  "visaRegistryCountries": ["UK", "US"],
+  "sources": ["greenhouse", "lever", "ashby", "remoteok", "remotive", "arbeitnow", "jobicy"],
+  "postedWithinDays": 30,
+  "seniorityLevels": ["junior", "mid"],
+  "maxResults": 200,
+  "enableAIClassification": false,
+  "minimumRelevanceScore": 0.5,
+  "sortBy": "composite_score",
+  "sortOrder": "desc",
+  "includeDescription": true
+}
