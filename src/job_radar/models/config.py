@@ -19,6 +19,7 @@ class JobSearchConfig:
 
     # Visa Sponsorship Filters
     visa_sponsorship_only: bool = True
+    include_unknown_visa: bool = False
     visa_registry_countries: List[str] = field(default_factory=lambda: ["UK", "US"])
     min_visa_confidence: str = "unknown"  # unknown | historical_filings | on_sponsor_list | stated_in_jd
     exclude_explicit_no_sponsorship: bool = True

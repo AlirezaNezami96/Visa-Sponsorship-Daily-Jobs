@@ -53,6 +53,7 @@ def input_to_config(actor_input: Optional[Dict[str, Any]]) -> JobSearchConfig:
 
     # 2. Visa Filters
     visa_sponsorship_only = bool(_get_val("visaSponsorshipOnly", visa_filt, True))
+    include_unknown_visa = bool(_get_val("includeUnknownVisa", visa_filt, False))
     visa_registry_countries = _get_val("visaRegistryCountries", visa_filt, ["UK", "US"])
     min_visa_confidence = str(_get_val("minVisaConfidence", visa_filt, "unknown")).lower()
     exclude_explicit_no_sponsorship = bool(_get_val("excludeExplicitNoSponsorship", visa_filt, True))
@@ -109,6 +110,7 @@ def input_to_config(actor_input: Optional[Dict[str, Any]]) -> JobSearchConfig:
         remote_only=remote_only,
         remote_regions=remote_regions,
         visa_sponsorship_only=visa_sponsorship_only,
+        include_unknown_visa=include_unknown_visa,
         visa_registry_countries=visa_registry_countries,
         min_visa_confidence=min_visa_confidence,
         exclude_explicit_no_sponsorship=exclude_explicit_no_sponsorship,

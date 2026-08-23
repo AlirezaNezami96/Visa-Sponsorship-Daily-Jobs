@@ -1,5 +1,5 @@
 """Tests for Apify input_to_config mapper."""
-from apify.config_mapper import input_to_config
+from apify_actor.config_mapper import input_to_config
 
 
 def test_config_mapper_nested_sections():
@@ -12,6 +12,7 @@ def test_config_mapper_nested_sections():
         },
         "visaFilters": {
             "visaSponsorshipOnly": True,
+            "includeUnknownVisa": True,
             "minVisaConfidence": "on_sponsor_list",
             "excludeExplicitNoSponsorship": True,
         },
@@ -43,6 +44,8 @@ def test_config_mapper_nested_sections():
     assert config.exclude_keywords == ["Lead"]
     assert config.countries == ["Germany", "United Kingdom"]
     assert config.remote_only is True
+    assert config.visa_sponsorship_only is True
+    assert config.include_unknown_visa is True
     assert config.min_visa_confidence == "on_sponsor_list"
     assert config.sources == ["greenhouse", "lever"]
     assert config.company_urls == ["https://boards.greenhouse.io/stripe"]
@@ -59,6 +62,7 @@ def test_config_mapper_flat_input():
     actor_input = {
         "keywords": ["Machine Learning"],
         "remoteOnly": True,
+        "includeUnknownVisa": False,
         "maxResults": 50,
         "enableAIClassification": False,
     }
@@ -67,6 +71,7 @@ def test_config_mapper_flat_input():
 
     assert config.keywords == ["Machine Learning"]
     assert config.remote_only is True
+    assert config.include_unknown_visa is False
     assert config.max_results == 50
     assert config.enable_ai_classification is False
     assert config.posted_within_days == 30  # Default preserved

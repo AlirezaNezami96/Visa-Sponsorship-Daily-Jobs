@@ -6,7 +6,7 @@
     "keywords": {
       "title": "Search Keywords",
       "type": "array",
-      "description": "Job titles, skills, or tech keywords (e.g. ['Machine Learning', 'Android', 'Python']).",
+      "description": "Job titles, skills, or stack terms (e.g. ['Machine Learning', 'Android', 'Python']).",
       "editor": "json",
       "default": [],
       "sectionCaption": "1. Search Criteria",
@@ -49,16 +49,27 @@
     "visaSponsorshipOnly": {
       "title": "Visa Sponsorship Only",
       "type": "boolean",
-      "description": "Filter out jobs where visa sponsorship is explicitly denied or unfeasible.",
+      "description": "When enabled, filters for jobs with confirmed sponsorship signals (on sponsor list, historical filings, or stated in JD).",
       "default": true,
       "sectionCaption": "2. Visa Filters (The Moat)",
       "sectionDescription": "Cross-reference against official government sponsor registries and check explicit sponsorship statements."
+    },
+    "includeUnknownVisa": {
+      "title": "Include Unknown Visa Status",
+      "type": "boolean",
+      "description": "When Visa Sponsorship Only is enabled, also include jobs where sponsorship status is unknown. Disable this for stricter sponsorship-only results.",
+      "default": false
     },
     "visaRegistryCountries": {
       "title": "Visa Registry Countries",
       "type": "array",
       "description": "Official sponsor registries to check against.",
-      "editor": "json",
+      "editor": "select",
+      "items": {
+        "type": "string",
+        "enum": ["UK", "US"],
+        "enumTitles": ["UK (Register of Licensed Sponsors)", "US (DOL LCA Certified Filings)"]
+      },
       "default": ["UK", "US"]
     },
     "minVisaConfidence": {
@@ -84,9 +95,40 @@
     "sources": {
       "title": "Data Sources",
       "type": "array",
-      "description": "ATS systems and public boards to query. Leave empty to query all available sources.",
-      "editor": "json",
-      "default": [],
+      "description": "Select public ATS systems and job boards to query.",
+      "editor": "select",
+      "items": {
+        "type": "string",
+        "enum": [
+          "greenhouse",
+          "lever",
+          "ashby",
+          "workable",
+          "smartrecruiters",
+          "personio",
+          "remoteok",
+          "remotive",
+          "arbeitnow",
+          "himalayas",
+          "hn_whoshiring",
+          "jobicy"
+        ],
+        "enumTitles": [
+          "Greenhouse",
+          "Lever",
+          "Ashby",
+          "Workable",
+          "SmartRecruiters",
+          "Personio",
+          "RemoteOK",
+          "Remotive",
+          "Arbeitnow",
+          "Himalayas",
+          "HN Who's Hiring",
+          "Jobicy"
+        ]
+      },
+      "default": ["greenhouse", "lever", "ashby", "remoteok", "remotive"],
       "sectionCaption": "3. Data Sources",
       "sectionDescription": "Select public ATS endpoints and job board feeds."
     },
@@ -107,8 +149,13 @@
     "seniorityLevels": {
       "title": "Seniority Levels",
       "type": "array",
-      "description": "Filter by seniority level (e.g. ['intern', 'junior', 'mid', 'senior', 'lead', 'executive']).",
-      "editor": "json",
+      "description": "Filter by seniority level.",
+      "editor": "select",
+      "items": {
+        "type": "string",
+        "enum": ["intern", "junior", "mid", "senior", "lead", "executive"],
+        "enumTitles": ["Internship", "Junior / Entry", "Mid-Level", "Senior", "Lead / Staff", "Executive"]
+      },
       "default": [],
       "sectionCaption": "4. Job Filters",
       "sectionDescription": "Narrow jobs by seniority, employment type, age, and salary."
@@ -116,8 +163,13 @@
     "employmentTypes": {
       "title": "Employment Types",
       "type": "array",
-      "description": "Filter by employment type (e.g. ['full_time', 'part_time', 'contract', 'internship']).",
-      "editor": "json",
+      "description": "Filter by employment type.",
+      "editor": "select",
+      "items": {
+        "type": "string",
+        "enum": ["full_time", "part_time", "contract", "internship"],
+        "enumTitles": ["Full-time", "Part-time", "Contract", "Internship"]
+      },
       "default": []
     },
     "postedWithinDays": {
@@ -206,7 +258,7 @@
       "editor": "select",
       "default": "desc",
       "enum": ["asc", "desc"],
-      "enumTitles": ["Ascending (Lowest/Oldest first)", "Descending (Highest/Newest first)"]
+      "enumTitles": ["Descending (Highest/Newest first)", "Ascending (Lowest/Oldest first)"]
     },
     "includeDescription": {
       "title": "Include Full Description",
@@ -244,6 +296,14 @@
       "default": 30,
       "minimum": 5,
       "maximum": 120
+    },
+    "maxRuntimeSecs": {
+      "title": "Max Runtime (Seconds)",
+      "type": "integer",
+      "description": "Maximum allowed runtime for the Actor before graceful termination.",
+      "default": 300,
+      "minimum": 10,
+      "maximum": 3600
     },
     "useBrowserFallback": {
       "title": "Use Browser Fallback",

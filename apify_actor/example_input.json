@@ -2,6 +2,7 @@
   "keywords": ["Android", "Machine Learning", "Kotlin", "Python"],
   "countries": ["Germany", "United Kingdom", "Netherlands"],
   "visaSponsorshipOnly": true,
+  "includeUnknownVisa": false,
   "visaRegistryCountries": ["UK", "US"],
   "sources": ["greenhouse", "lever", "ashby", "remoteok", "remotive", "arbeitnow", "jobicy"],
   "postedWithinDays": 30,

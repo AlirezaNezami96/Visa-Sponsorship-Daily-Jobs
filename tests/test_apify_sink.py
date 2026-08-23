@@ -2,7 +2,7 @@
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from apify.sink import ApifyDatasetSink
+from apify_actor.sink import ApifyDatasetSink
 from job_radar.models.enums import VisaConfidence
 from job_radar.models.job import Job
 

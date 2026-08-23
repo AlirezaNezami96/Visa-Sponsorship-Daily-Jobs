@@ -22,6 +22,9 @@ CONFIDENCE_RANK = {
 
 def evaluate_visa_for_job(job: Job) -> Job:
     """Evaluate visa sponsorship signals and registry match for a single job."""
+    if job.visa_confidence and job.visa_confidence != VisaConfidence.UNKNOWN:
+        return job
+
     job_dict = job.to_legacy_dict()
     try:
         conf, auth, meta = evaluate_job_visa(job_dict)
@@ -63,30 +66,31 @@ def evaluate_and_filter_visa(jobs: List[Job], config: JobSearchConfig) -> Tuple[
 
     for job in jobs:
         evaluate_visa_for_job(job)
-        if job.visa_confidence in (VisaConfidence.ON_SPONSOR_LIST, VisaConfidence.HISTORICAL_FILINGS, VisaConfidence.STATED_IN_JD):
+        conf_val = job.visa_confidence if isinstance(job.visa_confidence, str) else job.visa_confidence.value
+        if conf_val in ("on_sponsor_list", "historical_filings", "stated_in_jd"):
             enriched_count += 1
 
         # 1. Exclude explicit NO if configured
-        if config.exclude_explicit_no_sponsorship and job.visa_confidence == VisaConfidence.EXPLICIT_NO:
+        if config.exclude_explicit_no_sponsorship and conf_val == "explicit_no":
             continue
 
         # 2. Min confidence threshold
-        conf_val = job.visa_confidence if isinstance(job.visa_confidence, str) else job.visa_confidence.value
         job_rank = CONFIDENCE_RANK.get(conf_val, 0)
         if job_rank < min_rank:
             continue
 
         # 3. Visa sponsorship only filter
         if config.visa_sponsorship_only:
-            # Keep if explicitly offered in JD, company on sponsor list, historical filings, or unknown if permissive
-            if job.visa_confidence == VisaConfidence.EXPLICIT_NO:
+            # Positive signals: stated_in_jd, on_sponsor_list, historical_filings
+            if conf_val in ("stated_in_jd", "on_sponsor_list", "historical_filings"):
+                passed_jobs.append(job)
+            elif conf_val == "unknown" and config.include_unknown_visa:
+                passed_jobs.append(job)
+            else:
+                # Excluded when include_unknown_visa is False
                 continue
-            if min_rank > 0 and job_rank < min_rank:
-                continue
-            # If min_visa_confidence is unknown but visa_sponsorship_only is true, exclude known NOs
-            if job.visa_status == "no":
-                continue
-
-        passed_jobs.append(job)
+        else:
+            # visa_sponsorship_only is False: include all non-excluded jobs
+            passed_jobs.append(job)
 
     return passed_jobs, enriched_count

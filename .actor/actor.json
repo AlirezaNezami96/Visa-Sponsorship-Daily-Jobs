@@ -2,37 +2,16 @@
   "actorSpecification": 1,
   "name": "visa-sponsorship-jobs-scraper",
   "title": "Visa Sponsorship Jobs Scraper & API",
-  "description": "Extracts job listings from Greenhouse, Lever, Ashby, Workable, and public job boards cross-referenced against official UK and US government visa sponsor registries.",
-  "version": "1.0.0",
-  "pricingModel": "PAY_PER_EVENT",
-  "pricing": {
-    "pricingModel": "PAY_PER_EVENT",
-    "events": {
-      "actor-start": {
-        "title": "Actor Start Fee",
-        "description": "Initial charge per Actor execution run.",
-        "unitPriceUsd": 0.05
-      },
-      "job-result": {
-        "title": "Job Result",
-        "description": "Charge per normalized job result saved to the dataset.",
-        "unitPriceUsd": 0.002
-      },
-      "visa-enriched-job": {
-        "title": "Visa Enriched Job",
-        "description": "Charge per job verified against government visa sponsor registers.",
-        "unitPriceUsd": 0.001
-      },
-      "ai-classified-job": {
-        "title": "AI Classified Job",
-        "description": "Charge per job classified using LLM relevance analysis.",
-        "unitPriceUsd": 0.003
-      }
-    }
-  },
+  "description": "Find sponsorship-friendly jobs by combining public ATS job APIs with official sponsor registry intelligence.",
+  "version": "1.0",
+  "buildTag": "latest",
   "dockerfile": "./Dockerfile",
+  "dockerContextDir": "..",
+  "readme": "./README.md",
   "input": "./input_schema.json",
   "storages": {
     "dataset": "./dataset_schema.json"
-  }
+  },
+  "minMemoryMbytes": 256,
+  "maxMemoryMbytes": 1024
 }
