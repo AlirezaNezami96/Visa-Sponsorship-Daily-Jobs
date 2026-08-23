@@ -12,7 +12,12 @@ import unicodedata
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
-import rapidfuzz.fuzz
+try:
+    import rapidfuzz.fuzz
+    _HAS_RAPIDFUZZ = True
+except ImportError:
+    import difflib
+    _HAS_RAPIDFUZZ = False
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +153,7 @@ def match_company_to_sponsor(
         if alias_target in sponsors_by_norm:
             return sponsors_by_norm[alias_target], "alias"
 
-    # 3. Fuzzy matching with rapidfuzz (guard against short words <= 3 chars)
+    # 3. Fuzzy matching (rapidfuzz token_set_ratio or difflib fallback)
     if len(norm) > 3 and norm not in GENERIC_TERMS:
         best_match = None
         best_score = 0.0
@@ -157,7 +162,11 @@ def match_company_to_sponsor(
             if len(sp_norm) <= 3:
                 continue
 
-            score = rapidfuzz.fuzz.token_set_ratio(norm, sp_norm) / 100.0
+            if _HAS_RAPIDFUZZ:
+                score = rapidfuzz.fuzz.token_set_ratio(norm, sp_norm) / 100.0
+            else:
+                score = difflib.SequenceMatcher(None, norm, sp_norm).ratio()
+
             if score >= min_fuzzy_score and score > best_score:
                 best_score = score
                 best_match = sp_record
