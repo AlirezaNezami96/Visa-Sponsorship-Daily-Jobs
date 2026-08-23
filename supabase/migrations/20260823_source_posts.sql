@@ -46,8 +46,8 @@ CREATE TABLE IF NOT EXISTS source_post_media (
     media_type TEXT NOT NULL, -- 'image', 'video', 'thumbnail'
     source_url TEXT,
     thumbnail_url TEXT,
-    storage_provider TEXT NOT NULL DEFAULT 'google_drive', -- 'google_drive', 'local', 'supabase_storage'
-    storage_file_id TEXT, -- Google Drive file ID or object path
+    storage_provider TEXT NOT NULL DEFAULT 'supabase_storage', -- 'supabase_storage', 'google_drive', 'local'
+    storage_file_id TEXT, -- Supabase object path or Google Drive file ID
     storage_path TEXT,
     mime_type TEXT,
     file_size BIGINT,
@@ -56,6 +56,11 @@ CREATE TABLE IF NOT EXISTS source_post_media (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- 4. Supabase Storage Bucket for LinkedIn Media
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('linkedin-media', 'linkedin-media', true)
+ON CONFLICT (id) DO NOTHING;
 
 CREATE INDEX IF NOT EXISTS idx_source_post_media_post_id ON source_post_media (source_post_id);
 CREATE INDEX IF NOT EXISTS idx_source_post_media_status ON source_post_media (download_status);

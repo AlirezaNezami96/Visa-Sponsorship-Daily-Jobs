@@ -5,7 +5,7 @@
 #
 # Pipeline:
 #   1. Connects to Supabase and atomically reserves one eligible source post
-#   2. Downloads and durably archives media to Google Drive
+#   2. Downloads and durably archives media in Supabase Storage ('linkedin-media' bucket)
 #   3. Adapts source post using Gemini 3.7 Flash
 #   4. Overlays creator badge for video posts via CreatorBadgeService
 #   5. Publishes post and media directly to LinkedIn via REST API

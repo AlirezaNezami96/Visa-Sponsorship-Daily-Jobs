@@ -49,30 +49,75 @@ class MediaManager:
             logger.error("Failed to download media from %s: %s", url, exc)
         return None
 
-    def archive_media_file_to_drive(
+    def archive_media_file(
         self,
         local_file: Path,
         source_post_id: str,
         filename: str,
         mime_type: str = "application/octet-stream",
     ) -> Optional[Dict[str, Any]]:
-        """Uploads a local media file to the Google Drive post folder."""
-        if not self.drive.is_configured:
-            logger.debug("Google Drive not configured, skipping cloud archive.")
-            return None
+        """
+        Durably archives a local media file to Supabase Storage (primary)
+        or Google Drive (fallback).
+        """
+        storage_rel_path = f"{source_post_id}/{filename}"
 
-        post_folder_id = self.drive.get_post_media_folder(source_post_id)
-        if not post_folder_id:
-            logger.warning("Could not establish Google Drive post folder for post %s", source_post_id)
-            return None
+        # 1. Primary: Supabase Storage
+        if self.supabase.is_configured:
+            res = self.supabase.upload_storage_file(
+                bucket_name="linkedin-media",
+                storage_path=storage_rel_path,
+                content=local_file,
+                mime_type=mime_type,
+            )
+            if res:
+                return {
+                    "storage_provider": "supabase_storage",
+                    "storage_file_id": storage_rel_path,
+                    "storage_path": storage_rel_path,
+                    "id": storage_rel_path,
+                }
 
-        result = self.drive.upload_file(
-            content=local_file,
-            filename=filename,
-            mime_type=mime_type,
-            folder_id=post_folder_id,
-        )
-        return result
+        # 2. Fallback: Google Drive
+        if self.drive.is_configured:
+            post_folder_id = self.drive.get_post_media_folder(source_post_id)
+            if post_folder_id:
+                drive_res = self.drive.upload_file(
+                    content=local_file,
+                    filename=filename,
+                    mime_type=mime_type,
+                    folder_id=post_folder_id,
+                )
+                if drive_res:
+                    return {
+                        "storage_provider": "google_drive",
+                        "storage_file_id": drive_res.get("id"),
+                        "storage_path": filename,
+                        "id": drive_res.get("id"),
+                    }
+
+        return None
+
+    def retrieve_archived_file(
+        self,
+        storage_provider: str,
+        storage_file_id: str,
+        destination_path: Path,
+    ) -> bool:
+        """Retrieves archived file from Supabase Storage or Google Drive."""
+        if not storage_file_id:
+            return False
+
+        if storage_provider == "supabase_storage" or (self.supabase.is_configured and "/" in storage_file_id):
+            clean_path = storage_file_id.replace("linkedin-media/", "")
+            res = self.supabase.download_storage_file("linkedin-media", clean_path, destination_path)
+            return bool(res and destination_path.exists())
+
+        if storage_provider == "google_drive" and self.drive.is_configured:
+            res = self.drive.download_file(storage_file_id, destination_path)
+            return bool(res and destination_path.exists())
+
+        return False
 
     def prepare_post_media(
         self,
@@ -81,8 +126,8 @@ class MediaManager:
     ) -> Tuple[bool, List[Path], Optional[str]]:
         """
         Retrieves and processes all media required for publishing:
-          - Video: downloads original (from Drive or source URL), archives to Drive, and passes through CreatorBadgeService.
-          - Image: downloads original (from Drive or source URL), archives to Drive.
+          - Video: downloads original (from Supabase Storage/Drive or source URL), archives to Supabase Storage, and passes through CreatorBadgeService.
+          - Image: downloads original (from Supabase Storage/Drive or source URL), archives to Supabase Storage.
         Returns: (success, local_processed_paths, error_message)
         """
         if post.media_type == MediaType.NONE.value:
@@ -93,7 +138,6 @@ class MediaManager:
             media_records = []
 
         if not media_records and post.source_json:
-            # Fallback to extracting from source_json if DB records empty
             from job_radar.repurpose.importer import SourcePostImporter
             _, parsed_media = SourcePostImporter().parse_record(post.source_json)
             media_records = [
@@ -101,6 +145,7 @@ class MediaManager:
                     "media_type": m.media_type,
                     "source_url": m.source_url,
                     "thumbnail_url": m.thumbnail_url,
+                    "storage_provider": m.storage_provider,
                     "storage_file_id": m.storage_file_id,
                 }
                 for m in parsed_media
@@ -108,46 +153,44 @@ class MediaManager:
 
         if not media_records:
             logger.warning("Post %s has media_type '%s' but no media records found.", post.source_post_id, post.media_type)
-            return False, [], "No media URLs or Drive records found for media post."
+            return False, [], "No media URLs or Storage records found for media post."
 
         processed_paths: List[Path] = []
 
         # ── 1. Video Processing ──
         if post.media_type == MediaType.VIDEO.value:
             video_item = next((m for m in media_records if m.get("media_type") == "video"), media_records[0])
-            drive_file_id = video_item.get("storage_file_id")
+            storage_provider = video_item.get("storage_provider", "supabase_storage")
+            storage_file_id = video_item.get("storage_file_id")
             source_url = video_item.get("source_url")
 
             raw_video_path = temp_dir / f"original_{post.source_post_id}.mp4"
 
-            # 1a. Try downloading from Google Drive
+            # 1a. Try downloading from durable cloud storage
             downloaded = False
-            if drive_file_id and self.drive.is_configured:
-                if self.drive.download_file(drive_file_id, raw_video_path):
-                    downloaded = True
+            if storage_file_id:
+                downloaded = self.retrieve_archived_file(storage_provider, storage_file_id, raw_video_path)
 
-            # 1b. Fallback: download from source URL & archive to Google Drive
+            # 1b. Fallback: download from source URL & archive to Supabase Storage
             if not downloaded and source_url:
                 if self.download_url_to_file(source_url, raw_video_path):
                     downloaded = True
-                    # Archive to Google Drive
-                    drive_upload = self.archive_media_file_to_drive(
+                    # Archive to cloud storage
+                    upload_res = self.archive_media_file(
                         local_file=raw_video_path,
                         source_post_id=post.source_post_id,
                         filename=f"original_video_{post.source_post_id}.mp4",
                         mime_type="video/mp4",
                     )
-                    if drive_upload and "id" in drive_upload:
-                        video_item["storage_file_id"] = drive_upload["id"]
-                        video_item["download_status"] = "downloaded"
-                        if post.id:
-                            self.supabase.upsert_source_media({
-                                "source_post_id": post.id,
-                                "media_type": "video",
-                                "storage_file_id": drive_upload["id"],
-                                "download_status": "downloaded",
-                            })
-                            self.supabase.update_post_status(post.id, post.processing_status, media_archived=True, media_status="archived")
+                    if upload_res and post.id:
+                        self.supabase.upsert_source_media({
+                            "source_post_id": post.id,
+                            "media_type": "video",
+                            "storage_provider": upload_res.get("storage_provider", "supabase_storage"),
+                            "storage_file_id": upload_res.get("storage_file_id"),
+                            "download_status": "downloaded",
+                        })
+                        self.supabase.update_post_status(post.id, post.processing_status, media_archived=True, media_status="archived")
 
             if not downloaded or not raw_video_path.exists():
                 return False, [], f"Failed to retrieve video for post {post.source_post_id} (URL expired or missing)."
@@ -180,29 +223,30 @@ class MediaManager:
                 image_items = media_records
 
             for idx, img in enumerate(image_items):
-                drive_file_id = img.get("storage_file_id")
+                storage_provider = img.get("storage_provider", "supabase_storage")
+                storage_file_id = img.get("storage_file_id")
                 source_url = img.get("source_url")
                 img_path = temp_dir / f"image_{post.source_post_id}_{idx}.jpg"
 
                 downloaded = False
-                if drive_file_id and self.drive.is_configured:
-                    if self.drive.download_file(drive_file_id, img_path):
-                        downloaded = True
+                if storage_file_id:
+                    downloaded = self.retrieve_archived_file(storage_provider, storage_file_id, img_path)
 
                 if not downloaded and source_url:
                     if self.download_url_to_file(source_url, img_path):
                         downloaded = True
-                        drive_upload = self.archive_media_file_to_drive(
+                        upload_res = self.archive_media_file(
                             local_file=img_path,
                             source_post_id=post.source_post_id,
                             filename=f"image_{post.source_post_id}_{idx}.jpg",
                             mime_type="image/jpeg",
                         )
-                        if drive_upload and "id" in drive_upload and post.id:
+                        if upload_res and post.id:
                             self.supabase.upsert_source_media({
                                 "source_post_id": post.id,
                                 "media_type": "image",
-                                "storage_file_id": drive_upload["id"],
+                                "storage_provider": upload_res.get("storage_provider", "supabase_storage"),
+                                "storage_file_id": upload_res.get("storage_file_id"),
                                 "download_status": "downloaded",
                             })
 

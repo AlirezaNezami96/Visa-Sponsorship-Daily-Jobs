@@ -1,6 +1,6 @@
 # LinkedIn Content Repurposing & Automated Publishing Pipeline
 
-The **LinkedIn Content Repurposing Pipeline** is an unattended, production-grade system that selects an unused technical post from a curated ~200-post dataset in Supabase, adapts it using **Gemini 3.7 Flash**, archives media to **Google Drive**, re-brands demo videos with the personal creator badge (**Alireza Nezami**), and publishes directly to LinkedIn on a twice-daily schedule via GitHub Actions.
+The **LinkedIn Content Repurposing Pipeline** is an unattended, production-grade system that selects an unused technical post from a curated ~200-post dataset in Supabase, adapts it using **Gemini 3.7 Flash**, archives media directly to **Supabase Storage** (`linkedin-media` bucket), re-brands demo videos with the personal creator badge (**Alireza Nezami**), and publishes directly to LinkedIn on a twice-daily schedule via GitHub Actions.
 
 ---
 
@@ -21,31 +21,33 @@ The **LinkedIn Content Repurposing Pipeline** is an unattended, production-grade
     │                        ↓                               ↓
     │                 [ Image Post ]                  [ Video Post ]
     │                        ↓                               ↓
-    │                 (Download/Archive               (Download/Archive
-    │                  to Google Drive)                to Google Drive)
+    │                 (Download & Archive             (Download & Archive
+    │                  to Supabase Storage)            to Supabase Storage)
     │                        ↓                               ↓
     │                        │                       [ CreatorBadgeService ]
-    │                        │                       (Branded Bottom-Right Badge)
+    │                        │                       (Replaces old creator badge
+    │                        │                        with @alireza-nezami badge)
     │                        └───────────────┬───────────────┘
     │                                        ↓
     └────────────────────────────────────────┤
                                              ↓
                          [ Gemini 3.7 Flash Adaptation ]
-                         (Original voice, anti-copying check,
-                          strips author branding/CTAs)
+                         (Transforms post to first-person tech authority,
+                          scrubs original author handles & CTAs)
                                              ↓
                          [ Deterministic Quality Validation ]
+                         (Length bounds, anti-copying similarity < 0.90)
                                              ↓
                          [ LinkedIn REST API Publication ]
-                         (Text commentary + image/multi-image/video)
+                         (Registers media upload, uploads binary, publishes UGC post)
                                              ↓
                          [ Supabase State Update: `published` ]
-                         (Stores LinkedIn Post URN & URL)
+                         (Records LinkedIn Post URN, public URL & timestamp)
 ```
 
 ---
 
-## 🗄️ Database Setup (Supabase)
+## 🗄️ Database & Storage Setup (Supabase)
 
 ### 1. Run the Migration
 In your **Supabase Project $\rightarrow$ SQL Editor**, execute the migration file:
@@ -53,7 +55,8 @@ In your **Supabase Project $\rightarrow$ SQL Editor**, execute the migration fil
 
 This sets up:
 - `source_posts`: Main table tracking post lifecycle, content hashes, reservation tokens, and publication metadata.
-- `source_post_media`: Normalized storage for images, videos, thumbnails, and Google Drive file IDs.
+- `source_post_media`: Normalized storage for images, videos, thumbnails, and Supabase Storage object paths.
+- `storage.buckets`: Auto-provisions the public `linkedin-media` bucket.
 - `reserve_next_source_post()`: PostgreSQL stored procedure with `FOR UPDATE SKIP LOCKED` for concurrency-safe atomic reservations.
 
 ---

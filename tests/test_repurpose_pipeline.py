@@ -421,3 +421,31 @@ def test_import_real_rammcodes_dataset():
     assert summary.errors == []
 
 
+def test_supabase_storage_upload_and_download(tmp_path):
+    client = SupabaseStorageClient(url="https://fake.supabase.co", key="fake-key")
+
+    with patch("requests.get") as mock_get, patch("requests.post") as mock_post:
+        # Mock bucket check and upload success
+        mock_get.return_value.status_code = 200
+        mock_post.return_value.status_code = 200
+
+        test_file = tmp_path / "test.jpg"
+        test_file.write_bytes(b"\xff\xd8\xff\xe0testimage")
+
+        upload_res = client.upload_storage_file("linkedin-media", "123/test.jpg", test_file, "image/jpeg")
+        assert upload_res is not None
+        assert upload_res["storage_file_id"] == "linkedin-media/123/test.jpg"
+
+        # Mock download context manager response
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.iter_content = lambda chunk_size: [b"downloadedbytes"]
+        mock_get.return_value.__enter__.return_value = mock_resp
+
+        dest = tmp_path / "down.jpg"
+        dl_res = client.download_storage_file("linkedin-media", "123/test.jpg", dest)
+        assert dl_res == dest
+        assert dest.read_bytes() == b"downloadedbytes"
+
+
+

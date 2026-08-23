@@ -68,6 +68,163 @@ class SupabaseStorageClient:
     def is_configured(self) -> bool:
         return bool(self.url and self.key)
 
+    def _storage_headers(self, content_type: Optional[str] = None, upsert: bool = True) -> Dict[str, str]:
+        headers = {
+            "apikey": self.key,
+            "Authorization": f"Bearer {self.key}",
+        }
+        if content_type:
+            headers["Content-Type"] = content_type
+        if upsert:
+            headers["x-upsert"] = "true"
+        return headers
+
+    # ── Supabase Storage (S3-compatible bucket) Operations ──
+
+    def ensure_storage_bucket(self, bucket_name: str = "linkedin-media", public: bool = True) -> bool:
+        """Ensures the storage bucket exists in Supabase."""
+        if not self.is_configured:
+            return False
+
+        if self._client:
+            try:
+                self._client.storage.get_bucket(bucket_name)
+                return True
+            except Exception:
+                try:
+                    self._client.storage.create_bucket(bucket_name, options={"public": public})
+                    logger.info("Created Supabase storage bucket: '%s'", bucket_name)
+                    return True
+                except Exception as e:
+                    logger.debug("SDK bucket create attempt: %s", e)
+
+        # REST API fallback
+        url = f"{self.url}/storage/v1/bucket/{bucket_name}"
+        headers = self._rest_headers()
+        try:
+            r = requests.get(url, headers=headers, timeout=10)
+            if r.status_code == 200:
+                return True
+
+            create_url = f"{self.url}/storage/v1/bucket"
+            payload = {"id": bucket_name, "name": bucket_name, "public": public}
+            cr = requests.post(create_url, headers=headers, json=payload, timeout=10)
+            if cr.status_code in (200, 201):
+                logger.info("Created Supabase storage bucket '%s' via REST", bucket_name)
+                return True
+        except Exception as exc:
+            logger.debug("Failed ensuring storage bucket '%s': %s", bucket_name, exc)
+
+        return True  # Proceed as bucket may already exist via SQL migration
+
+    def upload_storage_file(
+        self,
+        bucket_name: str,
+        storage_path: str,
+        content: bytes | Path,
+        mime_type: str = "application/octet-stream",
+    ) -> Optional[Dict[str, Any]]:
+        """Uploads binary file to Supabase Storage with upsert."""
+        if not self.is_configured:
+            return None
+
+        self.ensure_storage_bucket(bucket_name)
+        storage_path = storage_path.lstrip("/")
+
+        from pathlib import Path as PathLib
+        file_bytes = content if isinstance(content, bytes) else PathLib(content).read_bytes()
+
+        if self._client:
+            try:
+                res = self._client.storage.from_(bucket_name).upload(
+                    path=storage_path,
+                    file=file_bytes,
+                    file_options={"content-type": mime_type, "upsert": "true"},
+                )
+                logger.info("Uploaded to Supabase Storage: %s/%s", bucket_name, storage_path)
+                return {
+                    "storage_file_id": f"{bucket_name}/{storage_path}",
+                    "storage_path": storage_path,
+                    "bucket": bucket_name,
+                    "mime_type": mime_type,
+                    "size": len(file_bytes),
+                }
+            except Exception as e:
+                logger.warning("SDK storage upload failed: %s; falling back to REST", e)
+
+        # REST API upload
+        upload_url = f"{self.url}/storage/v1/object/{bucket_name}/{storage_path}"
+        headers = self._storage_headers(content_type=mime_type, upsert=True)
+        try:
+            resp = requests.post(upload_url, headers=headers, data=file_bytes, timeout=60)
+            if resp.status_code in (200, 201):
+                logger.info("Successfully uploaded '%s' to Supabase Storage bucket '%s'", storage_path, bucket_name)
+                return {
+                    "storage_file_id": f"{bucket_name}/{storage_path}",
+                    "storage_path": storage_path,
+                    "bucket": bucket_name,
+                    "mime_type": mime_type,
+                    "size": len(file_bytes),
+                }
+            else:
+                logger.error("Supabase Storage upload failed (%d): %s", resp.status_code, resp.text)
+        except Exception as exc:
+            logger.error("Exception during Supabase Storage upload: %s", exc)
+
+        return None
+
+    def download_storage_file(
+        self,
+        bucket_name: str,
+        storage_path: str,
+        destination_path: Path,
+    ) -> Optional[Path]:
+        """Downloads file from Supabase Storage to local destination_path."""
+        if not self.is_configured:
+            return None
+
+        from pathlib import Path as PathLib
+        destination_path = PathLib(destination_path)
+        destination_path.parent.mkdir(parents=True, exist_ok=True)
+        storage_path = storage_path.lstrip("/")
+
+        if self._client:
+            try:
+                data = self._client.storage.from_(bucket_name).download(storage_path)
+                with open(destination_path, "wb") as f:
+                    f.write(data)
+                logger.info("Downloaded Supabase Storage file %s/%s to %s", bucket_name, storage_path, destination_path)
+                return destination_path
+            except Exception as e:
+                logger.debug("SDK storage download failed: %s; trying REST", e)
+
+        # REST API download
+        download_url = f"{self.url}/storage/v1/object/authenticated/{bucket_name}/{storage_path}"
+        headers = self._rest_headers()
+        try:
+            with requests.get(download_url, headers=headers, stream=True, timeout=60) as r:
+                if r.status_code == 200:
+                    with open(destination_path, "wb") as f:
+                        for chunk in r.iter_content(chunk_size=1024 * 64):
+                            if chunk:
+                                f.write(chunk)
+                    logger.info("Downloaded Supabase file %s/%s via REST", bucket_name, storage_path)
+                    return destination_path
+                else:
+                    # Try public URL endpoint as fallback
+                    public_url = f"{self.url}/storage/v1/object/public/{bucket_name}/{storage_path}"
+                    with requests.get(public_url, stream=True, timeout=60) as pr:
+                        if pr.status_code == 200:
+                            with open(destination_path, "wb") as f:
+                                for chunk in pr.iter_content(chunk_size=1024 * 64):
+                                    if chunk:
+                                        f.write(chunk)
+                            return destination_path
+        except Exception as exc:
+            logger.error("Exception downloading Supabase Storage file %s/%s: %s", bucket_name, storage_path, exc)
+
+        return None
+
     def _rest_headers(self) -> Dict[str, str]:
         return {
             "apikey": self.key,
