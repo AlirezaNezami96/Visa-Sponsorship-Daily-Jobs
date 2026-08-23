@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 STATE_DIR = "state"
 PENDING_FILE = os.path.join(STATE_DIR, "pending_post.json")
+REPURPOSE_PENDING_FILE = os.path.join(STATE_DIR, "pending_linkedin_post.json")
 COVER_FILE = os.path.join(STATE_DIR, "cover_image.jpg")
 
 
@@ -185,6 +186,7 @@ def trigger_repurpose_workflow() -> bool:
     payload = {"ref": "main"}
     try:
         res = requests.post(url, headers=headers, json=payload, timeout=15)
+        logger.info("Triggered linkedin-republish.yml workflow (HTTP %d)", res.status_code)
         return res.status_code in (204, 201, 200)
     except Exception as e:
         logger.warning("Exception while triggering linkedin-republish.yml: %s", e)
@@ -193,7 +195,7 @@ def trigger_repurpose_workflow() -> bool:
 
 def cleanup_state_files():
     import shutil
-    for f in (PENDING_FILE, COVER_FILE):
+    for f in (PENDING_FILE, REPURPOSE_PENDING_FILE, COVER_FILE):
         if os.path.exists(f):
             try:
                 os.remove(f)
@@ -208,6 +210,9 @@ def cleanup_state_files():
 
 
 def check_and_publish_post():
+    from pathlib import Path
+    from job_radar.storage.supabase_client import SupabaseStorageClient
+
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id_env = os.environ.get("TELEGRAM_CHAT_ID")
     authorized_user_id = os.environ.get("TELEGRAM_AUTHORIZED_USER_ID")
@@ -252,15 +257,75 @@ def check_and_publish_post():
             logger.warning("Unauthorized user_id='%s' in client_payload. Expected '%s'. Terminating.", u_str, auth_str)
             sys.exit(0)
 
+    # ── Load Pending Post State (Multi-Source with Supabase Fallback) ──
+    pending_data = None
+    for p_candidate in (REPURPOSE_PENDING_FILE, PENDING_FILE):
+        if os.path.exists(p_candidate):
+            try:
+                with open(p_candidate, "r", encoding="utf-8") as f:
+                    pending_data = json.load(f)
+                if pending_data:
+                    logger.info("Loaded pending post draft from %s", p_candidate)
+                    break
+            except Exception as e:
+                logger.warning("Failed to read %s: %s", p_candidate, e)
+
+    supabase = SupabaseStorageClient()
+
+    # Fallback to Supabase database source of truth if local JSON files are missing
+    if not pending_data and supabase.is_configured:
+        db_post = supabase.get_pending_approval_post()
+        if db_post:
+            logger.info("Retrieved active pending post from Supabase (id=%s, source_post_id=%s)", db_post.get("id"), db_post.get("source_post_id"))
+            gen_content = db_post.get("generated_content") or db_post.get("content", "")
+            post_text_db = gen_content
+            first_comment_cta_db = None
+            if isinstance(gen_content, str) and gen_content.strip().startswith("{") and gen_content.strip().endswith("}"):
+                try:
+                    parsed_gen = json.loads(gen_content)
+                    post_text_db = parsed_gen.get("text", gen_content)
+                    first_comment_cta_db = parsed_gen.get("first_comment_cta")
+                except Exception:
+                    pass
+
+            from job_radar.repurpose.media_manager import MediaManager
+            from job_radar.repurpose.models import SourcePostRecord
+            media_mgr = MediaManager(supabase_client=supabase)
+            source_rec = SourcePostRecord(
+                id=db_post.get("id"),
+                source_post_id=db_post.get("source_post_id"),
+                source_url=db_post.get("source_url"),
+                author_name=db_post.get("author_name"),
+                content=db_post.get("content", ""),
+                media_type=db_post.get("media_type", "none"),
+                source_json=db_post.get("source_json"),
+            )
+            media_save_dir = Path(STATE_DIR) / "pending_media"
+            media_save_dir.mkdir(parents=True, exist_ok=True)
+            ok_m, media_files_db, _ = media_mgr.prepare_post_media(source_rec, media_save_dir)
+
+            pending_data = {
+                "is_repurpose": True,
+                "database_id": db_post.get("id"),
+                "source_post_id": db_post.get("source_post_id"),
+                "text": post_text_db,
+                "first_comment_cta": first_comment_cta_db,
+                "media_type": db_post.get("media_type", "none"),
+                "media_files": [str(p) for p in media_files_db] if ok_m else [],
+                "source_url": db_post.get("source_url"),
+                "author_name": db_post.get("author_name"),
+                "execution_id": db_post.get("reserved_by"),
+            }
+
     if not action:
-        if not os.path.exists(PENDING_FILE):
+        if not pending_data:
             logger.info("No pending post. Exiting.")
             sys.exit(0)
         else:
             logger.info("Pending post draft exists. Waiting for user decision via Cloudflare Worker relay.")
             sys.exit(0)
 
-    if not os.path.exists(PENDING_FILE):
+    if not pending_data:
         if action in ("reject_regen", "reject_all", "regen_text"):
             cleanup_state_files()
             if msg_id:
@@ -278,13 +343,6 @@ def check_and_publish_post():
             if msg_id:
                 edit_telegram_message(bot_token, chat_id, msg_id, "⚠️ <i>This post draft was already processed or is no longer pending.</i>")
             sys.exit(0)
-
-    try:
-        with open(PENDING_FILE, "r", encoding="utf-8") as f:
-            pending_data = json.load(f)
-    except Exception as e:
-        logger.error("Failed to read %s: %s", PENDING_FILE, e)
-        sys.exit(1)
 
     is_repurpose = bool(pending_data.get("is_repurpose"))
     post_text = pending_data.get("text", "")

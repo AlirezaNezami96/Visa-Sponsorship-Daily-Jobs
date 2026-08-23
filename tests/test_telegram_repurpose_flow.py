@@ -93,12 +93,11 @@ def test_orchestrator_stages_pending_approval(mock_supabase, tmp_path):
 
         assert res.success is True
         assert res.status == "pending_approval"
-        mock_supabase.update_post_status.assert_called_with(
-            post_id=42,
-            status=ProcessingStatus.PENDING_APPROVAL.value,
-            execution_id=mock_supabase.update_post_status.call_args.kwargs["execution_id"],
-            generated_content="Rewritten post",
-        )
+        assert mock_supabase.update_post_status.called
+        kwargs = mock_supabase.update_post_status.call_args.kwargs
+        assert kwargs["post_id"] == 42
+        assert kwargs["status"] == ProcessingStatus.PENDING_APPROVAL.value
+        assert "Rewritten post" in kwargs["generated_content"]
         assert mock_save_json.called
 
 
@@ -109,6 +108,7 @@ def test_check_and_publish_repurpose_approve(tmp_path):
         "database_id": 42,
         "source_post_id": "post_42",
         "text": "Approved repurposed post text",
+        "first_comment_cta": "What are your thoughts? 👇",
         "media_type": "none",
         "media_files": [],
         "message_id": 8888,
@@ -126,6 +126,7 @@ def test_check_and_publish_repurpose_approve(tmp_path):
     }
 
     with patch.dict(os.environ, env_vars), \
+         patch("job_radar.social.publisher.REPURPOSE_PENDING_FILE", str(pending_file)), \
          patch("job_radar.social.publisher.PENDING_FILE", str(pending_file)), \
          patch("job_radar.repurpose.publisher.LinkedInRepurposePublisher.publish_post", return_value=(True, 201, "urn:li:share:123", "{}", "https://linkedin.com/feed/update/urn:li:share:123")), \
          patch("job_radar.storage.supabase_client.SupabaseStorageClient.update_post_status") as mock_update_status, \
@@ -172,6 +173,7 @@ def test_check_and_publish_repurpose_reject(tmp_path):
     }
 
     with patch.dict(os.environ, env_vars), \
+         patch("job_radar.social.publisher.REPURPOSE_PENDING_FILE", str(pending_file)), \
          patch("job_radar.social.publisher.PENDING_FILE", str(pending_file)), \
          patch("job_radar.storage.supabase_client.SupabaseStorageClient.update_post_status") as mock_update_status, \
          patch("job_radar.social.publisher.edit_telegram_message") as mock_edit_tg, \
@@ -214,6 +216,7 @@ def test_check_and_publish_repurpose_reject_regen(tmp_path):
     }
 
     with patch.dict(os.environ, env_vars), \
+         patch("job_radar.social.publisher.REPURPOSE_PENDING_FILE", str(pending_file)), \
          patch("job_radar.social.publisher.PENDING_FILE", str(pending_file)), \
          patch("job_radar.storage.supabase_client.SupabaseStorageClient.update_post_status") as mock_update_status, \
          patch("job_radar.social.publisher.edit_telegram_message") as mock_edit_tg, \
@@ -233,3 +236,45 @@ def test_check_and_publish_repurpose_reject_regen(tmp_path):
         assert mock_edit_tg.called
         assert mock_send_tg.called
         assert mock_trigger.called
+
+
+def test_check_and_publish_supabase_fallback_when_files_missing():
+    env_vars = {
+        "TELEGRAM_BOT_TOKEN": "bot123",
+        "TELEGRAM_CHAT_ID": "123456",
+        "TELEGRAM_AUTHORIZED_USER_ID": "999",
+        "LINKEDIN_ACCESS_TOKEN": "token_li",
+        "CLIENT_PAYLOAD": json.dumps({"action": "approve", "message_id": 8888, "user_id": 999}),
+    }
+
+    mock_db_post = {
+        "id": 99,
+        "source_post_id": "supabase_post_99",
+        "content": "Original Content",
+        "generated_content": json.dumps({"text": "Adapted Supabase Post", "first_comment_cta": "Thoughts? 👇"}),
+        "media_type": "none",
+        "reserved_by": "worker-gha",
+    }
+
+    with patch.dict(os.environ, env_vars), \
+         patch("os.path.exists", return_value=False), \
+         patch("job_radar.storage.supabase_client.SupabaseStorageClient.is_configured", True), \
+         patch("job_radar.storage.supabase_client.SupabaseStorageClient.get_pending_approval_post", return_value=mock_db_post), \
+         patch("job_radar.repurpose.publisher.LinkedInRepurposePublisher.publish_post", return_value=(True, 201, "urn:li:share:99", "{}", "https://linkedin.com/feed/update/urn:li:share:99")), \
+         patch("job_radar.storage.supabase_client.SupabaseStorageClient.update_post_status") as mock_update_status, \
+         patch("job_radar.social.publisher.edit_telegram_message") as mock_edit_tg, \
+         patch("job_radar.social.publisher.send_telegram_message") as mock_send_tg:
+
+        check_and_publish_post()
+
+        mock_update_status.assert_called_with(
+            post_id=99,
+            status=ProcessingStatus.PUBLISHED.value,
+            execution_id="worker-gha",
+            published_linkedin_post_id="urn:li:share:99",
+            published_linkedin_url="https://linkedin.com/feed/update/urn:li:share:99",
+            published_at="now()",
+            final_content="Adapted Supabase Post",
+        )
+        assert mock_edit_tg.called
+        assert mock_send_tg.called

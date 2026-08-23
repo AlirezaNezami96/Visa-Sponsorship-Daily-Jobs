@@ -441,6 +441,35 @@ class SupabaseStorageClient:
             logger.error("Failed to fetch media for post %d: %s", post_id, exc)
         return []
 
+    def get_pending_approval_post(self) -> Optional[Dict[str, Any]]:
+        """Retrieves the most recent post in 'pending_approval' or 'reserved' status."""
+        if not self.is_configured:
+            return None
+
+        # First look for pending_approval
+        rest_url = f"{self.url}/rest/v1/source_posts?processing_status=eq.pending_approval&order=updated_at.desc&limit=1"
+        try:
+            resp = requests.get(rest_url, headers=self._rest_headers(), timeout=15)
+            if resp.status_code == 200:
+                data = resp.json()
+                if isinstance(data, list) and data:
+                    return data[0]
+        except Exception as exc:
+            logger.error("Failed to fetch pending_approval post: %s", exc)
+
+        # Fallback to reserved
+        rest_url_res = f"{self.url}/rest/v1/source_posts?processing_status=eq.reserved&order=updated_at.desc&limit=1"
+        try:
+            resp = requests.get(rest_url_res, headers=self._rest_headers(), timeout=15)
+            if resp.status_code == 200:
+                data = resp.json()
+                if isinstance(data, list) and data:
+                    return data[0]
+        except Exception as exc:
+            logger.error("Failed to fetch reserved post: %s", exc)
+
+        return None
+
     def get_available_posts_count(self) -> int:
         """Returns the number of available source posts remaining."""
         if not self.is_configured:

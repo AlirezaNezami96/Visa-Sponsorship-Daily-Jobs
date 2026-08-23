@@ -1,6 +1,7 @@
 """Master Orchestrator for LinkedIn Source Post Repurposing & Auto-Publishing."""
 from __future__ import annotations
 
+import json
 import logging
 import os
 import shutil
@@ -184,16 +185,21 @@ class RepurposeOrchestrator:
                     "chat_id": chat_id,
                     "execution_id": execution_id,
                 }
-                pending_file = state_dir / "pending_linkedin_post.json"
                 from job_radar.filters.dedupe import atomic_save_json
-                atomic_save_json(pending_state, str(pending_file))
+                atomic_save_json(pending_state, str(state_dir / "pending_linkedin_post.json"))
+                atomic_save_json(pending_state, str(state_dir / "pending_post.json"))
 
                 if post.id and not dry_run:
+                    gen_payload = json.dumps({
+                        "text": adapted_text,
+                        "first_comment_cta": first_comment_cta,
+                        "source_post_id": post.source_post_id,
+                    }, ensure_ascii=False)
                     self.supabase.update_post_status(
                         post_id=post.id,
                         status=ProcessingStatus.PENDING_APPROVAL.value,
                         execution_id=execution_id,
-                        generated_content=adapted_text,
+                        generated_content=gen_payload,
                     )
                     logger.info("Source post %s marked as pending_approval in Supabase.", post.source_post_id)
 
