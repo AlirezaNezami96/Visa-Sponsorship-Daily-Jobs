@@ -6,6 +6,7 @@ from typing import Any, Dict, List
 
 from apify import Actor
 
+from job_radar.models.enums import VisaConfidence
 from job_radar.models.job import Job
 from job_radar.pipeline.sink import JobSink
 
@@ -37,7 +38,7 @@ class ApifyDatasetSink(JobSink):
             # Push to dataset
             await Actor.push_data(item)
 
-            # 1. Base PPE event for job result
+            # 1. Base PPE event for job result (charged for every emitted item)
             try:
                 await Actor.charge(event_name="job-result")
             except Exception as e:
@@ -52,9 +53,9 @@ class ApifyDatasetSink(JobSink):
                     logger.debug("Actor.charge('ai-classified-job') note: %s", e)
                 self.ai_classified_count += 1
 
-            # 3. Add-on PPE event for official visa registry enrichment
+            # 3. Add-on PPE event for official visa registry enrichment (ON_SPONSOR_LIST)
             conf_val = job.visa_confidence if isinstance(job.visa_confidence, str) else job.visa_confidence.value
-            if conf_val in ("on_sponsor_list", "historical_filings", "stated_in_jd"):
+            if conf_val == VisaConfidence.ON_SPONSOR_LIST.value or conf_val == "on_sponsor_list":
                 try:
                     await Actor.charge(event_name="visa-enriched-job")
                 except Exception as e:

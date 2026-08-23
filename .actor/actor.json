@@ -1,18 +1,38 @@
 {
   "actorSpecification": 1,
-  "name": "visa-sponsorship-jobs",
+  "name": "visa-sponsorship-jobs-scraper",
   "title": "Visa Sponsorship Jobs Scraper & API",
-  "description": "Find jobs where visa sponsorship is actually available. Cross-references official government sponsor registries (UK, US, EU) with live ATS job boards.",
-  "version": "0.1.0",
-  "dockerfile": "Dockerfile",
-  "input": "input_schema.json",
-  "readme": "README.md",
+  "description": "Extracts job listings from Greenhouse, Lever, Ashby, Workable, and public job boards cross-referenced against official UK and US government visa sponsor registries.",
+  "version": "1.0.0",
+  "pricingModel": "PAY_PER_EVENT",
   "pricing": {
     "pricingModel": "PAY_PER_EVENT",
-    "events": [
-      { "name": "job-result", "title": "Job result" },
-      { "name": "ai-classified-job", "title": "AI-classified job" },
-      { "name": "visa-enriched-job", "title": "Visa-enriched job" }
-    ]
+    "events": {
+      "actor-start": {
+        "title": "Actor Start Fee",
+        "description": "Initial charge per Actor execution run.",
+        "unitPriceUsd": 0.05
+      },
+      "job-result": {
+        "title": "Job Result",
+        "description": "Charge per normalized job result saved to the dataset.",
+        "unitPriceUsd": 0.002
+      },
+      "visa-enriched-job": {
+        "title": "Visa Enriched Job",
+        "description": "Charge per job verified against government visa sponsor registers.",
+        "unitPriceUsd": 0.001
+      },
+      "ai-classified-job": {
+        "title": "AI Classified Job",
+        "description": "Charge per job classified using LLM relevance analysis.",
+        "unitPriceUsd": 0.003
+      }
+    }
+  },
+  "dockerfile": "./Dockerfile",
+  "input": "./input_schema.json",
+  "storages": {
+    "dataset": "./dataset_schema.json"
   }
 }

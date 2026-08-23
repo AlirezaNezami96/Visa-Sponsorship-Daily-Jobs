@@ -1,4 +1,4 @@
-"""Apify Actor entrypoint. Thin adapter layer delegating to the shared pipeline."""
+"""Apify Actor entrypoint. Thin asynchronous adapter layer delegating to the shared pipeline."""
 from __future__ import annotations
 
 import asyncio
@@ -13,8 +13,14 @@ logger = logging.getLogger("apify_main")
 
 
 async def main() -> None:
-    """Main Actor execution routine."""
+    """Main Actor execution routine with Pay-Per-Event initialization."""
     async with Actor:
+        # Charge initial actor start fee
+        try:
+            await Actor.charge(event_name="actor-start")
+        except Exception as e:
+            logger.debug("Actor.charge('actor-start') note: %s", e)
+
         # 1. Read input from Apify environment
         actor_input = await Actor.get_input()
         Actor.log.info("Loaded Apify Actor input payload.")
