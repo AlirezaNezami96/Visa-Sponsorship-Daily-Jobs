@@ -36,6 +36,11 @@ def main() -> None:
         "--post-id",
         help="Force process a specific source post database ID.",
     )
+    parser.add_argument(
+        "--auto-publish",
+        action="store_true",
+        help="Publish immediately to LinkedIn without waiting for Telegram approval.",
+    )
 
     args = parser.parse_args()
 
@@ -44,10 +49,15 @@ def main() -> None:
         worker_id=args.worker_id,
         dry_run=args.dry_run,
         force_post_id=args.post_id,
+        auto_publish=args.auto_publish,
     )
 
     if result.status == "exhausted":
         logger.info("Pipeline completed: %s", result.skipped_reason)
+        sys.exit(0)
+
+    if result.status == "pending_approval":
+        logger.info("Draft successfully sent to Telegram for approval (Source Post: %s, DB ID: %s)", result.source_post_id, result.database_id)
         sys.exit(0)
 
     if result.success:

@@ -31,18 +31,21 @@ The **LinkedIn Content Repurposing Pipeline** is an unattended, production-grade
     │                                        ↓
     └────────────────────────────────────────┤
                                              ↓
-                         [ Gemini 3.7 Flash Adaptation ]
-                         (Transforms post to first-person tech authority,
-                          scrubs original author handles & CTAs)
+                          [ Gemini 3.7 Flash Adaptation ]
+                          (Transforms post to first-person tech authority,
+                           scrubs original author handles & CTAs)
                                              ↓
-                         [ Deterministic Quality Validation ]
-                         (Length bounds, anti-copying similarity < 0.90)
+                          [ Staging & Telegram Approval Draft ]
+                          (Sends media preview, formatted text, and 3 buttons:
+                           - [✅ Accept] -> Publishes to LinkedIn
+                           - [❌ Reject] -> Discards draft & marks skipped
+                           - [🔄 Reject & Generate Another] -> Re-triggers pipeline)
                                              ↓
-                         [ LinkedIn REST API Publication ]
-                         (Registers media upload, uploads binary, publishes UGC post)
+                          [ LinkedIn REST API Publication ]
+                          (Registers media upload, uploads binary, publishes UGC post)
                                              ↓
-                         [ Supabase State Update: `published` ]
-                         (Records LinkedIn Post URN, public URL & timestamp)
+                          [ Supabase State Update: `published` ]
+                          (Records LinkedIn Post URN, public URL & timestamp)
 ```
 
 ---

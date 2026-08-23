@@ -101,7 +101,10 @@ def run(
                 errors_count += 1
                 continue
             for j in result.jobs:
-                item = dict(j)
+                if hasattr(j, "to_legacy_dict"):
+                    item = j.to_legacy_dict()
+                else:
+                    item = dict(j)
                 if not item.get("company"):
                     item["company"] = comp_name
                 if not item.get("source"):
@@ -148,24 +151,35 @@ def run(
         ]
         logger.info("After Supabase cross-track dedup: %d jobs (dropped %d)", len(candidate_jobs), before - len(candidate_jobs))
 
-    qualified_jobs, _ = classify_and_filter_jobs(candidate_jobs, config=cfg)
-
-    # Resume matching — in-memory, fail-open
+    # Fetch resume once for single-pass combined LLM evaluation
+    resume_text = None
     if cfg.resume_matcher.enabled and os.environ.get("GEMINI_API_KEY"):
-        resume_text = None
         try:
             resume_text = fetch_resume_text(
                 doc_id=cfg.resume.doc_id,
                 access_method=cfg.resume.access_method,
             )
+            if resume_text:
+                logger.info("Loaded candidate resume for single-pass matching (%d chars)", len(resume_text))
         except Exception as exc:
-            logger.warning("Resume fetch failed: %s — skipping ATS scoring for this run", exc)
-        if resume_text:
-            logger.info("Running resume matching for %d qualified jobs...", len(qualified_jobs))
-            match_resume_batch(qualified_jobs, resume_text, config=cfg)
-    else:
-        if not os.environ.get("GEMINI_API_KEY"):
-            logger.debug("GEMINI_API_KEY not set — skipping resume matching")
+            logger.warning("Resume fetch failed: %s — skipping resume matching for this run", exc)
+
+    qualified_jobs, clf_stats = classify_and_filter_jobs(candidate_jobs, config=cfg, resume_text=resume_text)
+
+    # Multi-dimensional ranking:
+    # 1. Visa status: sponsors -> likely -> opt_friendly -> unknown -> no
+    # 2. Relevance score: descending
+    # 3. Resume match score: descending
+    # 4. Date posted / Recency
+    visa_order = {"sponsors": 0, "likely": 1, "opt_friendly": 2, "unknown": 3, "no": 4}
+    qualified_jobs.sort(
+        key=lambda x: (
+            visa_order.get(x.get("visa_status", "unknown"), 3),
+            -(x.get("relevance_score") or 0),
+            -(x.get("resume_match_score") or 0),
+            str(x.get("date_posted") or ""),
+        )
+    )
 
     # Company LinkedIn page discovery & enrichment (after discovery is finalized)
     if qualified_jobs:
@@ -175,26 +189,32 @@ def run(
     internships = [j for j in qualified_jobs if j.get("classified_track") == "internship"]
     engineers = [j for j in qualified_jobs if j.get("classified_track") == "engineer"]
 
+    # Atomic state persist: write once at end of successful run (never in dry-run)
     if not dry_run:
         _save_seen(seen, SEEN_FILE)
-        logger.info("Persisted updated seen store: %d entries", len(seen))
+        logger.info("Atomically persisted updated seen store: %d entries", len(seen))
         # Mark sent jobs in Supabase
         if supabase_available() and qualified_jobs:
             bulk_mark_sent(internships, track="visa_intern")
             bulk_mark_sent(engineers, track="visa_engineer")
     else:
-        logger.info("[DRY RUN] Seen store and Supabase left unmodified")
+        logger.info("[DRY RUN] Seen store and Supabase left unmodified (atomic write skipped)")
 
     total_found = len(internships) + len(engineers)
     logger.info("\n" + "=" * 60)
     logger.info("🎯 RADAR RUN COMPLETE: %d new matches (%d internships, %d engineers)", total_found, len(internships), len(engineers))
+    logger.info("Visa breakdown: %s", clf_stats.get("visa_status_counts", {}))
     logger.info("=" * 60)
 
+    from job_radar.fetchers.ats import global_circuit_breaker
     health_info = {
         "companies_scanned": companies_count,
         "boards_scanned": boards_count,
         "errors": errors_count,
         "total_evaluated": len(candidate_jobs),
+        "total_qualified": len(qualified_jobs),
+        "circuit_breaker_trips": global_circuit_breaker.get_trip_counts(),
+        "visa_status_counts": clf_stats.get("visa_status_counts", {}),
     }
 
     send_empty_flag = send_empty if send_empty is not None else cfg.email.send_empty_digests

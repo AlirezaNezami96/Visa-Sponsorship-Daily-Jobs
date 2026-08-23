@@ -61,6 +61,7 @@ job_radar = ["py.typed"]
 [tool.pytest.ini_options]
 minversion = "7.0"
 testpaths = ["tests"]
+pythonpath = [".", "src"]
 python_files = ["test_*.py"]
 addopts = "-ra -q --import-mode=importlib"
 

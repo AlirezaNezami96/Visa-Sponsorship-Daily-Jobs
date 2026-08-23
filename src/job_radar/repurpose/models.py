@@ -11,6 +11,7 @@ class ProcessingStatus(str, Enum):
     AVAILABLE = "available"
     RESERVED = "reserved"
     PROCESSING = "processing"
+    PENDING_APPROVAL = "pending_approval"
     PUBLISHED = "published"
     FAILED = "failed"
     SKIPPED = "skipped"

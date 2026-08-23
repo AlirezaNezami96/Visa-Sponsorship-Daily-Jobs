@@ -119,12 +119,7 @@ def match_track(title: str, config: Any = None) -> Optional[str]:
     if has_intern_term and has_ai_domain:
         return "internship"
 
-    # 3. Borderline review check (prioritized for roles like Data Scientist / Prompt Engineer)
-    for kw in borderline_review:
-        if re.search(r"\b" + re.escape(kw) + r"\b", t):
-            return "borderline"
-
-    # 4. Early-Career Engineer track check
+    # 3. Early-Career Engineer track check (explicit junior/entry/associate/engineer patterns)
     for kw in engineer_include:
         if kw in t or re.search(r"\b" + re.escape(kw) + r"\b", t):
             return "engineer"
@@ -132,6 +127,11 @@ def match_track(title: str, config: Any = None) -> Optional[str]:
     for pattern in ENGINEER_TITLE_PATTERNS:
         if re.search(pattern, t):
             return "engineer"
+
+    # 4. Borderline review check (for generic Data Scientist, AI Specialist without explicit level)
+    for kw in borderline_review:
+        if re.search(r"\b" + re.escape(kw) + r"\b", t):
+            return "borderline"
 
     return None
 

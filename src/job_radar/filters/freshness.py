@@ -178,6 +178,8 @@ def filter_fresh_jobs(jobs: list, max_age_days: int = 5) -> list:
     before = len(jobs)
     fresh = [j for j in jobs if is_fresh_enough(j, max_age_days=max_age_days)]
     dropped = before - len(fresh)
-    if dropped:
-        logger.info("Freshness filter: dropped %d stale jobs (max_age=%dd), kept %d", dropped, max_age_days, len(fresh))
     return fresh
+
+
+is_job_fresh = is_fresh_enough
+

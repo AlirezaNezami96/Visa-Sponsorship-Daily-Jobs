@@ -51,46 +51,90 @@ def _canonical_seen_key(key: str) -> str:
     return f"{company.casefold()}|{_canonical_job_url(url)}"
 
 
-def normalize_company_name(company: str) -> str:
-    """Normalize company name for cross-source matching."""
+def normalize_company_name(company: str, config: Any = None) -> str:
+    """Normalize company name for cross-source matching using config synonyms."""
     if not company:
         return ""
     c = company.strip().lower()
-    c = re.sub(r"\b(inc|incorporated|corp|corporation|llc|ltd|limited|gmbh|co|technologies|technology|labs|pbc)\b", "", c)
+    suffixes = None
+    if config and hasattr(config, "dedup") and hasattr(config.dedup, "company_suffixes"):
+        suffixes = config.dedup.company_suffixes
+    if not suffixes:
+        suffixes = ["inc", "incorporated", "corp", "corporation", "llc", "ltd", "limited", "gmbh", "co", "technologies", "technology", "labs", "pbc"]
+
+    pattern = r"\b(" + "|".join(re.escape(s) for s in suffixes) + r")\b"
+    c = re.sub(pattern, "", c, flags=re.IGNORECASE)
     c = re.sub(r"[^\w\s]", "", c)
     return " ".join(c.split())
 
 
-def normalize_job_title(title: str) -> str:
-    """Normalize job title for cross-source deduplication."""
+def normalize_job_title(title: str, config: Any = None) -> str:
+    """Normalize job title for cross-source deduplication using config synonyms."""
     if not title:
         return ""
     t = title.strip().lower()
     t = re.sub(r"[^\w\s]", " ", t)
-    t = re.sub(r"\binternship\b", "intern", t)
-    t = re.sub(r"\bmachine learning\b", "ml", t)
-    t = re.sub(r"\bartificial intelligence\b", "ai", t)
-    t = re.sub(r"\bdeep learning\b", "dl", t)
+
+    synonyms = None
+    if config and hasattr(config, "dedup") and hasattr(config.dedup, "title_synonyms"):
+        synonyms = config.dedup.title_synonyms
+    if not synonyms or not isinstance(synonyms, dict):
+        synonyms = {
+            "internship": "intern",
+            "machine learning": "ml",
+            "artificial intelligence": "ai",
+            "deep learning": "dl",
+        }
+
+    for source_word, target_word in synonyms.items():
+        t = re.sub(rf"\b{re.escape(source_word)}\b", target_word, t, flags=re.IGNORECASE)
+
     return " ".join(t.split())
 
 
-def normalize_job_location(location: str) -> str:
+def normalize_job_location(location: str, config: Any = None) -> str:
     """Normalize location string for fingerprinting."""
     if not location:
         return "remote"
     loc = location.strip().lower()
-    if any(w in loc for w in ("remote", "anywhere", "worldwide", "work from home", "virtual")):
+    remote_terms = None
+    if config and hasattr(config, "dedup") and hasattr(config.dedup, "remote_terms"):
+        remote_terms = config.dedup.remote_terms
+    if not remote_terms:
+        remote_terms = ["remote", "anywhere", "worldwide", "work from home", "virtual"]
+
+    if any(w in loc for w in remote_terms):
         return "remote"
     loc = re.sub(r"[^\w\s]", " ", loc)
     return " ".join(loc.split())
 
 
-def job_fingerprint(company: str, title: str, location: str = "") -> str:
+def job_fingerprint(company: str, title: str, location: str = "", config: Any = None) -> str:
     """Create a normalized fingerprint for cross-source deduplication."""
-    norm_c = normalize_company_name(company)
-    norm_t = normalize_job_title(title)
-    norm_l = normalize_job_location(location)
+    norm_c = normalize_company_name(company, config=config)
+    norm_t = normalize_job_title(title, config=config)
+    norm_l = normalize_job_location(location, config=config)
     return f"fp|{norm_c}|{norm_t}|{norm_l}"
+
+
+def atomic_save_json(data: Any, path: str) -> None:
+    """Atomically writes JSON to file using a temporary file and atomic os.replace."""
+    abs_path = os.path.abspath(path)
+    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+    temp_path = f"{abs_path}.tmp.{os.getpid()}.{int(time.time() * 1000)}"
+    try:
+        with open(temp_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, separators=(",", ":"))
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temp_path, abs_path)
+    except Exception:
+        if os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
+        raise
 
 
 def _load_seen(path: str = None) -> dict:
@@ -127,11 +171,9 @@ def _load_seen(path: str = None) -> dict:
 
 
 def _save_seen(seen: dict, path: str = None):
-    """Persist the seen-jobs store in compact JSON."""
+    """Persist the seen-jobs store atomically in compact JSON."""
     path = path or SEEN_FILE
-    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(seen, f, separators=(",", ":"))
+    atomic_save_json(seen, path)
 
 
 def dedupe_radar_jobs(jobs: list, seen: dict, config: Any = None) -> list:

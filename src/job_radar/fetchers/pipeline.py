@@ -21,7 +21,7 @@ class CompanyFetch:
     """The acquisition result for one company, retained in input order."""
 
     company: dict
-    jobs: List[dict]
+    jobs: List[Any]
     method: str
     error: str | None = None
 

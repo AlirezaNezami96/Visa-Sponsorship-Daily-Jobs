@@ -42,6 +42,9 @@ jobs:
       - name: Process Telegram approval & publish if approved
         env:
           CLIENT_PAYLOAD: ${{ toJson(github.event.client_payload) }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_KEY }}
           ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
@@ -50,6 +53,7 @@ jobs:
           TELEGRAM_AUTHORIZED_USER_ID: ${{ secrets.TELEGRAM_AUTHORIZED_USER_ID }}
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           LINKEDIN_PERSON_URN: ${{ secrets.LINKEDIN_PERSON_URN }}
+          GH_PAT: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |

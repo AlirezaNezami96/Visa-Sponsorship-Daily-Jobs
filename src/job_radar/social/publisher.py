@@ -169,13 +169,42 @@ def publish_to_linkedin(access_token: str, person_urn: str, text: str, cover_byt
         return False, 0, "", str(err)
 
 
+def trigger_repurpose_workflow() -> bool:
+    repo = os.environ.get("GITHUB_REPOSITORY")
+    token = os.environ.get("GH_PAT") or os.environ.get("GITHUB_TOKEN")
+    if not repo or not token:
+        logger.warning("GITHUB_REPOSITORY or GITHUB_TOKEN not set. Cannot auto-trigger linkedin-republish.yml workflow.")
+        return False
+
+    url = f"https://api.github.com/repos/{repo}/actions/workflows/linkedin-republish.yml/dispatches"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28"
+    }
+    payload = {"ref": "main"}
+    try:
+        res = requests.post(url, headers=headers, json=payload, timeout=15)
+        return res.status_code in (204, 201, 200)
+    except Exception as e:
+        logger.warning("Exception while triggering linkedin-republish.yml: %s", e)
+        return False
+
+
 def cleanup_state_files():
+    import shutil
     for f in (PENDING_FILE, COVER_FILE):
         if os.path.exists(f):
             try:
                 os.remove(f)
             except Exception:
                 pass
+    pending_media_dir = os.path.join(STATE_DIR, "pending_media")
+    if os.path.exists(pending_media_dir):
+        try:
+            shutil.rmtree(pending_media_dir, ignore_errors=True)
+        except Exception:
+            pass
 
 
 def check_and_publish_post():
@@ -184,7 +213,6 @@ def check_and_publish_post():
     authorized_user_id = os.environ.get("TELEGRAM_AUTHORIZED_USER_ID")
     linkedin_access_token = os.environ.get("LINKEDIN_ACCESS_TOKEN")
     linkedin_person_urn = os.environ.get("LINKEDIN_PERSON_URN", "urn:li:person:aAOQrAt7pG")
-    gemini_api_key = os.environ.get("GEMINI_API_KEY")
 
     missing = []
     if not bot_token:
@@ -236,9 +264,9 @@ def check_and_publish_post():
         if action in ("reject_regen", "reject_all", "regen_text"):
             cleanup_state_files()
             if msg_id:
-                edit_telegram_message(bot_token, chat_id, msg_id, "🔄 <b>Draft Rejected — Generating New Draft...</b>")
+                edit_telegram_message(bot_token, chat_id, msg_id, "🔄 <b>Draft Rejected — Generating Next Post...</b>")
             send_telegram_message(bot_token, chat_id, "🔄 <b>Generating a brand new post draft now...</b>")
-            trigger_generate_workflow()
+            trigger_repurpose_workflow()
             sys.exit(0)
         elif action in ("reject", "reject_only"):
             cleanup_state_files()
@@ -258,13 +286,98 @@ def check_and_publish_post():
         logger.error("Failed to read %s: %s", PENDING_FILE, e)
         sys.exit(1)
 
+    is_repurpose = bool(pending_data.get("is_repurpose"))
     post_text = pending_data.get("text", "")
-    image_title = pending_data.get("image_title", "AI PRODUCTIVITY")
-    category = pending_data.get("category", "AI TOOLS")
-    bg_prompt = pending_data.get("bg_prompt", "")
     if not msg_id:
         msg_id = pending_data.get("message_id")
 
+    # ── Handling Repurposed Source Post Drafts ──
+    if is_repurpose:
+        from pathlib import Path
+        from job_radar.repurpose.publisher import LinkedInRepurposePublisher
+        from job_radar.repurpose.models import ProcessingStatus
+        from job_radar.storage.supabase_client import SupabaseStorageClient
+
+        db_id = pending_data.get("database_id")
+        source_post_id = pending_data.get("source_post_id")
+        media_type = pending_data.get("media_type", "none")
+        media_file_paths = [Path(p) for p in pending_data.get("media_files", []) if os.path.exists(p)]
+        execution_id = pending_data.get("execution_id")
+
+        supabase = SupabaseStorageClient()
+
+        if action in ("approve", "approve_all", "accept"):
+            logger.info("Publishing repurposed post %s to LinkedIn...", source_post_id)
+            publisher = LinkedInRepurposePublisher()
+            pub_ok, status_code, post_urn, res_text, post_url = publisher.publish_post(
+                text=post_text,
+                media_files=media_file_paths,
+                media_type=media_type,
+                dry_run=False,
+            )
+
+            if pub_ok:
+                cleanup_state_files()
+                if db_id:
+                    supabase.update_post_status(
+                        post_id=db_id,
+                        status=ProcessingStatus.PUBLISHED.value,
+                        execution_id=execution_id,
+                        published_linkedin_post_id=post_urn,
+                        published_linkedin_url=post_url,
+                        published_at="now()",
+                        final_content=post_text,
+                    )
+                if msg_id:
+                    edit_telegram_message(bot_token, chat_id, msg_id, f"✅ <b>Posted to LinkedIn</b>\n\n{html.escape(post_text)}")
+                followup_text = f"🎉 <b>Repurposed Post Published Successfully!</b>\n\n<b>Source ID:</b> <code>{html.escape(str(source_post_id))}</code>\n<b>Post URN:</b> <code>{html.escape(str(post_urn))}</code>"
+                if post_url:
+                    followup_text += f"\n<b>Link:</b> {post_url}"
+                send_telegram_message(bot_token, chat_id, followup_text)
+            else:
+                cleanup_state_files()
+                if db_id:
+                    supabase.update_post_status(
+                        post_id=db_id,
+                        status=ProcessingStatus.FAILED.value,
+                        execution_id=execution_id,
+                        last_error=f"LinkedIn publish error ({status_code}): {res_text}",
+                    )
+                if msg_id:
+                    edit_telegram_message(bot_token, chat_id, msg_id, f"⚠️ <b>LinkedIn Publication Failed (HTTP {status_code})</b>\n\nDraft discarded.")
+                alert_text = f"⚠️ <b>LinkedIn Posting Failed (HTTP {status_code})</b>\n\n<code>{html.escape(res_text)}</code>"
+                send_telegram_message(bot_token, chat_id, alert_text)
+
+        elif action in ("reject", "reject_only"):
+            cleanup_state_files()
+            if db_id:
+                supabase.update_post_status(
+                    post_id=db_id,
+                    status=ProcessingStatus.SKIPPED.value,
+                    execution_id=execution_id,
+                    skipped_reason="Rejected via Telegram",
+                )
+            if msg_id:
+                edit_telegram_message(bot_token, chat_id, msg_id, f"❌ <b>Draft Rejected & Discarded</b>\n\n<s>{html.escape(post_text)}</s>")
+            send_telegram_message(bot_token, chat_id, "🗑️ <b>Draft Rejected.</b> No new post will be generated.")
+
+        elif action in ("reject_regen", "reject_all"):
+            cleanup_state_files()
+            if db_id:
+                supabase.update_post_status(
+                    post_id=db_id,
+                    status=ProcessingStatus.SKIPPED.value,
+                    execution_id=execution_id,
+                    skipped_reason="Rejected via Telegram (requested regeneration)",
+                )
+            if msg_id:
+                edit_telegram_message(bot_token, chat_id, msg_id, f"🔄 <b>Draft Rejected — Generating Next Post...</b>\n\n<s>{html.escape(post_text)}</s>")
+            send_telegram_message(bot_token, chat_id, "🗑️ <b>Draft Rejected.</b> Selecting and preparing the next source post now...")
+            trigger_repurpose_workflow()
+
+        return
+
+    # ── Handling Legacy Generated Post Drafts ──
     cover_bytes = None
     if os.path.exists(COVER_FILE):
         try:
@@ -310,3 +423,4 @@ def check_and_publish_post():
             edit_telegram_message(bot_token, chat_id, msg_id, f"🔄 <b>Draft Rejected — Generating New Draft...</b>\n\n<s>{html.escape(post_text)}</s>")
         send_telegram_message(bot_token, chat_id, "🗑️ <b>Draft Rejected & Discarded.</b> Generating a brand new post draft now...")
         trigger_generate_workflow()
+

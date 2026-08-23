@@ -39,6 +39,7 @@ class RepurposeOrchestrator:
         worker_id: Optional[str] = None,
         dry_run: bool = False,
         force_post_id: Optional[str] = None,
+        auto_publish: bool = False,
     ) -> RepurposeJobResult:
         """
         Executes an unattended LinkedIn repurposing run:
@@ -137,8 +138,75 @@ class RepurposeOrchestrator:
 
             logger.info("Adapted text preview:\n%s\n---", adapted_text[:200] + "..." if len(adapted_text) > 200 else adapted_text)
 
-            # ── 5. LinkedIn Publishing ──
-            logger.info("Publishing to LinkedIn (Media Count: %d)...", len(media_files))
+            # ── 5. Staging for Telegram Approval OR Direct Auto-Publishing ──
+            bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
+            chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+            use_telegram_approval = bool(bot_token and chat_id and not auto_publish)
+
+            if use_telegram_approval:
+                logger.info("Staging repurposed post for Telegram approval (bot_token configured)...")
+                tg_ok, msg_id = self.send_telegram_draft(
+                    post=post,
+                    adapted_text=adapted_text,
+                    media_files=media_files,
+                    bot_token=bot_token,
+                    chat_id=chat_id,
+                    dry_run=dry_run,
+                )
+
+                # Persist pending approval state
+                state_dir = Path("state")
+                state_dir.mkdir(parents=True, exist_ok=True)
+                media_save_dir = state_dir / "pending_media"
+                media_save_dir.mkdir(parents=True, exist_ok=True)
+
+                saved_media_paths = []
+                for mf in media_files:
+                    target_mf = media_save_dir / mf.name
+                    try:
+                        shutil.copy2(mf, target_mf)
+                        saved_media_paths.append(str(target_mf))
+                    except Exception as copy_err:
+                        logger.warning("Could not copy media %s to state: %s", mf, copy_err)
+
+                pending_state = {
+                    "is_repurpose": True,
+                    "database_id": post.id,
+                    "source_post_id": post.source_post_id,
+                    "text": adapted_text,
+                    "media_type": post.media_type,
+                    "media_files": saved_media_paths,
+                    "source_url": post.source_url,
+                    "author_name": post.author_name,
+                    "message_id": msg_id,
+                    "chat_id": chat_id,
+                    "execution_id": execution_id,
+                }
+                pending_file = state_dir / "pending_linkedin_post.json"
+                from job_radar.filters.dedupe import atomic_save_json
+                atomic_save_json(pending_state, str(pending_file))
+
+                if post.id and not dry_run:
+                    self.supabase.update_post_status(
+                        post_id=post.id,
+                        status=ProcessingStatus.PENDING_APPROVAL.value,
+                        execution_id=execution_id,
+                        generated_content=adapted_text,
+                    )
+                    logger.info("Source post %s marked as pending_approval in Supabase.", post.source_post_id)
+
+                return RepurposeJobResult(
+                    success=True,
+                    source_post_id=post.source_post_id,
+                    database_id=post.id,
+                    status="pending_approval",
+                    adapted_content=adapted_text,
+                    media_type=post.media_type,
+                    processed_media_path=str(saved_media_paths[0]) if saved_media_paths else None,
+                )
+
+            # ── 6. Direct LinkedIn Publishing (Auto-Publish mode) ──
+            logger.info("Publishing directly to LinkedIn (Media Count: %d)...", len(media_files))
             pub_ok, status_code, post_urn, res_text, post_url = self.publisher.publish_post(
                 text=adapted_text,
                 media_files=media_files,
@@ -164,7 +232,7 @@ class RepurposeOrchestrator:
                     error_message=f"LinkedIn publish failed ({status_code}): {res_text}",
                 )
 
-            # ── 6. Mark Published Permanently in Database ──
+            # ── 7. Mark Published Permanently in Database ──
             if post.id and not dry_run:
                 self.supabase.update_post_status(
                     post_id=post.id,
@@ -192,17 +260,119 @@ class RepurposeOrchestrator:
             )
 
         finally:
-            # ── 7. Safe Cleanup of Temporary Runner Files ──
+            # ── 8. Safe Cleanup of Temporary Runner Files ──
             if temp_dir.exists():
                 shutil.rmtree(temp_dir, ignore_errors=True)
                 logger.debug("Cleaned up temporary runner directory: %s", temp_dir)
+
+    def send_telegram_draft(
+        self,
+        post: SourcePostRecord,
+        adapted_text: str,
+        media_files: list[Path],
+        bot_token: str,
+        chat_id: str,
+        dry_run: bool = False,
+    ) -> tuple[bool, Optional[int]]:
+        """
+        Sends repurposed post preview and inline action buttons to Telegram:
+        - [✅ Accept]
+        - [❌ Reject]
+        - [🔄 Reject & Generate Another]
+        """
+        import html as html_lib
+        import requests
+
+        if dry_run:
+            logger.info("[DRY RUN] Would send Telegram draft with Accept / Reject / Reject & Generate Another buttons")
+            return True, 99999
+
+        photo_msg_id = None
+        # Send media preview (photo / video) if present
+        if media_files:
+            first_media = media_files[0]
+            if post.media_type == "video" or first_media.suffix.lower() in (".mp4", ".mov", ".mkv"):
+                video_url = f"https://api.telegram.org/bot{bot_token}/sendVideo"
+                try:
+                    with open(first_media, "rb") as vf:
+                        files = {"video": (first_media.name, vf, "video/mp4")}
+                        data = {
+                            "chat_id": chat_id,
+                            "caption": f"🎬 <b>Video Preview ({first_media.name})</b>",
+                            "parse_mode": "HTML",
+                        }
+                        v_res = requests.post(video_url, data=data, files=files, timeout=60)
+                        if v_res.status_code == 200:
+                            photo_msg_id = v_res.json().get("result", {}).get("message_id")
+                except Exception as ve:
+                    logger.warning("Failed to send Telegram video preview: %s", ve)
+            elif first_media.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"):
+                photo_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
+                try:
+                    with open(first_media, "rb") as pf:
+                        files = {"photo": (first_media.name, pf, "image/jpeg")}
+                        data = {
+                            "chat_id": chat_id,
+                            "caption": f"🖼️ <b>Media Preview ({first_media.name})</b>",
+                            "parse_mode": "HTML",
+                        }
+                        p_res = requests.post(photo_url, data=data, files=files, timeout=30)
+                        if p_res.status_code == 200:
+                            photo_msg_id = p_res.json().get("result", {}).get("message_id")
+                except Exception as pe:
+                    logger.warning("Failed to send Telegram photo preview: %s", pe)
+
+        # Send text message with Accept / Reject / Reject & Generate Another buttons
+        msg_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        source_link = f'<a href="{html_lib.escape(post.source_url)}">{html_lib.escape(post.source_post_id)}</a>' if post.source_url else html_lib.escape(post.source_post_id)
+        author_info = html_lib.escape(post.author_name or "Unknown Author")
+
+        formatted_text = (
+            f"📝 <b>New Repurposed LinkedIn Post Pending Approval:</b>\n"
+            f"👤 <b>Original Author:</b> {author_info}\n"
+            f"🔗 <b>Source Post:</b> {source_link}\n"
+            f"🎬 <b>Media:</b> {post.media_type.upper()} ({len(media_files)} files)\n\n"
+            f"{html_lib.escape(adapted_text)}\n\n"
+            f"<i>Please choose an action below:</i>"
+        )
+
+        msg_payload = {
+            "chat_id": chat_id,
+            "text": formatted_text,
+            "parse_mode": "HTML",
+            "reply_markup": {
+                "inline_keyboard": [
+                    [{"text": "✅ Accept", "callback_data": "approve"}],
+                    [
+                        {"text": "❌ Reject", "callback_data": "reject"},
+                        {"text": "🔄 Reject & Generate Another", "callback_data": "reject_regen"}
+                    ]
+                ]
+            }
+        }
+
+        try:
+            m_res = requests.post(msg_url, json=msg_payload, timeout=20)
+            m_res.raise_for_status()
+            text_msg_id = m_res.json().get("result", {}).get("message_id")
+            return True, text_msg_id
+        except Exception as me:
+            logger.error("Failed to send Telegram text draft: %s", me)
+            return False, None
 
 
 def run_repurpose_pipeline(
     worker_id: Optional[str] = None,
     dry_run: bool = False,
     force_post_id: Optional[str] = None,
+    auto_publish: bool = False,
 ) -> RepurposeJobResult:
     """Convenience functional entrypoint for the repurposing orchestrator."""
     orchestrator = RepurposeOrchestrator()
-    return orchestrator.run(worker_id=worker_id, dry_run=dry_run, force_post_id=force_post_id)
+    return orchestrator.run(
+        worker_id=worker_id,
+        dry_run=dry_run,
+        force_post_id=force_post_id,
+        auto_publish=auto_publish,
+    )
+

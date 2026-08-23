@@ -34,10 +34,9 @@ class ClassificationCache:
         self.cache[key] = {**value, "_cached_at": int(time.time())}
 
     def save(self) -> None:
-        os.makedirs(os.path.dirname(os.path.abspath(self.cache_file)), exist_ok=True)
+        from job_radar.filters.dedupe import atomic_save_json
         try:
-            with open(self.cache_file, "w", encoding="utf-8") as f:
-                json.dump(self.cache, f, indent=2)
+            atomic_save_json(self.cache, self.cache_file)
         except Exception as exc:
             logger.warning("Could not save classifier cache %s: %s", self.cache_file, exc)
 
@@ -49,7 +48,13 @@ def get_classifier_cache(path: str = "state/classifier_cache.json") -> Classific
     return ClassificationCache(path)
 
 
-def make_cache_key(company: str, title: str, location: str, url: str) -> str:
+def make_cache_key(company: str, title: str, description: str = "", resume_text: str = "", location: str = "", url: str = "") -> str:
+    """
+    Generate deterministic hash key using full available text.
+    Two jobs sharing identical prefix but different tails will not collide.
+    """
     import hashlib
-    raw = f"{company.strip().lower()}|{title.strip().lower()}|{location.strip().lower()}|{url.strip()}"
+    res_hash = hashlib.sha256(resume_text.strip().encode("utf-8")).hexdigest()[:16] if resume_text else ""
+    full_desc = description.strip() or f"{location}|{url}"
+    raw = f"{company.strip().lower()}|{title.strip().lower()}|{full_desc}|{res_hash}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()

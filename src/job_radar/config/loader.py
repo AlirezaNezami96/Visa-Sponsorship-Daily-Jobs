@@ -149,6 +149,39 @@ def load_radar_config(config_path: Optional[str] = None) -> RadarConfig:
         force_run=bool(sg_raw.get("force_run", False)),
     )
 
+    # 11. Visa config
+    visa_raw = data.get("visa", {})
+    weights_raw = visa_raw.get("weights", {})
+    from job_radar.config.models import DedupConfig, VisaConfig, VisaWeightsConfig
+    visa = VisaConfig(
+        enabled=bool(visa_raw.get("enabled", True)),
+        min_score_to_tag=float(visa_raw.get("min_score_to_tag", 0.55)),
+        drop_if_status=visa_raw.get("drop_if_status", []),
+        show_unknown=bool(visa_raw.get("show_unknown", True)),
+        weights=VisaWeightsConfig(
+            registry=float(weights_raw.get("registry", 0.50)),
+            llm=float(weights_raw.get("llm", 0.35)),
+            keyword=float(weights_raw.get("keyword", 0.15)),
+        ),
+    )
+
+    # 12. Dedup config
+    dedup_raw = data.get("dedup", {})
+    dedup = DedupConfig(
+        title_synonyms=dedup_raw.get("title_synonyms", {
+            "internship": "intern",
+            "machine learning": "ml",
+            "artificial intelligence": "ai",
+            "deep learning": "dl",
+        }),
+        company_suffixes=dedup_raw.get("company_suffixes", [
+            "inc", "incorporated", "corp", "corporation", "llc", "ltd", "limited", "gmbh", "co", "technologies", "technology", "labs", "pbc"
+        ]),
+        remote_terms=dedup_raw.get("remote_terms", [
+            "remote", "anywhere", "worldwide", "work from home", "virtual"
+        ]),
+    )
+
     return RadarConfig(
         tracks=tracks,
         geography=geography,
@@ -160,6 +193,8 @@ def load_radar_config(config_path: Optional[str] = None) -> RadarConfig:
         supabase=supabase,
         resume_matcher=resume_matcher,
         search_grounding=search_grounding,
+        visa=visa,
+        dedup=dedup,
     )
 
 

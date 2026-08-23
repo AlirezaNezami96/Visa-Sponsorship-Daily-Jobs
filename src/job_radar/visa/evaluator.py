@@ -159,6 +159,105 @@ class VisaEvaluator:
         auth_fit = AuthFit.SPONSOR_REQUIRED_AND_PLAUSIBLE if not candidate_needs_sponsorship else AuthFit.SPONSOR_UNKNOWN
         return VisaConfidence.UNKNOWN, auth_fit, sponsor_meta
 
+    def score_visa_sponsorship(
+        self,
+        job: Dict[str, Any],
+        llm_visa_mention: Optional[str] = None,
+        llm_visa_quote: Optional[str] = None,
+        weights: Optional[Dict[str, float]] = None,
+    ) -> Tuple[str, float, List[str]]:
+        """
+        Computes weighted visa score (0.0 to 1.0), distinct visa_status, and evidence list.
+        Statuses: 'sponsors' | 'likely' | 'opt_friendly' | 'unknown' | 'no'
+        """
+        self._ensure_db_loaded()
+
+        company = str(job.get("company", "")).strip()
+        desc = str(job.get("description", "") or job.get("description_text", "") or job.get("snippet", "") or "")
+        title = str(job.get("title", "")).strip()
+
+        evidence: List[str] = []
+
+        # 1. Registry signal (0.0 or 1.0)
+        matched_sponsor, match_type = match_company_to_sponsor(
+            company_name=company,
+            sponsors_by_norm=self._sponsors or {},
+            alias_map=self._aliases or {},
+        )
+
+        reg_val = 0.0
+        if matched_sponsor:
+            reg_val = 1.0
+            if matched_sponsor.source == "govuk_register":
+                routes_str = f" ({', '.join(matched_sponsor.routes)})" if matched_sponsor.routes else ""
+                evidence.append(f"UK Home Office Licensed Sponsor: {matched_sponsor.legal_name}{routes_str}")
+            elif matched_sponsor.source == "dol_lca":
+                lca_count = matched_sponsor.extra.get("lca_count_12m", 0)
+                evidence.append(f"US DOL LCA Filings: {matched_sponsor.legal_name} ({lca_count} certified)")
+            else:
+                evidence.append(f"Verified Sponsor Registry: {matched_sponsor.legal_name}")
+
+        # 2. LLM JD Signal
+        llm_mention_clean = (llm_visa_mention or "").lower().strip()
+        if not llm_mention_clean:
+            # Fallback to deterministic regex on JD if LLM not run
+            if _EXPLICIT_NO_REGEX.search(desc):
+                llm_mention_clean = "no"
+                evidence.append("Explicit refusal in job description")
+            elif _STATED_IN_JD_REGEX.search(desc):
+                llm_mention_clean = "sponsors"
+                evidence.append("Explicit sponsorship/relocation offered in job description")
+            else:
+                llm_mention_clean = "unspecified"
+
+        if llm_mention_clean == "no":
+            llm_val = 0.0
+            if "Explicit refusal" not in str(evidence):
+                evidence.append("Posting disclaims visa sponsorship")
+        elif llm_mention_clean == "sponsors":
+            llm_val = 1.0
+            if llm_visa_quote:
+                evidence.append(f"JD Quote: \"{llm_visa_quote}\"")
+            elif "sponsorship/relocation offered" not in str(evidence):
+                evidence.append("Posting offers visa sponsorship")
+        elif llm_mention_clean == "opt_friendly":
+            llm_val = 0.6
+            evidence.append("OPT / STEM-OPT friendly position")
+        else:
+            llm_val = 0.4  # Unspecified
+
+        # 3. Keyword Signal
+        combined_text = f"{title} {desc}".lower()
+        keyword_signal = any(k in combined_text for k in (
+            "visa sponsorship", "sponsorship available", "relocation assistance",
+            "work authorization", "opt friendly", "stem opt", "skilled worker visa"
+        ))
+        kw_val = 1.0 if keyword_signal else 0.0
+        if keyword_signal and "keyword" not in str(evidence):
+            evidence.append("Visa/relocation keywords matched in listing")
+
+        # 4. Weighted Formula
+        w_reg = weights.get("registry", 0.50) if weights else 0.50
+        w_llm = weights.get("llm", 0.35) if weights else 0.35
+        w_kw = weights.get("keyword", 0.15) if weights else 0.15
+
+        raw_score = (w_reg * reg_val) + (w_llm * llm_val) + (w_kw * kw_val)
+        visa_score = round(min(max(raw_score, 0.0), 1.0), 3)
+
+        # 5. Status Mapping
+        if llm_mention_clean == "no":
+            visa_status = "no"
+        elif llm_mention_clean == "opt_friendly":
+            visa_status = "opt_friendly"
+        elif visa_score >= 0.70 or (reg_val == 1.0 and llm_val == 1.0):
+            visa_status = "sponsors"
+        elif visa_score >= 0.50 or reg_val == 1.0:
+            visa_status = "likely"
+        else:
+            visa_status = "unknown"
+
+        return visa_status, visa_score, evidence
+
 
 # Global singleton
 _GLOBAL_EVALUATOR: Optional[VisaEvaluator] = None
@@ -177,3 +276,18 @@ def evaluate_job_visa(
     db_path: Path = DEFAULT_DB_PATH,
 ) -> Tuple[VisaConfidence, AuthFit, Dict[str, Any]]:
     return get_visa_evaluator(db_path=db_path).evaluate_job(job=job, candidate_auth=candidate_auth)
+
+
+def score_job_visa(
+    job: Dict[str, Any],
+    llm_visa_mention: Optional[str] = None,
+    llm_visa_quote: Optional[str] = None,
+    weights: Optional[Dict[str, float]] = None,
+    db_path: Path = DEFAULT_DB_PATH,
+) -> Tuple[str, float, List[str]]:
+    return get_visa_evaluator(db_path=db_path).score_visa_sponsorship(
+        job=job,
+        llm_visa_mention=llm_visa_mention,
+        llm_visa_quote=llm_visa_quote,
+        weights=weights,
+    )

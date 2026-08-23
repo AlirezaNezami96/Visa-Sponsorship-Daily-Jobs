@@ -66,16 +66,22 @@ jobs:
           pip install -r requirements.txt
           pip install -e .
 
-      - name: Execute Repurposing & Publishing Pipeline
+      - name: Execute Repurposing & Staging / Publishing Pipeline
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_KEY }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_AUTHORIZED_USER_ID: ${{ secrets.TELEGRAM_AUTHORIZED_USER_ID }}
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           LINKEDIN_PERSON_URN: ${{ secrets.LINKEDIN_PERSON_URN }}
           GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
           GOOGLE_DRIVE_ROOT_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_ROOT_FOLDER_ID }}
+          GH_PAT: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           VIDEO_BADGE_PROCESSOR_ENABLED: "true"
           SOURCE_POST_REUSE_ENABLED: "false"
           GITHUB_RUN_ID: ${{ github.run_id }}
@@ -89,3 +95,11 @@ jobs:
             ARGS="$ARGS --post-id ${{ inputs.post_id }}"
           fi
           python republish_post.py $ARGS
+
+      - name: Commit pipeline state changes
+        run: |
+          git config user.name "content-bot"
+          git config user.email "content-bot@users.noreply.github.com"
+          git add -A state/ 2>/dev/null || true
+          git diff --cached --quiet || (git commit -m "chore: update pending repurpose draft [skip ci]" && git push)
+

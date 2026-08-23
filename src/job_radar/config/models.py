@@ -97,6 +97,38 @@ class SearchGroundingConfig:
 
 
 @dataclass
+class VisaWeightsConfig:
+    registry: float = 0.50
+    llm: float = 0.35
+    keyword: float = 0.15
+
+
+@dataclass
+class VisaConfig:
+    enabled: bool = True
+    min_score_to_tag: float = 0.55
+    drop_if_status: List[str] = field(default_factory=list)
+    show_unknown: bool = True
+    weights: VisaWeightsConfig = field(default_factory=VisaWeightsConfig)
+
+
+@dataclass
+class DedupConfig:
+    title_synonyms: Dict[str, str] = field(default_factory=lambda: {
+        "internship": "intern",
+        "machine learning": "ml",
+        "artificial intelligence": "ai",
+        "deep learning": "dl",
+    })
+    company_suffixes: List[str] = field(default_factory=lambda: [
+        "inc", "incorporated", "corp", "corporation", "llc", "ltd", "limited", "gmbh", "co", "technologies", "technology", "labs", "pbc"
+    ])
+    remote_terms: List[str] = field(default_factory=lambda: [
+        "remote", "anywhere", "worldwide", "work from home", "virtual"
+    ])
+
+
+@dataclass
 class RadarConfig:
     tracks: TrackConfig = field(default_factory=TrackConfig)
     geography: GeographyConfig = field(default_factory=GeographyConfig)
@@ -108,3 +140,5 @@ class RadarConfig:
     supabase: SupabaseConfig = field(default_factory=SupabaseConfig)
     resume_matcher: ResumeMatcherConfig = field(default_factory=ResumeMatcherConfig)
     search_grounding: SearchGroundingConfig = field(default_factory=SearchGroundingConfig)
+    visa: VisaConfig = field(default_factory=VisaConfig)
+    dedup: DedupConfig = field(default_factory=DedupConfig)

@@ -105,8 +105,20 @@ def _render_job_card(
     ]
     if salary:
         badges.append(f'<span style="background:#FEF3C7;color:#92400E;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:500;">💰 {salary}</span>')
-    if show_visa_tag and has_visa:
-        badges.append('<span style="background:#FDF2F8;color:#9D174D;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:600;">🛂 Visa Sponsor</span>')
+    # Visa Sponsorship Badge
+    visa_status = j.get("visa_status", "sponsors" if has_visa else "unknown")
+    if show_visa_tag:
+        if visa_status == "sponsors":
+            badges.append('<span style="background:#DCFCE7;color:#15803D;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:700;">🏛️ Visa Sponsor: Confirmed</span>')
+        elif visa_status == "likely":
+            badges.append('<span style="background:#E0E7FF;color:#3730A3;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:600;">✨ Visa Sponsor: Likely</span>')
+        elif visa_status == "opt_friendly":
+            badges.append('<span style="background:#FEF3C7;color:#92400E;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:600;">🎓 Visa: OPT / STEM-OPT Friendly</span>')
+        elif visa_status == "no":
+            badges.append('<span style="background:#FEE2E2;color:#991B1B;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:500;">🚫 Visa: No Sponsorship</span>')
+        elif has_visa or (visa_status == "unknown" and j.get("visa_sponsorship")):
+            badges.append('<span style="background:#FDF2F8;color:#9D174D;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:600;">🛂 Visa Sponsor</span>')
+
     if source:
         badges.append(f'<span style="background:#F1F5F9;color:#475569;padding:3px 8px;border-radius:4px;font-size:11px;">🏷️ {source}</span>')
 

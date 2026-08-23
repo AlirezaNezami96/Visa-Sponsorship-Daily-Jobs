@@ -1,0 +1,73 @@
+# Import & Populate Source Posts to Supabase Workflow
+# Run this manually via GitHub Actions to import/seed 'assets/rammcodes posts.json' into Supabase
+
+name: Import Source Posts to Supabase
+
+on:
+  workflow_dispatch:
+    inputs:
+      file_path:
+        description: "Path to source JSON file"
+        required: false
+        default: "assets/rammcodes posts.json"
+        type: string
+      dry_run:
+        description: "Simulate parsing without writing to Supabase"
+        required: false
+        default: false
+        type: boolean
+      reset_all_to_available:
+        description: "Reset existing unpublished posts back to 'available'"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  import-posts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.6.0
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Import & Seed Posts into Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_KEY }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_KEY }}
+        run: |
+          if [ "${{ inputs.reset_all_to_available }}" = "true" ]; then
+            echo "Resetting existing unpublished posts to 'available'..."
+            python3 -c "
+          from job_radar.storage.supabase_client import SupabaseStorageClient
+          import requests
+          s = SupabaseStorageClient()
+          if s.is_configured:
+              url = f'{s.url}/rest/v1/source_posts?processing_status=neq.published'
+              headers = s._rest_headers()
+              resp = requests.patch(url, headers=headers, json={'processing_status': 'available', 'failure_count': 0, 'last_error': None})
+              print(f'Reset status code: {resp.status_code}')
+          "
+          fi
+
+          ARGS="--file \"${{ inputs.file_path }}\""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+
+          python3 scripts/import_source_posts.py $ARGS
