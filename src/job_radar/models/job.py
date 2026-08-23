@@ -128,6 +128,10 @@ class Job(BaseModel):
     resume_match_score: Optional[int] = None
     resume_match_why: Optional[str] = None
 
+    # B2B Lead Gen & Enrichment (Hiring Contacts & Company Intel)
+    hiring_contacts: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+    company_intel: Optional[Dict[str, Any]] = None
+
     # Composite Scoring & Ranking
     composite_score: Optional[float] = None
 
@@ -230,6 +234,8 @@ class Job(BaseModel):
             "compositeScore": self.composite_score,
             "classificationReason": self.classification_reason or self.relevance_why,
             "isAiRole": self.is_ai_role,
+            "hiringContacts": self.hiring_contacts if self.hiring_contacts is not None else [],
+            "companyIntel": self.company_intel,
         }
 
         if include_description:

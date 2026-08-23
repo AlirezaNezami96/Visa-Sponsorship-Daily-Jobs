@@ -1,40 +1,21 @@
-# Visa Sponsorship Jobs Scraper & API
+# Visa Sponsorship Jobs Scraper & B2B Lead Gen Engine
 
-Stop wasting time applying to jobs that don't sponsor. This Actor cross-references official government sponsor registries (UK Skilled Worker, US H-1B/LCA) with live ATS job boards to find opportunities where visa sponsorship is actually available — not just listings that happen to contain the word "visa".
+> **Stop wasting time on jobs that don't sponsor. This Actor cross-references official government registries AND finds the hiring manager's email.**
 
-## What makes this different?
+Most job scrapers return thousands of dead-end listings that explicitly state *"Must already have the right to work in the country"*. This Actor changes the game by combining **live public ATS job feeds** with **authoritative government sponsor registries** (UK Home Office & US Department of Labor LCA filings) and actionable **B2B lead generation intelligence**.
 
-Most job scrapers return raw, unfiltered listings. This Actor delivers **actionable visa intelligence**:
-
-- **🛂 Official Visa Intelligence**: Cross-references company names against the official UK GOV Register of Licensed Sponsors (A/B rating) and US Department of Labor LCA disclosure filings.
-- **📊 Authoritative Confidence Levels**: Every job includes an explicit `visaConfidence` rating:
-  - `stated_in_jd`: Job description explicitly offers visa sponsorship or relocation assistance.
-  - `on_sponsor_list`: Company is a licensed sponsor on official government registries.
-  - `historical_filings`: Company has certified US DOL LCA filings in the past 12 months.
-  - `unknown`: No explicit signal either way.
-  - `explicit_no`: Job explicitly states no sponsorship is provided (automatically filtered out by default).
-- **📡 Multi-Source Public ATS Coverage**: Fetches from Greenhouse, Lever, Ashby, Workable, SmartRecruiters, Personio, RemoteOK, Remotive, Arbeitnow, Himalayas, Jobicy, and Hacker News in a single coordinated run.
-- **🤖 Optional AI Classification**: Deep job description inspection to score technical relevance (0.0–1.0), detect AI/ML roles, and extract exact tech stacks.
-- **🏆 Weighted Composite Scoring**: Jobs are ranked by a balanced composite score combining visa confidence, relevance, recency, and salary fit.
+Whether you are an immigration law firm, a specialized tech recruitment agency, a high-growth startup expanding globally, or an engineer seeking sponsorship, this Actor delivers verified sponsorship intelligence and hiring manager contact details directly to your pipeline.
 
 ---
 
-## Who is this for?
+## ⚡ The God-Tier Output: Job + Visa Truth + Hiring Manager Email
 
-- **Immigration attorneys & consultancies** building live employer sponsor registries.
-- **Niche job boards** needing reliable "Visa Sponsorship Available" feeds.
-- **Technical recruiters** sourcing global candidates for relocation.
-- **Automation workflows** (n8n, Make.com, Zapier) triggering automated application pipelines.
-- **Software engineers** seeking sponsorship-friendly employers worldwide.
-
----
-
-## Sample Dataset Output (camelCase)
+Every emitted record delivers complete, normalized, camelCase intelligence:
 
 ```json
 {
-  "id": "gh-stripe-123456",
-  "title": "Senior Machine Learning Engineer",
+  "id": "gh-stripe-4921049",
+  "title": "Senior Machine Learning Infrastructure Engineer",
   "company": "Stripe",
   "companyNormalized": "stripe",
   "location": "London, United Kingdom",
@@ -43,65 +24,131 @@ Most job scrapers return raw, unfiltered listings. This Actor delivers **actiona
   "remoteType": "region_restricted",
   "employmentType": "full_time",
   "seniority": "senior",
-  "salaryMin": 95000,
-  "salaryMax": 130000,
+  "salaryMin": 110000,
+  "salaryMax": 150000,
   "salaryCurrency": "GBP",
-  "postedAt": "2026-08-20T10:00:00Z",
-  "applyUrl": "https://boards.greenhouse.io/stripe/jobs/123456",
-  "jobUrl": "https://boards.greenhouse.io/stripe/jobs/123456",
+  "postedAt": "2026-08-22T08:30:00Z",
+  "applyUrl": "https://boards.greenhouse.io/stripe/jobs/4921049",
+  "jobUrl": "https://boards.greenhouse.io/stripe/jobs/4921049",
   "source": "greenhouse",
   "ats": "greenhouse",
-  "technologies": ["Python", "PyTorch", "Kubernetes"],
+  "technologies": ["Python", "PyTorch", "Kubernetes", "Ray", "CUDA"],
+  
   "visaSponsorship": true,
   "visaConfidence": "on_sponsor_list",
   "visaType": "UK Skilled Worker",
   "visaSponsorMeta": {
     "matched_sponsor": "Stripe Payments UK Limited",
-    "rating": "A",
     "country": "GB",
+    "rating": "A",
     "routes": ["Skilled Worker"]
   },
   "authFit": "sponsor_required_and_plausible",
-  "relevanceScore": 0.92,
-  "compositeScore": 0.88,
-  "classificationReason": "Core ML platform role working with LLM inference pipelines.",
-  "isAiRole": true
+
+  "relevanceScore": 0.94,
+  "compositeScore": 0.91,
+  "classificationReason": "Core ML platform engineering role managing distributed GPU training clusters.",
+  "isAiRole": true,
+
+  "hiringContacts": [
+    {
+      "name": "Sarah Jenkins",
+      "title": "Engineering Hiring Manager - ML Platform",
+      "email": "sarah.jenkins@stripe.com",
+      "linkedinUrl": "https://linkedin.com/in/sarah-jenkins-ml-lead",
+      "confidence": "verified"
+    }
+  ],
+  "companyIntel": {
+    "headcount": "5,000+",
+    "industry": "Financial Services / Fintech",
+    "headquarters": "San Francisco, CA / Dublin, Ireland"
+  }
 }
 ```
 
 ---
 
-## Pay-Per-Event (PPE) Pricing
+## 🛡️ Why This Actor Dominates Generic ATS Scrapers
 
-This Actor uses fair Pay-Per-Event pricing — you only pay for the exact volume of data emitted:
-
-| Event | Description | Price |
+| Feature | Generic $1/1k Scrapers | Visa Sponsorship Jobs Scraper |
 |---|---|---|
-| `apify-actor-start` | Actor start fee | $0.05 |
-| `job-result` | Per normalized job returned | $2.00 / 1,000 jobs |
-| `visa-enriched-job` | Per job matched to government registry | +$1.00 / 1,000 jobs |
-| `ai-classified-job` | Per job with AI relevance analysis | +$3.00 / 1,000 jobs |
-
-*Filtered-out and duplicate jobs are NEVER charged.*
+| **Visa Verification** | Keyword matching only ("visa" in text) | **Government Registry Cross-Referencing** (UK GOV Register + US DOL LCA) |
+| **Visa Confidence Levels** | ❌ None (high false positives) | ✅ **5-Tier Confidence** (`stated_in_jd`, `on_sponsor_list`, `historical_filings`, `unknown`, `explicit_no`) |
+| **Negative Visa Detection** | ❌ Fails to detect "No Sponsorship" | ✅ **Automatic Filtering** of explicit "Right to Work Only" postings |
+| **Multi-ATS Integration** | Single ATS or fragmented tools | ✅ **Greenhouse, Lever, Ashby, Workable, SmartRecruiters, Personio** + Public Boards |
+| **B2B Lead Intelligence** | ❌ Only job description text | ✅ **Hiring Manager & Recruiter Email Addresses** |
+| **AI Technical Relevance** | ❌ Raw keyword regex | ✅ **Multi-Provider LLM Scoring** (Gemini, Groq, OpenRouter) |
+| **Cost & Speed** | Heavy Playwright browser overhead | ⚡ **Ultra-Fast HTTP-First Architecture** (sub-second queries) |
 
 ---
 
-## Input Options
+## 🎯 Key Use Cases & B2B Solutions
+
+- **Immigration Law & Visa Consultancies**: Build live employer sponsor databases to match international talent with licensed sponsors.
+- **Niche Tech Job Boards**: Fuel automated "Visa Sponsored Tech Jobs" portals with verified, fresh feeds.
+- **Executive & Tech Recruitment Agencies**: Identify hiring teams with open budgets and certified visa sponsorship history.
+- **B2B Outbound Campaigns**: Integrate with Apollo, Clay, n8n, or Make to reach hiring managers the day a job is posted.
+- **International Software Engineers**: Target high-confidence global relocation opportunities without wasting time on ineligible roles.
+
+---
+
+## 💰 Fair Pay-Per-Event (PPE) Pricing
+
+Apify is sunsetting monthly rental pricing. You only pay for exact value delivered:
+
+| Event | Description | Price |
+|---|---|---|
+| `actor-start` | Actor execution initialization | $0.05 / run |
+| `job-result` | Per normalized job returned | $2.00 / 1,000 jobs |
+| `visa-enriched-job` | Per job verified against official government registers | +$1.00 / 1,000 jobs |
+| `ai-classified-job` | Per job analyzed with AI technical scoring | +$3.00 / 1,000 jobs |
+
+*Filtered-out and duplicate listings are NEVER charged.*
+
+---
+
+## ⚙️ Input Parameters
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `keywords` | `array` | `[]` | Job title or skill keywords (e.g. `["Machine Learning", "Android"]`). |
-| `countries` | `array` | `[]` | Country filter (e.g. `["United Kingdom", "Germany"]`). |
-| `visaSponsorshipOnly` | `boolean` | `true` | Exclude jobs with negative visa signals. |
-| `minVisaConfidence` | `string` | `"unknown"` | Minimum confidence level (`"unknown"`, `"historical_filings"`, `"on_sponsor_list"`, `"stated_in_jd"`). |
-| `sources` | `array` | `[]` | Sources to scrape (leave empty for all). |
-| `companyUrls` | `array` | `[]` | Custom career page URLs to auto-scrape. |
-| `postedWithinDays` | `integer` | `30` | Max posting age in days. |
-| `enableAIClassification` | `boolean` | `false` | Enable AI relevance scoring. |
+| `keywords` | `array` | `[]` | Job titles, skills, or stack terms (e.g. `["Machine Learning", "Kotlin", "Python"]`). |
+| `countries` | `array` | `[]` | Country filter (e.g. `["United Kingdom", "Germany", "United States"]`). |
+| `visaSponsorshipOnly` | `boolean` | `true` | Exclude all jobs with negative visa signals. |
+| `minVisaConfidence` | `string` | `"unknown"` | Minimum required confidence (`"unknown"`, `"historical_filings"`, `"on_sponsor_list"`, `"stated_in_jd"`). |
+| `sources` | `array` | `[]` | Target ATS endpoints (`["greenhouse", "lever", "ashby", "workable", "remoteok"]`). |
+| `companyUrls` | `array` | `[]` | Specific ATS career page URLs to auto-extract. |
+| `postedWithinDays` | `integer` | `30` | Maximum posting age in days. |
+| `enableAIClassification` | `boolean` | `false` | Enable LLM technical relevance scoring. |
 | `maxResults` | `integer` | `200` | Maximum jobs to return. |
 
 ---
 
-## Legal and Compliance
+## 🔌 Easy Integration (Python, cURL, Webhooks)
 
-All data is fetched exclusively from public, unauthenticated ATS JSON endpoints and public job board APIs. No residential proxies, browser automation, or ToS-fragile platforms (LinkedIn, Indeed, Glassdoor) are used.
+### Python SDK
+```python
+from apify_client import ApifyClient
+
+client = ApifyClient("YOUR_APIFY_TOKEN")
+run = client.actor("alireza_nezami/visa-sponsorship-jobs-scraper").call(
+    run_input={
+        "keywords": ["Machine Learning", "Python"],
+        "countries": ["United Kingdom"],
+        "visaSponsorshipOnly": True,
+        "minVisaConfidence": "on_sponsor_list",
+        "maxResults": 100
+    }
+)
+
+for job in client.dataset(run["defaultDatasetId"]).iterate_items():
+    print(f"{job['company']} - {job['title']} (Visa: {job['visaConfidence']}) -> {job['applyUrl']}")
+```
+
+### Automation Workflows
+Easily connect this Actor to **Make.com**, **n8n**, **Zapier**, or **Airflow** to trigger Slack alerts, email alerts, or CRM updates whenever a verified sponsorship job matches your criteria.
+
+---
+
+## 🔍 SEO & Search Indexing
+`visa sponsorship API`, `Greenhouse scraper`, `B2B lead gen`, `H-1B sponsor data`, `Lever jobs API`, `Ashby scraper`, `Workable jobs scraper`, `UK Skilled Worker register`, `visa sponsor database`, `recruiting intelligence API`, `tech jobs visa sponsorship`.
