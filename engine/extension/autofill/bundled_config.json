@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "generatedAt": "2026-08-22T00:00:00Z",
+  "platforms": {
+    "greenhouse": {
+      "name": "Greenhouse",
+      "urlPatterns": ["*://boards.greenhouse.io/*", "*://job-boards.greenhouse.io/*"],
+      "fields": {
+        "first_name": { "selectors": ["#first_name", "input[name='first_name']"] },
+        "last_name": { "selectors": ["#last_name", "input[name='last_name']"] },
+        "email": { "selectors": ["#email", "input[name='email']"] },
+        "phone": { "selectors": ["#phone", "input[name='phone']"] },
+        "city": { "selectors": ["#job_application_location", "input[name*='location']"] },
+        "resume_file": { "selectors": ["#resume_file", "input[name='resume']", "input[type='file']"] }
+      }
+    },
+    "workday": {
+      "name": "Workday",
+      "urlPatterns": ["*://*.myworkdayjobs.com/*", "*://*.myworkday.com/*"],
+      "fields": {
+        "first_name": { "selectors": ["[data-automation-id='legalNameSection_firstName']"] },
+        "last_name": { "selectors": ["[data-automation-id='legalNameSection_lastName']"] },
+        "email": { "selectors": ["[data-automation-id='email']"] },
+        "phone": { "selectors": ["[data-automation-id='phone-number']"] },
+        "city": { "selectors": ["[data-automation-id='addressSection_city']"] },
+        "resume_file": { "selectors": ["[data-automation-id='file-upload-drop-zone'] input[type='file']"] }
+      }
+    },
+    "lever": {
+      "name": "Lever",
+      "urlPatterns": ["*://jobs.lever.co/*"],
+      "fields": {
+        "full_name": { "selectors": ["input[name='name']"] },
+        "email": { "selectors": ["input[name='email']"] },
+        "phone": { "selectors": ["input[name='phone']"] },
+        "current_company": { "selectors": ["input[name='org']"] },
+        "city": { "selectors": ["input[name='location']"] },
+        "resume_file": { "selectors": ["input[name='resume']"] }
+      }
+    },
+    "ashby": {
+      "name": "Ashby",
+      "urlPatterns": ["*://jobs.ashbyhq.com/*"],
+      "fields": {
+        "first_name": { "selectors": ["input[name='firstName']", "[data-testid='field-firstName'] input"] },
+        "last_name": { "selectors": ["input[name='lastName']", "[data-testid='field-lastName'] input"] },
+        "email": { "selectors": ["input[name='email']", "[data-testid='field-email'] input"] },
+        "phone": { "selectors": ["input[name='phone']", "[data-testid='field-phone'] input"] }
+      }
+    }
+  }
+}

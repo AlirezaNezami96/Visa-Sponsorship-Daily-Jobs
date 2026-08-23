@@ -1,49 +1,38 @@
 /**
- * linkedin.js — LinkedIn Easy Apply Modal Adapter (Stops before submit)
+ * linkedin.js — LinkedIn Easy Apply Adapter
  */
 
-import { setNativeValue, humanType } from '../reactSet.js';
-import { selectNativeOrCustom } from '../select.js';
-import { getDeterministicAnswer } from '../answers.js';
-import { classifyFieldType, getFieldDescriptor } from '../fields.js';
+import { BaseAtsAdapter } from './base.js';
 
-export const LinkedInAdapter = {
-  name: 'LinkedIn Easy Apply',
+export class LinkedInAdapter extends BaseAtsAdapter {
+  constructor() {
+    super('linkedin', 'LinkedIn Easy Apply');
+  }
 
-  matches() {
+  matches(url, doc = document) {
+    const host = (url ? new URL(url).hostname : window.location.hostname).toLowerCase();
     return (
-      window.location.hostname.includes('linkedin.com') &&
-      document.querySelector('.jobs-easy-apply-modal, .jobs-easy-apply-content') !== null
+      host.includes('linkedin.com') &&
+      doc.querySelector('.jobs-easy-apply-modal, .jobs-easy-apply-content, [data-easy-apply-modal]') !== null
     );
-  },
+  }
 
-  async fillForm(profile, jobData, onProgress) {
-    const modal = document.querySelector('.jobs-easy-apply-modal') || document;
-    const inputs = Array.from(modal.querySelectorAll('input, select, textarea'));
-    let filled = 0;
-    const skipped = [];
+  getFieldHints() {
+    return {
+      first_name: { selectors: ['input[id*="firstName"]', 'input[name*="firstName"]'] },
+      last_name: { selectors: ['input[id*="lastName"]', 'input[name*="lastName"]'] },
+      email: { selectors: ['input[id*="email"]', 'select[id*="email"]'] },
+      phone: { selectors: ['input[id*="phoneNumber-nationalNumber"]', 'input[id*="phoneNumber"]', 'input[type="tel"]'] },
+      city: { selectors: ['input[id*="city"]', 'input[id*="location"]'] },
+      resume_file: { selectors: ['input[type="file"][id*="resume"]', 'input[type="file"]'] },
+    };
+  }
 
-    for (const input of inputs) {
-      if (input.type === 'hidden' || input.type === 'submit') continue;
+  getFormContainer(doc = document) {
+    return doc.querySelector('.jobs-easy-apply-modal, .jobs-easy-apply-content') || doc.body;
+  }
 
-      const desc = getFieldDescriptor(input);
-      const classification = classifyFieldType(desc);
-      const answer = getDeterministicAnswer(classification, profile);
-
-      if (answer) {
-        if (input.tagName === 'SELECT') {
-          const aliases = classification === 'COUNTRY' ? profile.address.country_aliases : [];
-          await selectNativeOrCustom(input, answer, aliases);
-        } else {
-          await humanType(input, answer);
-        }
-        filled++;
-        if (onProgress) onProgress({ current: filled, total: inputs.length, field: desc.name });
-      } else if (desc.isRequired) {
-        skipped.push(desc.labelText || desc.name);
-      }
-    }
-
-    return { filled, skipped };
-  },
-};
+  getNextPageButton(doc = document) {
+    return doc.querySelector('button[aria-label="Continue to next step"], button[aria-label="Review your application"]');
+  }
+}

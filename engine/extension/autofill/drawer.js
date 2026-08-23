@@ -1,6 +1,9 @@
 /**
- * drawer.js — In-Page Slide-Out Right Panel & Field Progress Tracker with Hiring Contacts
+ * drawer.js — Universal Copilot Drawer with Confidence Badges, Stop Control & Inspector
  */
+
+import { globalFieldInspector } from './inspector.js';
+import { ApplicationSession } from './session.js';
 
 export class CopilotDrawer {
   constructor(atsName, onStartAutofill, getJobData) {
@@ -11,6 +14,8 @@ export class CopilotDrawer {
     this.fieldRows = new Map();
     this.contactsCache = null;
     this.isContactsLoading = false;
+    this.session = new ApplicationSession({});
+    this.isInspecting = false;
   }
 
   mount() {
@@ -24,7 +29,10 @@ export class CopilotDrawer {
           <span>🚀 Job OS Copilot</span>
           <span class="job-os-drawer-badge">${this.atsName}</span>
         </div>
-        <button class="job-os-drawer-close" id="job-os-drawer-close-btn">&times;</button>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <button class="job-os-drawer-tool-btn" id="job-os-btn-inspect" title="Toggle Developer Field Inspector">🔍</button>
+          <button class="job-os-drawer-close" id="job-os-drawer-close-btn">&times;</button>
+        </div>
       </div>
 
       <div class="job-os-drawer-body">
@@ -45,11 +53,16 @@ export class CopilotDrawer {
           </button>
         </div>
 
-        <!-- ── Autofill Application Button ── -->
-        <button class="job-os-btn-autofill" id="job-os-btn-autofill-drawer">
-          <span>⚡</span>
-          <span>Autofill Application</span>
-        </button>
+        <!-- ── Action Controls ── -->
+        <div style="display: flex; gap: 8px;">
+          <button class="job-os-btn-autofill" id="job-os-btn-autofill-drawer" style="flex: 1;">
+            <span>⚡</span>
+            <span>Autofill Application</span>
+          </button>
+          <button class="job-os-btn-stop hidden" id="job-os-btn-stop" style="background: #ef4444; color: #fff; border: none; border-radius: 8px; padding: 0 12px; font-weight: 700; cursor: pointer;">
+            <span>⏹️ Stop</span>
+          </button>
+        </div>
 
         <div id="job-os-status-banner" style="font-size: 12px; color: #94a3b8; padding: 4px 0;">
           Ready to sequentially autofill with tailored resume.
@@ -70,11 +83,30 @@ export class CopilotDrawer {
       this.close();
     });
 
+    document.getElementById('job-os-btn-inspect').addEventListener('click', () => {
+      this.isInspecting = !this.isInspecting;
+      if (this.isInspecting) {
+        globalFieldInspector.enable();
+        document.getElementById('job-os-btn-inspect').style.background = '#3b82f6';
+      } else {
+        globalFieldInspector.disable();
+        document.getElementById('job-os-btn-inspect').style.background = 'transparent';
+      }
+    });
+
+    const stopBtn = document.getElementById('job-os-btn-stop');
+    stopBtn.addEventListener('click', () => {
+      this.session.stop();
+      this.setStatus('⏹️ Stopping autofill...');
+    });
+
     document.getElementById('job-os-btn-autofill-drawer').addEventListener('click', () => {
       if (this.onStartAutofill) {
+        this.session.startFilling();
         document.getElementById('job-os-btn-autofill-drawer').disabled = true;
+        stopBtn.classList.remove('hidden');
         this.setStatus('Autofilling fields sequentially...');
-        this.onStartAutofill();
+        this.onStartAutofill(this.session);
       }
     });
 
@@ -185,7 +217,6 @@ export class CopilotDrawer {
       this.isContactsLoading = false;
       if (btn) btn.classList.remove('loading');
       if (textSpan) textSpan.textContent = 'Find Hiring Contacts (Retry)';
-      console.debug('[HiringContacts] Discovery error:', err);
     }
   }
 
@@ -194,18 +225,42 @@ export class CopilotDrawer {
     if (banner) banner.textContent = msg;
   }
 
-  addFieldRow(fieldKey, labelText, targetElement) {
+  clearFieldRows() {
+    const list = document.getElementById('job-os-field-list');
+    if (list) list.innerHTML = '';
+    this.fieldRows.clear();
+  }
+
+  addFieldRow(fieldKey, labelText, targetElement, confidenceTier = 'SAFE_AUTOFILL') {
     const list = document.getElementById('job-os-field-list');
     if (!list || this.fieldRows.has(fieldKey)) return;
+
+    let badgeColor = '#10b981';
+    let badgeText = 'Safe';
+    if (confidenceTier === 'PROBABLE_AUTOFILL') {
+      badgeColor = '#60a5fa';
+      badgeText = 'Probable';
+    } else if (confidenceTier === 'AI_REVIEW') {
+      badgeColor = '#a855f7';
+      badgeText = 'AI Review';
+    } else if (confidenceTier === 'UNKNOWN') {
+      badgeColor = '#94a3b8';
+      badgeText = 'Unknown';
+    }
 
     const row = document.createElement('div');
     row.className = 'job-os-field-row';
     row.id = `row-${fieldKey}`;
     row.innerHTML = `
-      <span style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">
-        ${labelText || 'Field'}
-      </span>
-      <span class="row-status" style="color: #94a3b8;">Pending</span>
+      <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+        <span style="font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,0.08); color: ${badgeColor};">
+          ${badgeText}
+        </span>
+        <span style="font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px;">
+          ${labelText || 'Field'}
+        </span>
+      </div>
+      <span class="row-status" style="color: #94a3b8; font-size: 11px;">Pending</span>
     `;
 
     row.addEventListener('click', () => {
@@ -255,12 +310,16 @@ export class CopilotDrawer {
     }
   }
 
-  showComplete(filledCount, skippedCount) {
-    this.setStatus(`✅ Finished filling form. Please review every field before submitting.`);
+  showComplete(filledCount, skippedCount, aiCount = 0) {
+    this.setStatus(`✅ Autofill finished. Review ${filledCount} filled fields before submitting manually.`);
     const btn = document.getElementById('job-os-btn-autofill-drawer');
+    const stopBtn = document.getElementById('job-os-btn-stop');
     if (btn) {
       btn.disabled = false;
       btn.textContent = '⚡ Refill Form';
+    }
+    if (stopBtn) {
+      stopBtn.classList.add('hidden');
     }
     this.updateFooter(filledCount, skippedCount);
   }

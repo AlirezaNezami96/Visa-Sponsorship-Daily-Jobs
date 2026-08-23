@@ -1,42 +1,21 @@
 /**
- * runner.js — Master Sequential Form Walk Executor with Upfront Batch AI
+ * runner.js — Universal Master Sequential Form Walk Executor with Session State Machine
  */
 
-import { enumerateFormFields } from './enumerate.js';
-import { fillSingleField } from './fill.js';
+import { discoverFormFields } from './discovery.js';
+import { classifyFormField } from './classifier.js';
+import { resolveCandidateValue } from './resolver.js';
+import { defaultAdapterRegistry } from './adapters/registry.js';
+import { remoteConfigManager } from './remote_config.js';
+import { verifyAndApplyValue, applyCustomComboboxValue, applyCheckboxOrRadio, wait } from './applicator.js';
 import { fillExperienceRepeaters, fillEducationRepeaters } from './repeaters.js';
-import { wait, rand } from './reactSet.js';
+import { attachBase64PdfToFileElement } from './files.js';
+import { fillCountry, fillPhoneCountryThenNumber, fillLocationAutocomplete } from './widgets.js';
+import { localDiagnostics } from './diagnostics.js';
 
-const DETERMINISTIC_TYPES = new Set([
-  'FIRST_NAME',
-  'LAST_NAME',
-  'FULL_NAME',
-  'EMAIL',
-  'PHONE',
-  'PHONE_COUNTRY',
-  'LINK_LINKEDIN',
-  'LINK_GITHUB',
-  'LINK_PORTFOLIO',
-  'COUNTRY',
-  'LOCATION_CITY',
-  'POSTAL_CODE',
-  'ADDRESS_LINE',
-  'LOCATION_PREFERENCE',
-  'WORK_AUTH',
-  'EEO_GENDER',
-  'EEO_ETHNICITY',
-  'EEO_VETERAN',
-  'EEO_DISABILITY',
-  'EEO_LGBTQ',
-  'SALARY_EXPECTATION',
-  'YEARS_EXPERIENCE',
-  'HOW_HEARD',
-  'CONSENT',
-  'FILE_RESUME',
-  'FILE_COVER_LETTER',
-]);
+export async function runAutofillSequence(drawer, jobData = {}, session = null) {
+  const startTime = Date.now();
 
-export async function runAutofillSequence(drawer, jobData = {}) {
   // 1. Fetch applicant profile from background worker
   const profileResp = await chrome.runtime.sendMessage({ action: 'GET_PROFILE' });
   if (!profileResp || !profileResp.success || !profileResp.profile) {
@@ -44,42 +23,52 @@ export async function runAutofillSequence(drawer, jobData = {}) {
     alert('Please ensure Job Acquisition Engine is running on http://127.0.0.1:8000.');
     return;
   }
-
   const profile = profileResp.profile;
 
-  // 2. Enumerate visible form fields in visual order
-  const fields = enumerateFormFields(document);
-  if (fields.length === 0) {
+  // 2. Resolve Active ATS Adapter & Remote Platform Hints
+  const adapter = defaultAdapterRegistry.resolveAdapter(window.location.href, document);
+  const platformHints = await remoteConfigManager.getPlatformHints(adapter.id);
+  const combinedHints = { ...adapter.getFieldHints(), ...platformHints };
+
+  // 3. Discover all form fields across DOM & Shadow DOM
+  const formFields = discoverFormFields(document);
+  if (formFields.length === 0) {
     drawer.setStatus('⚠️ No interactive form fields found on this page.');
     return;
   }
 
-  // Populate drawer rows upfront
-  fields.forEach((f, idx) => {
+  // 4. Classify each FormField using weighted multi-signal scoring
+  for (const field of formFields) {
+    classifyFormField(field, combinedHints);
+  }
+
+  // 5. Populate Drawer UI upfront with confidence tiers
+  drawer.clearFieldRows();
+  formFields.forEach((f, idx) => {
     const key = `field_${idx}`;
     f.key = key;
-    const label = f.desc?.labelText || f.name || f.classification;
-    drawer.addFieldRow(key, label, f.el);
+    const label = f.labelInfo?.raw || f.name || f.classification || 'Field';
+    drawer.addFieldRow(key, label, f.element, f.confidenceTier);
   });
 
-  // 3. Batch AI Answering for custom/unmatched questions before the walk
+  // 6. Batch AI Answering for custom/unmatched questions (strictly firewalled from demographics)
   const batchAnswers = {};
-  const aiFields = fields.filter((f) => !DETERMINISTIC_TYPES.has(f.classification));
+  const aiFields = formFields.filter(
+    (f) => f.confidenceTier === 'AI_REVIEW' && !f.isSensitive && f.fieldType !== 'file'
+  );
 
   if (aiFields.length > 0) {
     drawer.setStatus(`🧠 Answering ${aiFields.length} custom questions with Batch AI…`);
     try {
       const questionsPayload = aiFields.map((f) => {
         let options = [];
-        if (f.el.tagName === 'SELECT') {
-          options = Array.from(f.el.options)
-            .map((o) => (o.text || o.textContent || '').trim())
-            .filter((t) => t && !t.toLowerCase().includes('select') && !t.toLowerCase().includes('choose'));
+        if (f.fieldType === 'select' && f.options) {
+          options = f.options.map((o) => o.text).filter((t) => t && !t.toLowerCase().includes('select'));
         }
         return {
           id: f.key,
-          label: f.desc?.labelText || f.name || 'Question',
-          type: f.type,
+          label: f.labelInfo?.raw || f.name || 'Question',
+          type: f.fieldType,
           options,
         };
       });
@@ -102,61 +91,154 @@ export async function runAutofillSequence(drawer, jobData = {}) {
         });
       }
     } catch (batchErr) {
-      console.warn('Batch AI answering failed, falling back to local defaults:', batchErr);
+      console.warn('Batch AI answering warning:', batchErr);
     }
   }
-
-  const context = {
-    profile,
-    jobData,
-    cachedResume: null,
-    cachedCover: null,
-    batchAnswers,
-  };
 
   drawer.setStatus('Autofilling fields sequentially…');
   let filledCount = 0;
   let skippedCount = 0;
+  let aiFilledCount = 0;
 
-  // 4. Walk one field at a time
-  for (const field of fields) {
-    const targetEl = field.el;
+  // 7. Sequential Field Walk
+  for (const field of formFields) {
+    // Check if user clicked Stop
+    if (session && session.isStopped) {
+      drawer.setStatus('⏹️ Autofill stopped by user.');
+      break;
+    }
 
-    // Scroll into viewport center smoothly
+    const targetEl = field.element;
+
+    // Scroll into view & highlight
     if (targetEl && targetEl.scrollIntoView) {
       targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
       targetEl.classList.add('job-os-highlight-field');
     }
 
     drawer.updateFieldRow(field.key, 'active');
-    await wait(rand(130, 200));
+    await wait(140);
 
-    // Fill field
-    let result = { success: false, skipped: true };
+    let fillSuccess = false;
+    let valueUsed = '';
+    let skipReason = '';
+
     try {
-      result = await fillSingleField(field, context);
+      const classification = field.classification;
+
+      // Case A: Consent checkbox
+      if (classification === 'consent_terms' || field.fieldType === 'checkbox') {
+        applyCheckboxOrRadio(targetEl, true);
+        fillSuccess = true;
+        valueUsed = 'Agreed';
+      }
+      // Case B: Radio Group
+      else if (field.fieldType === 'radio-group') {
+        let answer = resolveCandidateValue(classification, profile, field, jobData);
+        if (!answer && batchAnswers[field.key]) {
+          answer = batchAnswers[field.key].option || batchAnswers[field.key].value;
+          aiFilledCount++;
+        }
+        if (answer && field.options) {
+          for (const opt of field.options) {
+            const optText = (opt.text || opt.value || '').toLowerCase();
+            const ansText = String(answer).toLowerCase();
+            if (optText === ansText || optText.includes(ansText) || (ansText === 'yes' && optText.startsWith('yes')) || (ansText === 'no' && optText.startsWith('no'))) {
+              opt.element.click();
+              opt.element.dispatchEvent(new Event('change', { bubbles: true }));
+              fillSuccess = true;
+              valueUsed = answer;
+              break;
+            }
+          }
+        }
+      }
+      // Case C: Country Widget (Turkey / Türkiye selector)
+      else if (classification === 'country') {
+        fillSuccess = await fillCountry(targetEl, profile);
+        valueUsed = 'Turkey (Türkiye)';
+      }
+      // Case D: Phone Number Widget
+      else if (classification === 'phone' || classification === 'phone_country') {
+        fillSuccess = await fillPhoneCountryThenNumber(targetEl, profile);
+        valueUsed = profile.identity?.phone_national || '5437437966';
+      }
+      // Case E: City Autocomplete
+      else if (classification === 'city') {
+        const res = await fillLocationAutocomplete(targetEl, profile);
+        fillSuccess = res.success;
+        valueUsed = res.valueUsed || 'Istanbul';
+      }
+      // Case F: File Uploads (Resume & Cover Letter)
+      else if (classification === 'resume_file' || (field.fieldType === 'file' && !field.name.includes('cover'))) {
+        const resp = await chrome.runtime.sendMessage({ action: 'TAILOR_RESUME_DIRECT', jobData });
+        if (resp && resp.success && resp.pdfBase64) {
+          const attached = attachBase64PdfToFileElement(targetEl, resp.pdfBase64, resp.filename);
+          if (attached) {
+            fillSuccess = true;
+            valueUsed = `Attached: ${resp.filename}`;
+          }
+        }
+      }
+      // Case G: Custom Combobox
+      else if (field.fieldType === 'combobox') {
+        const val = resolveCandidateValue(classification, profile, field, jobData);
+        if (val) {
+          fillSuccess = await applyCustomComboboxValue(targetEl, val);
+          valueUsed = String(val);
+        }
+      }
+      // Case H: Batch AI Answer
+      else if (batchAnswers[field.key]) {
+        const aiAns = batchAnswers[field.key];
+        const val = aiAns.option || aiAns.value;
+        if (val) {
+          if (field.fieldType === 'select') {
+            fillSuccess = await applyCustomComboboxValue(targetEl, val);
+          } else {
+            fillSuccess = await verifyAndApplyValue(targetEl, String(val));
+          }
+          valueUsed = String(val);
+          aiFilledCount++;
+        }
+      }
+      // Case I: Standard Deterministic Text / Textarea / Select
+      else {
+        const val = resolveCandidateValue(classification, profile, field, jobData);
+        if (val) {
+          if (field.fieldType === 'select') {
+            fillSuccess = await applyCustomComboboxValue(targetEl, val);
+          } else {
+            fillSuccess = await verifyAndApplyValue(targetEl, String(val));
+          }
+          valueUsed = String(val);
+        } else {
+          skipReason = 'No matching profile value';
+        }
+      }
     } catch (err) {
-      console.warn('Field fill error:', err);
-      result = { success: false, skipped: true, reason: err.message };
+      skipReason = err.message;
     }
 
     if (targetEl) {
       targetEl.classList.remove('job-os-highlight-field');
     }
 
-    if (result.success) {
+    if (fillSuccess) {
       filledCount++;
-      drawer.updateFieldRow(field.key, 'success', result.valueUsed);
+      drawer.updateFieldRow(field.key, 'success', valueUsed);
+      if (session) session.recordFill(field, valueUsed);
     } else {
       skippedCount++;
-      drawer.updateFieldRow(field.key, 'skipped', result.reason || 'Skipped');
+      drawer.updateFieldRow(field.key, 'skipped', skipReason || 'Skipped');
+      if (session) session.recordSkip(field, skipReason);
     }
 
     drawer.updateFooter(filledCount, skippedCount);
-    await wait(rand(120, 220));
+    await wait(120);
   }
 
-  // 5. Fill Experience & Education Repeaters if present
+  // 8. Experience & Education Repeaters
   try {
     if (profile.experience && profile.experience.length > 0) {
       await fillExperienceRepeaters(document, profile.experience);
@@ -164,10 +246,19 @@ export async function runAutofillSequence(drawer, jobData = {}) {
     if (profile.education && profile.education.length > 0) {
       await fillEducationRepeaters(document, profile.education);
     }
-  } catch (repErr) {
-    console.debug('Repeater fill completed or skipped:', repErr);
-  }
+  } catch (_) {}
 
-  // 6. Finished walk (Never submits)
-  drawer.showComplete(filledCount, skippedCount);
+  // 9. Record local diagnostics telemetry
+  const durationMs = Date.now() - startTime;
+  localDiagnostics.logRun({
+    atsName: adapter.name,
+    fieldCount: formFields.length,
+    filledCount,
+    aiCount: aiFilledCount,
+    skippedCount,
+    durationMs,
+  });
+
+  // 10. Complete (Never auto-submits)
+  drawer.showComplete(filledCount, skippedCount, aiFilledCount);
 }

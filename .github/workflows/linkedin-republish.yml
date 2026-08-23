@@ -1,0 +1,91 @@
+# LinkedIn Source Post Repurposing & Auto-Publishing Workflow
+# Runs twice daily at:
+#   - 07:30 UTC (11:00 Iran Time, UTC+03:30)
+#   - 15:30 UTC (19:00 Iran Time, UTC+03:30)
+#
+# Pipeline:
+#   1. Connects to Supabase and atomically reserves one eligible source post
+#   2. Downloads and durably archives media to Google Drive
+#   3. Adapts source post using Gemini 3.7 Flash
+#   4. Overlays creator badge for video posts via CreatorBadgeService
+#   5. Publishes post and media directly to LinkedIn via REST API
+#   6. Updates Supabase lifecycle state permanently
+
+name: Repurpose & Publish LinkedIn Post
+
+on:
+  schedule:
+    # 07:30 UTC -> 11:00 Iran Standard Time (UTC+03:30)
+    - cron: "30 7 * * *"
+    # 15:30 UTC -> 19:00 Iran Standard Time (UTC+03:30)
+    - cron: "30 15 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Simulate without publishing to LinkedIn"
+        required: false
+        default: false
+        type: boolean
+      post_id:
+        description: "Specific source post database ID to force-publish"
+        required: false
+        default: ""
+        type: string
+
+concurrency:
+  group: linkedin-republish-pipeline
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  repurpose-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.6.0
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Execute Repurposing & Publishing Pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_KEY }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_PERSON_URN: ${{ secrets.LINKEDIN_PERSON_URN }}
+          GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
+          GOOGLE_DRIVE_ROOT_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_ROOT_FOLDER_ID }}
+          VIDEO_BADGE_PROCESSOR_ENABLED: "true"
+          SOURCE_POST_REUSE_ENABLED: "false"
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          ARGS=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          if [ -n "${{ inputs.post_id }}" ]; then
+            ARGS="$ARGS --post-id ${{ inputs.post_id }}"
+          fi
+          python republish_post.py $ARGS

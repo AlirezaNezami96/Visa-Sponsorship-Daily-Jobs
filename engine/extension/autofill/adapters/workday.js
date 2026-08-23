@@ -1,51 +1,57 @@
 /**
- * workday.js — Workday ATS Multi-Page Wizard Adapter
+ * workday.js — Workday ATS Multi-Page Adapter
  */
 
-import { setNativeValue, wait, humanType } from '../reactSet.js';
-import { selectNativeOrCustom } from '../select.js';
-import { getDeterministicAnswer } from '../answers.js';
-import { classifyFieldType, getFieldDescriptor } from '../fields.js';
+import { BaseAtsAdapter } from './base.js';
 
-export const WorkdayAdapter = {
-  name: 'Workday',
+export class WorkdayAdapter extends BaseAtsAdapter {
+  constructor() {
+    super('workday', 'Workday');
+  }
 
-  matches() {
+  matches(url, doc = document) {
+    const host = (url ? new URL(url).hostname : window.location.hostname).toLowerCase();
     return (
-      window.location.hostname.includes('myworkdayjobs.com') ||
-      window.location.hostname.includes('myworkday.com') ||
-      document.querySelector('[data-automation-id="workdayApplication"]') !== null
+      host.includes('myworkdayjobs.com') ||
+      host.includes('myworkday.com') ||
+      host.includes('myworkdaysite.com') ||
+      doc.querySelector('[data-automation-id="workdayApplication"], [data-automation-id="legalNameSection"]') !== null
     );
-  },
+  }
 
-  async fillForm(profile, jobData, onProgress) {
-    const inputs = Array.from(
-      document.querySelectorAll(
-        'input:not([type="hidden"]), select, textarea, [data-automation-id*="formField"], [role="combobox"]'
-      )
+  getFieldHints() {
+    return {
+      first_name: { selectors: ['[data-automation-id="legalNameSection_firstName"]', 'input[data-automation-id*="firstName"]'] },
+      last_name: { selectors: ['[data-automation-id="legalNameSection_lastName"]', 'input[data-automation-id*="lastName"]'] },
+      email: { selectors: ['[data-automation-id="email"]', 'input[data-automation-id*="email"]'] },
+      phone: { selectors: ['[data-automation-id="phone-number"]', 'input[data-automation-id*="phone"]'] },
+      address_line1: { selectors: ['[data-automation-id="addressSection_addressLine1"]'] },
+      city: { selectors: ['[data-automation-id="addressSection_city"]', '[data-automation-id*="city"]'] },
+      postal_code: { selectors: ['[data-automation-id="addressSection_postalCode"]'] },
+      country: { selectors: ['[data-automation-id="addressSection_countryRegion"]', '[data-automation-id*="country"]'] },
+      linkedin_url: { selectors: ['[data-automation-id*="linkedin"]', 'input[data-automation-id*="LinkedIn"]'] },
+      github_url: { selectors: ['[data-automation-id*="github"]', 'input[data-automation-id*="GitHub"]'] },
+      portfolio_url: { selectors: ['[data-automation-id*="website"]', 'input[data-automation-id*="portfolio"]'] },
+      resume_file: { selectors: ['[data-automation-id="file-upload-drop-zone"] input[type="file"]', 'input[data-automation-id*="resume"]'] },
+    };
+  }
+
+  getFormContainer(doc = document) {
+    return doc.querySelector('[data-automation-id="workdayApplication"]') || doc.body;
+  }
+
+  getNextPageButton(doc = document) {
+    return (
+      doc.querySelector('[data-automation-id="bottom-navigation-next-button"]') ||
+      doc.querySelector('button[data-automation-id*="next"]') ||
+      doc.querySelector('button[data-automation-id*="saveAndContinue"]')
     );
-    let filled = 0;
-    const skipped = [];
+  }
 
-    for (const input of inputs) {
-      const desc = getFieldDescriptor(input);
-      const classification = classifyFieldType(desc);
-      const answer = getDeterministicAnswer(classification, profile);
-
-      if (answer) {
-        if (input.tagName === 'SELECT' || input.getAttribute('role') === 'combobox') {
-          const aliases = classification === 'COUNTRY' ? profile.address.country_aliases : [];
-          await selectNativeOrCustom(input, answer, aliases);
-        } else {
-          await humanType(input, answer);
-        }
-        filled++;
-        if (onProgress) onProgress({ current: filled, total: inputs.length, field: desc.name });
-      } else if (desc.isRequired) {
-        skipped.push(desc.labelText || desc.name);
-      }
-    }
-
-    return { filled, skipped };
-  },
-};
+  getJobContext(doc = document) {
+    return {
+      jobTitle: doc.querySelector('[data-automation-id="jobPostingHeader"]')?.textContent?.trim() || '',
+      company: doc.querySelector('[data-automation-id="companyName"]')?.textContent?.trim() || '',
+    };
+  }
+}

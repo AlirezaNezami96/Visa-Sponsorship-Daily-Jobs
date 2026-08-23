@@ -2,48 +2,44 @@
  * lever.js — Lever ATS Adapter
  */
 
-import { setNativeValue, humanType } from '../reactSet.js';
-import { selectNativeOrCustom } from '../select.js';
-import { getDeterministicAnswer } from '../answers.js';
-import { classifyFieldType, getFieldDescriptor } from '../fields.js';
+import { BaseAtsAdapter } from './base.js';
 
-export const LeverAdapter = {
-  name: 'Lever',
+export class LeverAdapter extends BaseAtsAdapter {
+  constructor() {
+    super('lever', 'Lever');
+  }
 
-  matches() {
+  matches(url, doc = document) {
+    const host = (url ? new URL(url).hostname : window.location.hostname).toLowerCase();
     return (
-      window.location.hostname.includes('lever.co') ||
-      document.querySelector('.application-form, .postings-btn-wrapper') !== null
+      host.includes('lever.co') ||
+      doc.querySelector('.application-form, .posting-header') !== null
     );
-  },
+  }
 
-  async fillForm(profile, jobData, onProgress) {
-    const form = document.querySelector('.application-form, form') || document;
-    const inputs = Array.from(form.querySelectorAll('input, select, textarea'));
-    let filled = 0;
-    const skipped = [];
+  getFieldHints() {
+    return {
+      full_name: { selectors: ['input[name="name"]', '#name'] },
+      email: { selectors: ['input[name="email"]', '#email'] },
+      phone: { selectors: ['input[name="phone"]', '#phone'] },
+      current_company: { selectors: ['input[name="org"]', '#org'] },
+      linkedin_url: { selectors: ['input[name="urls[LinkedIn]"]', 'input[name*="linkedin"]'] },
+      github_url: { selectors: ['input[name="urls[GitHub]"]', 'input[name*="github"]'] },
+      portfolio_url: { selectors: ['input[name="urls[Portfolio]"]', 'input[name*="portfolio"]', 'input[name*="other"]'] },
+      city: { selectors: ['input[name="location"]', '#location'] },
+      resume_file: { selectors: ['input[name="resume"]', 'input[type="file"]'] },
+      cover_letter_text: { selectors: ['textarea[name="comments"]', '#comments'] },
+    };
+  }
 
-    for (const input of inputs) {
-      if (input.type === 'hidden' || input.type === 'submit') continue;
+  getFormContainer(doc = document) {
+    return doc.querySelector('.application-form, form#application-form') || doc.body;
+  }
 
-      const desc = getFieldDescriptor(input);
-      const classification = classifyFieldType(desc);
-      const answer = getDeterministicAnswer(classification, profile);
-
-      if (answer) {
-        if (input.tagName === 'SELECT') {
-          const aliases = classification === 'COUNTRY' ? profile.address.country_aliases : [];
-          await selectNativeOrCustom(input, answer, aliases);
-        } else {
-          await humanType(input, answer);
-        }
-        filled++;
-        if (onProgress) onProgress({ current: filled, total: inputs.length, field: desc.name });
-      } else if (desc.isRequired) {
-        skipped.push(desc.labelText || desc.name);
-      }
-    }
-
-    return { filled, skipped };
-  },
-};
+  getJobContext(doc = document) {
+    return {
+      jobTitle: doc.querySelector('.posting-headline h2')?.textContent?.trim() || '',
+      company: doc.querySelector('.posting-headline .main-header-logo img')?.getAttribute('alt') || '',
+    };
+  }
+}

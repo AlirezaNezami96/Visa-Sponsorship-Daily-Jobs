@@ -1,45 +1,33 @@
 /**
- * generic.js — Universal Fallback Form Adapter
+ * generic.js — Universal Fallback ATS Adapter for Arbitrary Career Sites
  */
 
-import { setNativeValue, humanType } from '../reactSet.js';
-import { selectNativeOrCustom } from '../select.js';
-import { getDeterministicAnswer } from '../answers.js';
-import { classifyFieldType, getFieldDescriptor } from '../fields.js';
+import { BaseAtsAdapter } from './base.js';
 
-export const GenericAdapter = {
-  name: 'Generic ATS',
+export class GenericAdapter extends BaseAtsAdapter {
+  constructor() {
+    super('generic', 'Universal Career Application');
+  }
 
-  matches() {
-    return document.querySelector('form, [role="form"], input') !== null;
-  },
+  matches(url, doc = document) {
+    // Universal fallback always matches if an application form or resume input exists
+    return true;
+  }
 
-  async fillForm(profile, jobData, onProgress) {
-    const inputs = Array.from(document.querySelectorAll('input, select, textarea, [role="combobox"]'));
-    let filled = 0;
-    const skipped = [];
+  getFieldHints() {
+    return {
+      first_name: { selectors: ['input[name*="first_name" i]', 'input[name*="firstName" i]', 'input[autocomplete="given-name"]'] },
+      last_name: { selectors: ['input[name*="last_name" i]', 'input[name*="lastName" i]', 'input[autocomplete="family-name"]'] },
+      full_name: { selectors: ['input[name*="full_name" i]', 'input[name="name" i]', 'input[autocomplete="name"]'] },
+      email: { selectors: ['input[type="email"]', 'input[name*="email" i]'] },
+      phone: { selectors: ['input[type="tel"]', 'input[name*="phone" i]', 'input[name*="mobile" i]'] },
+      city: { selectors: ['input[name*="city" i]', 'input[name*="location" i]'] },
+      postal_code: { selectors: ['input[name*="postal" i]', 'input[name*="zip" i]'] },
+      resume_file: { selectors: ['input[type="file"][name*="resume" i]', 'input[type="file"][name*="cv" i]', 'input[type="file"]'] },
+    };
+  }
 
-    for (const input of inputs) {
-      if (input.type === 'hidden' || input.type === 'submit') continue;
-
-      const desc = getFieldDescriptor(input);
-      const classification = classifyFieldType(desc);
-      const answer = getDeterministicAnswer(classification, profile);
-
-      if (answer) {
-        if (input.tagName === 'SELECT' || input.getAttribute('role') === 'combobox') {
-          const aliases = classification === 'COUNTRY' ? profile.address.country_aliases : [];
-          await selectNativeOrCustom(input, answer, aliases);
-        } else {
-          await humanType(input, answer);
-        }
-        filled++;
-        if (onProgress) onProgress({ current: filled, total: inputs.length, field: desc.name });
-      } else if (desc.isRequired) {
-        skipped.push(desc.labelText || desc.name);
-      }
-    }
-
-    return { filled, skipped };
-  },
-};
+  getFormContainer(doc = document) {
+    return doc.querySelector('form[action*="apply" i], form[action*="job" i], form') || doc.body;
+  }
+}

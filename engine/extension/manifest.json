@@ -34,6 +34,9 @@
         "*://*.smartrecruiters.com/*",
         "*://*.icims.com/*",
         "*://*.taleo.net/*",
+        "*://*.oraclecloud.com/*",
+        "*://*.avature.net/*",
+        "*://*.adp.com/*",
         "*://*.workable.com/*",
         "*://*.personio.de/*",
         "*://*.personio.com/*",
@@ -49,7 +52,8 @@
       "js": ["content.js"],
       "css": ["autofill/overlay.css"],
       "run_at": "document_idle",
-      "all_frames": true
+      "all_frames": true,
+      "match_origin_as_fallback": true
     }
   ],
   "web_accessible_resources": [
@@ -57,6 +61,7 @@
       "resources": [
         "autofill/overlay.css",
         "autofill/*.js",
+        "autofill/*.json",
         "autofill/adapters/*.js"
       ],
       "matches": ["<all_urls>"]

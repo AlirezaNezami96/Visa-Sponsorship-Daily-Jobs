@@ -2,48 +2,42 @@
  * ashby.js — Ashby ATS Adapter
  */
 
-import { setNativeValue, humanType } from '../reactSet.js';
-import { selectNativeOrCustom } from '../select.js';
-import { getDeterministicAnswer } from '../answers.js';
-import { classifyFieldType, getFieldDescriptor } from '../fields.js';
+import { BaseAtsAdapter } from './base.js';
 
-export const AshbyAdapter = {
-  name: 'Ashby',
+export class AshbyAdapter extends BaseAtsAdapter {
+  constructor() {
+    super('ashby', 'Ashby');
+  }
 
-  matches() {
+  matches(url, doc = document) {
+    const host = (url ? new URL(url).hostname : window.location.hostname).toLowerCase();
     return (
-      window.location.hostname.includes('ashbyhq.com') ||
-      document.querySelector('[data-testid="application-form"], .ashby-job-posting-container') !== null
+      host.includes('ashbyhq.com') ||
+      doc.querySelector('[data-testid="application-form"], .ashby-application-form') !== null
     );
-  },
+  }
 
-  async fillForm(profile, jobData, onProgress) {
-    const form = document.querySelector('[data-testid="application-form"], form') || document;
-    const inputs = Array.from(form.querySelectorAll('input, select, textarea, [role="combobox"]'));
-    let filled = 0;
-    const skipped = [];
+  getFieldHints() {
+    return {
+      first_name: { selectors: ['input[name="firstName"]', '[data-testid="field-firstName"] input'] },
+      last_name: { selectors: ['input[name="lastName"]', '[data-testid="field-lastName"] input'] },
+      email: { selectors: ['input[name="email"]', '[data-testid="field-email"] input'] },
+      phone: { selectors: ['input[name="phone"]', '[data-testid="field-phone"] input'] },
+      resume_file: { selectors: ['[data-testid="field-resume"] input[type="file"]', 'input[name="resume"]'] },
+      linkedin_url: { selectors: ['input[name*="linkedin"]', '[data-testid*="linkedin"] input'] },
+      github_url: { selectors: ['input[name*="github"]', '[data-testid*="github"] input'] },
+      portfolio_url: { selectors: ['input[name*="website"]', 'input[name*="portfolio"]'] },
+    };
+  }
 
-    for (const input of inputs) {
-      if (input.type === 'hidden' || input.type === 'submit') continue;
+  getFormContainer(doc = document) {
+    return doc.querySelector('[data-testid="application-form"], form') || doc.body;
+  }
 
-      const desc = getFieldDescriptor(input);
-      const classification = classifyFieldType(desc);
-      const answer = getDeterministicAnswer(classification, profile);
-
-      if (answer) {
-        if (input.tagName === 'SELECT' || input.getAttribute('role') === 'combobox') {
-          const aliases = classification === 'COUNTRY' ? profile.address.country_aliases : [];
-          await selectNativeOrCustom(input, answer, aliases);
-        } else {
-          await humanType(input, answer);
-        }
-        filled++;
-        if (onProgress) onProgress({ current: filled, total: inputs.length, field: desc.name });
-      } else if (desc.isRequired) {
-        skipped.push(desc.labelText || desc.name);
-      }
-    }
-
-    return { filled, skipped };
-  },
-};
+  getJobContext(doc = document) {
+    return {
+      jobTitle: doc.querySelector('h1[data-testid="job-title"], h1')?.textContent?.trim() || '',
+      company: doc.querySelector('.ashby-job-posting-company-name')?.textContent?.trim() || '',
+    };
+  }
+}

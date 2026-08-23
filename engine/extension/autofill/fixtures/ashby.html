@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ashby Test Fixture</title>
+</head>
+<body>
+  <div data-testid="application-form">
+    <div data-testid="field-firstName">
+      <label>First Name</label>
+      <input type="text" name="firstName" autocomplete="given-name" required>
+    </div>
+    <div data-testid="field-lastName">
+      <label>Last Name</label>
+      <input type="text" name="lastName" autocomplete="family-name" required>
+    </div>
+    <div data-testid="field-email">
+      <label>Email Address</label>
+      <input type="email" name="email" autocomplete="email" required>
+    </div>
+    <div data-testid="field-phone">
+      <label>Phone</label>
+      <input type="tel" name="phone" autocomplete="tel">
+    </div>
+    <div data-testid="field-linkedin">
+      <label>LinkedIn URL</label>
+      <input type="text" name="urls.linkedin">
+    </div>
+    <div data-testid="field-resume">
+      <label>Attach Resume (PDF, DOCX)</label>
+      <input type="file" name="resume">
+    </div>
+  </div>
+</body>
+</html>

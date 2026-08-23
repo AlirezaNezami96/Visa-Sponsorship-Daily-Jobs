@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dynamic Conditional Form Test Fixture</title>
+</head>
+<body>
+  <form id="dynamic-form">
+    <div class="form-group">
+      <label>Are you legally authorized to work in the United States?</label>
+      <input type="radio" id="auth_yes" name="authorized" value="yes"> <label for="auth_yes">Yes</label>
+      <input type="radio" id="auth_no" name="authorized" value="no"> <label for="auth_no">No</label>
+    </div>
+
+    <div class="form-group">
+      <label>Will you now or in the future require visa sponsorship?</label>
+      <input type="radio" id="spons_yes" name="sponsorship" value="yes"> <label for="spons_yes">Yes</label>
+      <input type="radio" id="spons_no" name="sponsorship" value="no"> <label for="spons_no">No</label>
+    </div>
+
+    <div id="conditional-visa-container" style="display: none;">
+      <label for="visa_type">Specify your current visa / permit status:</label>
+      <input type="text" id="visa_type" name="visa_type">
+    </div>
+  </form>
+</body>
+</html>

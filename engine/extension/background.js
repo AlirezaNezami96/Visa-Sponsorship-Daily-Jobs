@@ -357,6 +357,17 @@ async function handleMessage(message, sender) {
     return res;
   }
 
+  if (action === 'GET_AUTOFILL_CONFIG') {
+    try {
+      const base = await getApiBase();
+      const resp = await fetch(`${base}/api/v1/autofill/config`);
+      if (resp.ok) {
+        return resp.json();
+      }
+    } catch (_) {}
+    return { success: false };
+  }
+
   if (action === 'CHECK_JOB_MEMORY') {
     const { url } = message;
     const norm = normalizeUrl(url);
