@@ -4138,5 +4138,17 @@
     "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
     "_fallback": true,
     "_cached_at": 1787458079
+  },
+  "0630f473413109ff295571ee03246f35c2687a91fa4406085a0545aa66fa05e1": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      ""
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787478547
   }
 }
