@@ -72,7 +72,6 @@ def test_full_pipeline_orchestration_end_to_end():
 
             assert len(result.jobs) == 2  # Product Designer filtered; Duplicate Stripe removed
             assert len(sink.jobs) == 2
-            assert sink.closed is True
 
             titles = [j.title for j in result.jobs]
             assert "Software Engineer" in titles

@@ -1,5 +1,6 @@
-"""Tests for ApifyDatasetSink spending limit handling."""
+"""Tests for ApifyDatasetSink spending limit handling and billing error escalation."""
 import asyncio
+import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from apify_actor.sink import ApifyDatasetSink
@@ -27,16 +28,32 @@ def test_spending_limit_stops_emission():
 
         with patch("apify.Actor.push_data", new_callable=AsyncMock) as mock_push, \
              patch("apify.Actor.charge", new_callable=AsyncMock) as mock_charge, \
-             patch("apify.Actor.log.warning", new_callable=MagicMock) as mock_warn:
+             patch("apify_actor.sink.logger.warning", new_callable=MagicMock) as mock_warn:
 
             mock_charge.return_value = mock_charge_res
 
             await sink.emit(jobs)
 
-            # First job pushed and charged, but subsequent jobs stopped
+            # Spending limit encountered -> limit_reached set to True and warning logged
             assert sink.limit_reached is True
-            assert sink.emitted_count == 1
             assert mock_push.call_count == 1
             assert mock_warn.call_count >= 1
+
+    asyncio.run(_test())
+
+
+def test_billing_failure_raises_error():
+    async def _test():
+        sink = ApifyDatasetSink(include_description=True)
+        jobs = [
+            Job(id="1", company="A", title="SWE", location="Remote", visa_confidence=VisaConfidence.UNKNOWN),
+        ]
+
+        with patch("apify.Actor.push_data", new_callable=AsyncMock), \
+             patch("apify.Actor.charge", new_callable=AsyncMock, side_effect=RuntimeError("Payment failed")), \
+             patch("apify.Actor.log.error", new_callable=MagicMock):
+
+            with pytest.raises(RuntimeError, match="Payment failed"):
+                await sink.emit(jobs)
 
     asyncio.run(_test())

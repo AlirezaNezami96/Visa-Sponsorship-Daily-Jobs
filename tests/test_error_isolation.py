@@ -52,7 +52,6 @@ def test_all_sources_failing_does_not_crash_pipeline():
 
             assert len(result.jobs) == 0
             assert len(sink.jobs) == 0
-            assert sink.closed is True
             assert len(result.failed_sources) == 1
             assert result.stats["totalEmitted"] == 0
 

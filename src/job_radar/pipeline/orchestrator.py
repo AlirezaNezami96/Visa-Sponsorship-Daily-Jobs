@@ -117,14 +117,25 @@ async def run_pipeline(
     total_visa_passed = len(visa_passed_jobs)
     logger.info("Visa stage complete: %d passed, %d matched to official sponsor registries", total_visa_passed, visa_enriched_count)
 
-    # 5. AI Classification (Optional, post-dedup to conserve API budget)
-    ai_passed_jobs, ai_classified_count = await classify_jobs_stage(visa_passed_jobs, config)
+    # 5. Preliminary Ranking & AI Candidate Slicing (FIX 1: Protect AI cost budget)
+    preliminary_ranked = score_and_rank_jobs(visa_passed_jobs, config)
+    if config.enable_ai_classification and config.max_results:
+        ai_candidate_limit = config.max_results + 50
+        candidates_for_ai = preliminary_ranked[:ai_candidate_limit]
+        logger.info(
+            "AI Pre-Filtering: Sliced candidate pool from %d to top %d jobs for LLM classification",
+            len(preliminary_ranked),
+            len(candidates_for_ai),
+        )
+    else:
+        candidates_for_ai = preliminary_ranked
+
+    # 6. AI Classification (Optional, budget-limited, run ONLY on top candidate pool)
+    ai_passed_jobs, ai_classified_count = await classify_jobs_stage(candidates_for_ai, config)
     total_ai_passed = len(ai_passed_jobs)
 
-    # 6. Composite scoring and ranking
+    # 7. Final Composite scoring, re-ranking, and truncation to maxResults
     ranked_jobs = score_and_rank_jobs(ai_passed_jobs, config)
-
-    # 7. Slicing to maxResults
     final_jobs = ranked_jobs[: config.max_results] if config.max_results else ranked_jobs
     total_emitted = len(final_jobs)
 
@@ -144,10 +155,9 @@ async def run_pipeline(
         "durationSeconds": duration_secs,
     }
 
-    # 8. Emit to sink
+    # 8. Emit to sink (sink.close is owned by the caller/wrapper)
     await sink.emit(final_jobs)
     await sink.emit_stats(stats)
-    await sink.close()
 
     logger.info("🎯 Pipeline finished in %.2fs: %d jobs emitted to sink", duration_secs, total_emitted)
     return PipelineResult(

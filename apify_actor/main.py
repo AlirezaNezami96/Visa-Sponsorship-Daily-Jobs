@@ -13,7 +13,7 @@ logger = logging.getLogger("apify_main")
 
 
 async def main() -> None:
-    """Main Actor execution routine with runtime timeout enforcement."""
+    """Main Actor execution routine with runtime timeout enforcement and guaranteed cleanup."""
     async with Actor:
         # 1. Read input from Apify environment
         actor_input = await Actor.get_input()
@@ -28,7 +28,7 @@ async def main() -> None:
             include_raw_metadata=config.include_raw_metadata,
         )
 
-        # 4. Run the shared job pipeline with maxRuntimeSecs enforcement
+        # 4. Run the shared job pipeline with maxRuntimeSecs enforcement and guaranteed cleanup in finally
         try:
             result = await asyncio.wait_for(
                 run_pipeline(config, sink),
@@ -49,6 +49,10 @@ async def main() -> None:
                 "emittedCount": sink.emitted_count,
             }
             await sink.emit_stats(timeout_stats)
+        except Exception as e:
+            Actor.log.error(f"Pipeline failed: {e}")
+            raise
+        finally:
             await sink.close()
 
 

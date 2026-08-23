@@ -66,8 +66,9 @@ def test_job_to_apify_dict_camel_case():
     assert data["salaryMax"] == 85000
     assert data["salaryCurrency"] == "GBP"
     assert data["applyUrl"] == "https://jobs.lever.co/example/abc"
-    assert data["visaSponsorship"] is True
-    assert data["visaConfidence"] == "stated_in_jd"
+    assert "visaSponsorship" not in data
+    assert data["visaSignal"] == "stated_in_jd"
+    assert data["visaConfidence"] == 1.0
     assert data["visaType"] == "UK Skilled Worker"
     assert data["visaSponsorMeta"]["rating"] == "A"
     assert data["relevanceScore"] == 0.95

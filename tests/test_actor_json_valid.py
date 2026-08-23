@@ -17,3 +17,4 @@ def test_actor_json_validity():
     assert "pricing" not in data, "actor.json should not contain custom pricing block (configured in Console)"
     assert data.get("dockerfile") == "./Dockerfile"
     assert data.get("input") == "./input_schema.json"
+    assert data.get("minMemoryMbytes") == 512

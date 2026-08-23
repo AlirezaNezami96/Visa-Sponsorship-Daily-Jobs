@@ -42,12 +42,15 @@ def test_apify_dataset_sink_emits_and_charges_ppe():
 
             await sink.emit(jobs)
 
-            # 2 jobs pushed to dataset
-            assert mock_push.call_count == 2
-            first_call_arg = mock_push.call_args_list[0][0][0]
-            assert "companyNormalized" in first_call_arg
-            assert first_call_arg["companyNormalized"] == "stripe"
-            assert first_call_arg["visaConfidence"] == "on_sponsor_list"
+            # Batched push: 1 call pushing 2 items
+            assert mock_push.call_count == 1
+            pushed_items = mock_push.call_args_list[0][0][0]
+            assert len(pushed_items) == 2
+            first_item = pushed_items[0]
+            assert "companyNormalized" in first_item
+            assert first_item["companyNormalized"] == "stripe"
+            assert first_item["visaSignal"] == "on_sponsor_list"
+            assert first_item["visaConfidence"] == 0.85
 
             # PPE Charges:
             # Job 1: job-result, ai-classified-job, visa-enriched-job (3 charges)

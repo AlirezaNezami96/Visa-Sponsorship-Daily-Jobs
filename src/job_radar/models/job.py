@@ -17,6 +17,14 @@ from job_radar.models.enums import (
     WorkplaceType,
 )
 
+VISA_CONFIDENCE_FLOAT_MAP: Dict[str, float] = {
+    "stated_in_jd": 1.0,
+    "on_sponsor_list": 0.85,
+    "historical_filings": 0.65,
+    "unknown": 0.25,
+    "explicit_no": 0.0,
+}
+
 
 def _to_camel_case(snake_str: str) -> str:
     """Convert snake_case string to camelCase."""
@@ -202,6 +210,8 @@ class Job(BaseModel):
         elif self.date_posted:
             posted_iso = self.date_posted
 
+        conf_str = self.visa_confidence if isinstance(self.visa_confidence, str) else self.visa_confidence.value
+
         out: Dict[str, Any] = {
             "id": self.id,
             "title": self.title,
@@ -225,8 +235,8 @@ class Job(BaseModel):
             "source": self.source,
             "ats": self.ats or self.source,
             "technologies": self.technologies,
-            "visaSponsorship": self.visaSponsorship_bool,
-            "visaConfidence": self.visa_confidence if isinstance(self.visa_confidence, str) else self.visa_confidence.value,
+            "visaSignal": conf_str,
+            "visaConfidence": round(float(VISA_CONFIDENCE_FLOAT_MAP.get(conf_str, 0.25)), 2),
             "visaType": self.visa_type,
             "visaSponsorMeta": self.visa_sponsor_meta,
             "authFit": self.auth_fit,

@@ -304,12 +304,6 @@
       "default": 300,
       "minimum": 10,
       "maximum": 3600
-    },
-    "useBrowserFallback": {
-      "title": "Use Browser Fallback",
-      "type": "boolean",
-      "description": "Enable headless browser fallback if API requests are blocked (increases execution cost).",
-      "default": false
     }
   }
 }
