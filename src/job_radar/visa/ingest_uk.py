@@ -37,10 +37,10 @@ def find_latest_uk_sponsor_csv_url(page_url: str = GOVUK_SPONSORS_PAGE) -> Optio
             return None
 
         soup = BeautifulSoup(resp.text, "html.parser")
-        # Look for links ending in .csv
+        # Look for links ending in .csv or containing .csv
         for a in soup.find_all("a", href=True):
             href = a["href"]
-            if href.lower().endswith(".csv") and "sponsor" in href.lower():
+            if ".csv" in href.lower():
                 if href.startswith("http"):
                     return href
                 return f"https://www.gov.uk{href}"

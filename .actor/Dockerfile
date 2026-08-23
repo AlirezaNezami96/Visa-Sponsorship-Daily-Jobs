@@ -15,19 +15,24 @@ WORKDIR /app
 COPY .actor/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy shared core and project configuration
+# Copy shared core, scripts, and project configuration
 COPY src/ ./src/
+COPY scripts/ ./scripts/
 COPY pyproject.toml ./
 
 # Copy Apify Actor wrapper and metadata
 COPY apify_actor/ ./apify_actor/
 COPY .actor/ ./.actor/
 
-# Copy curated sponsor and company data
+# Copy curated sponsor and company data (root and data/ paths)
 COPY data/ ./data/
+COPY companies*.json remote_companies*.json ai_companies*.json ./
 
-# Install the package in editable mode
-RUN pip install --no-cache-dir -e .
+# Bake official sponsor database into the image
+RUN python scripts/build_sponsors_db.py
+
+# Install the package in editable mode without pulling heavy optional dev dependencies
+RUN pip install --no-cache-dir -e . --no-deps
 
 # Set environment
 ENV PYTHONPATH=/app

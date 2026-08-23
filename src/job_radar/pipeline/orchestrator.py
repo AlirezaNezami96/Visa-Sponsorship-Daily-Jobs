@@ -130,8 +130,25 @@ async def run_pipeline(
     else:
         candidates_for_ai = preliminary_ranked
 
-    # 6. AI Classification (Optional, budget-limited, run ONLY on top candidate pool)
-    ai_passed_jobs, ai_classified_count = await classify_jobs_stage(candidates_for_ai, config)
+    # 6. Check budget and spending limits before burning LLM tokens (FIX 4: Prevent LLM Money Leak)
+    skip_ai = False
+    if getattr(sink, "limit_reached", False):
+        logger.warning("User spending limit reached before AI stage. Skipping AI classification.")
+        skip_ai = True
+
+    try:
+        from apify import Actor
+        cm = getattr(Actor, "charging_manager", None)
+        if cm and getattr(cm, "is_limit_reached", False):
+            logger.warning("Apify ChargingManager reports charge limit reached. Skipping AI classification.")
+            skip_ai = True
+    except Exception:
+        pass
+
+    if config.enable_ai_classification and not skip_ai:
+        ai_passed_jobs, ai_classified_count = await classify_jobs_stage(candidates_for_ai, config)
+    else:
+        ai_passed_jobs, ai_classified_count = candidates_for_ai, 0
     total_ai_passed = len(ai_passed_jobs)
 
     # 7. Final Composite scoring, re-ranking, and truncation to maxResults

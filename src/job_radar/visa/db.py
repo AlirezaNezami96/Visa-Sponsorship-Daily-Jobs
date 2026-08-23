@@ -87,9 +87,16 @@ def bulk_upsert_sponsors(records: List[SponsorRecord], db_path: Path = DEFAULT_D
     return len(records)
 
 
-def load_all_sponsors(country: Optional[str] = None, db_path: Path = DEFAULT_DB_PATH) -> Dict[str, SponsorRecord]:
+def load_all_sponsors(
+    country: Optional[str] = None,
+    db_path: Path = DEFAULT_DB_PATH,
+    allow_empty: bool = False,
+) -> Dict[str, SponsorRecord]:
     """Load sponsor records from SQLite into a fast normalized-lookup dictionary."""
     if not db_path.exists():
+        if not allow_empty:
+            logger.critical("Sponsor database missing at path: %s. Run scripts/build_sponsors_db.py to generate it.", db_path)
+            raise RuntimeError(f"Sponsor database missing at path: {db_path}. Run scripts/build_sponsors_db.py to generate it.")
         return {}
 
     init_sponsor_db(db_path)
@@ -113,6 +120,10 @@ def load_all_sponsors(country: Optional[str] = None, db_path: Path = DEFAULT_DB_
                 extra=json.loads(row["extra_json"]),
             )
             sponsors[record.normalized_name] = record
+
+    if not sponsors and not allow_empty:
+        logger.critical("Sponsor database at %s is empty. Official registries are required for accurate visa matching.", db_path)
+        raise RuntimeError(f"Sponsor database at {db_path} is empty. Run scripts/build_sponsors_db.py to populate it.")
 
     return sponsors
 

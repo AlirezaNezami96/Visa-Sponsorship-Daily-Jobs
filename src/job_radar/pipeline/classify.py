@@ -1,6 +1,7 @@
-"""AI classification pipeline stage with per-run budget management."""
+"""AI classification pipeline stage with async execution, bounded concurrency, and budget protection."""
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from typing import Any, Dict, List, Optional, Tuple
@@ -47,11 +48,8 @@ Job Description:
     return f"{system_instruction}\n\n---\n\n{user_content}"
 
 
-async def classify_job(job: Job, config: JobSearchConfig) -> Optional[Dict[str, Any]]:
-    """Perform AI classification on a single job using the unified LLM router."""
-    prompt = build_prompt(job, config.classification_prompt)
-    cache_key = f"{job.fingerprint}:{config.classifier_version}"
-
+def _sync_classify(prompt: str, cache_key: str) -> Optional[Dict[str, Any]]:
+    """Synchronous LLM router completion call to be run in worker thread."""
     try:
         res = complete(
             prompt=prompt,
@@ -60,7 +58,7 @@ async def classify_job(job: Job, config: JobSearchConfig) -> Optional[Dict[str, 
             cache_key=cache_key,
             temperature=0.1,
         )
-        if not res.text:
+        if not res or not res.text:
             return None
 
         cleaned = res.text.strip()
@@ -69,11 +67,27 @@ async def classify_job(job: Job, config: JobSearchConfig) -> Optional[Dict[str, 
         elif cleaned.startswith("```"):
             cleaned = cleaned.split("```", 1)[1].rsplit("```", 1)[0].strip()
 
-        data = json.loads(cleaned)
-        return data
+        return json.loads(cleaned)
     except Exception as e:
-        logger.debug("AI classification error for %s: %s", job.title, e)
+        logger.debug("AI LLM router completion failed: %s", e)
         return None
+
+
+async def classify_job(
+    job: Job,
+    config: JobSearchConfig,
+    semaphore: asyncio.Semaphore,
+) -> Optional[Dict[str, Any]]:
+    """Perform non-blocking AI classification on a single job using asyncio.to_thread."""
+    prompt = build_prompt(job, config.classification_prompt)
+    cache_key = f"{job.fingerprint}:{config.classifier_version}"
+
+    async with semaphore:
+        try:
+            return await asyncio.to_thread(_sync_classify, prompt, cache_key)
+        except Exception as e:
+            logger.debug("AI classification error for %s: %s", job.title, e)
+            return None
 
 
 async def classify_jobs_stage(
@@ -81,21 +95,22 @@ async def classify_jobs_stage(
     config: JobSearchConfig,
 ) -> Tuple[List[Job], int]:
     """
-    Executes optional AI classification across jobs within per-run budget.
+    Executes non-blocking AI classification across candidate jobs with bounded concurrency (3).
     Returns (qualified_jobs, classified_count).
     """
-    if not config.enable_ai_classification:
+    if not config.enable_ai_classification or not jobs:
         return jobs, 0
 
-    classified_count = 0
     max_calls = config.max_ai_calls if config.max_ai_calls is not None else 200
     min_score = config.minimum_relevance_score or 0.0
+    semaphore = asyncio.Semaphore(3)
 
+    classified_count = 0
     passed_jobs: List[Job] = []
 
     for job in jobs:
         if classified_count < max_calls:
-            clf = await classify_job(job, config)
+            clf = await classify_job(job, config, semaphore)
             if clf:
                 classified_count += 1
                 score_raw = clf.get("relevance_score")
