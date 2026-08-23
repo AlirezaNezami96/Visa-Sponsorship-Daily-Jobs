@@ -4114,5 +4114,29 @@
     "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
     "_fallback": true,
     "_cached_at": 1787434969
+  },
+  "22c78abb905eb2489cae4438de329d4c0c128ad35fc33f57666cb94bd7cc0b4b": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      "Berlin"
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787458079
+  },
+  "96759668ee14baae25ccc1dcac4aee0fa5d4ea4fcc6a929fde5e549dfc6353a5": {
+    "is_ai_ml_role": true,
+    "track": "new_grad_engineer",
+    "remote_scope": "onsite",
+    "allowed_regions": [
+      ""
+    ],
+    "relevance_score": 40,
+    "why": "Engineering role matching AI/ML patterns (rule-based evaluation).",
+    "_fallback": true,
+    "_cached_at": 1787458079
   }
 }
