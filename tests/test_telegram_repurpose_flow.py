@@ -84,7 +84,7 @@ def test_orchestrator_stages_pending_approval(mock_supabase, tmp_path):
 
     with patch.dict(os.environ, {"TELEGRAM_BOT_TOKEN": "bot_token_123", "TELEGRAM_CHAT_ID": "chat_456"}), \
          patch.object(orchestrator.media_mgr, "prepare_post_media", return_value=(True, [test_img], None)), \
-         patch.object(orchestrator.rewriter, "adapt_post", return_value=(True, "Rewritten post", None)), \
+         patch.object(orchestrator.rewriter, "adapt_post", return_value=(True, "Rewritten post", "What are your thoughts? 👇", None)), \
          patch.object(orchestrator, "send_telegram_draft", return_value=(True, 5555)), \
          patch("job_radar.repurpose.orchestrator.Path.mkdir"), \
          patch("job_radar.filters.dedupe.atomic_save_json") as mock_save_json:
@@ -147,6 +147,48 @@ def test_check_and_publish_repurpose_approve(tmp_path):
         assert mock_send_tg.called
 
 
+def test_check_and_publish_repurpose_reject(tmp_path):
+    pending_file = tmp_path / "pending_linkedin_post.json"
+    pending_state = {
+        "is_repurpose": True,
+        "database_id": 42,
+        "source_post_id": "post_42",
+        "text": "Rejected repurposed post text",
+        "first_comment_cta": "What are your thoughts? 👇",
+        "media_type": "none",
+        "media_files": [],
+        "message_id": 8888,
+        "chat_id": "123456",
+        "execution_id": "worker-1",
+    }
+    pending_file.write_text(json.dumps(pending_state), encoding="utf-8")
+
+    env_vars = {
+        "TELEGRAM_BOT_TOKEN": "bot123",
+        "TELEGRAM_CHAT_ID": "123456",
+        "TELEGRAM_AUTHORIZED_USER_ID": "999",
+        "LINKEDIN_ACCESS_TOKEN": "token_li",
+        "CLIENT_PAYLOAD": json.dumps({"action": "reject", "message_id": 8888, "user_id": 999}),
+    }
+
+    with patch.dict(os.environ, env_vars), \
+         patch("job_radar.social.publisher.PENDING_FILE", str(pending_file)), \
+         patch("job_radar.storage.supabase_client.SupabaseStorageClient.update_post_status") as mock_update_status, \
+         patch("job_radar.social.publisher.edit_telegram_message") as mock_edit_tg, \
+         patch("job_radar.social.publisher.send_telegram_message") as mock_send_tg:
+
+        check_and_publish_post()
+
+        mock_update_status.assert_called_with(
+            post_id=42,
+            status=ProcessingStatus.REJECTED.value,
+            execution_id="worker-1",
+            skipped_reason="Rejected by user via Telegram",
+        )
+        assert mock_edit_tg.called
+        assert mock_send_tg.called
+
+
 def test_check_and_publish_repurpose_reject_regen(tmp_path):
     pending_file = tmp_path / "pending_linkedin_post.json"
     pending_state = {
@@ -154,6 +196,7 @@ def test_check_and_publish_repurpose_reject_regen(tmp_path):
         "database_id": 42,
         "source_post_id": "post_42",
         "text": "Rejected repurposed post text",
+        "first_comment_cta": "What are your thoughts? 👇",
         "media_type": "none",
         "media_files": [],
         "message_id": 8888,
@@ -181,9 +224,11 @@ def test_check_and_publish_repurpose_reject_regen(tmp_path):
 
         mock_update_status.assert_called_with(
             post_id=42,
-            status=ProcessingStatus.SKIPPED.value,
-            execution_id="worker-1",
-            skipped_reason="Rejected via Telegram (requested regeneration)",
+            status=ProcessingStatus.AVAILABLE.value,
+            execution_id=None,
+            reserved_by=None,
+            reserved_at=None,
+            skipped_reason=None,
         )
         assert mock_edit_tg.called
         assert mock_send_tg.called

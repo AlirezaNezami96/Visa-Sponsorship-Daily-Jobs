@@ -94,14 +94,13 @@ AS $$
 DECLARE
     v_post_id BIGINT;
 BEGIN
-    -- Select one available post with concurrency-safe locking
+    -- Select one random available post with concurrency-safe locking
     SELECT id INTO v_post_id
     FROM source_posts
     WHERE processing_status = 'available'
       AND failure_count < p_max_failures
     ORDER BY 
-      media_archived DESC, -- Prioritize archived media
-      id ASC
+      RANDOM()
     FOR UPDATE SKIP LOCKED
     LIMIT 1;
 

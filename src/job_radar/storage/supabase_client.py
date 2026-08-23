@@ -342,18 +342,20 @@ class SupabaseStorageClient:
         except Exception as exc:
             logger.debug("REST RPC call failed: %s", exc)
 
-        # 3. Fallback: Conditional update on first available row
+        # 3. Fallback: Conditional update on randomly picked available row
         try:
+            import random
             fetch_url = (
                 f"{self.url}/rest/v1/source_posts?"
                 f"processing_status=eq.available&failure_count=lt.{max_failures}&"
-                f"order=media_archived.desc,id.asc&limit=1"
+                f"limit=50"
             )
             fetch_resp = requests.get(fetch_url, headers=self._rest_headers(), timeout=15)
             if fetch_resp.status_code == 200:
                 candidates = fetch_resp.json()
                 if candidates and isinstance(candidates, list):
-                    cand_id = candidates[0]["id"]
+                    chosen = random.choice(candidates)
+                    cand_id = chosen["id"]
                     # Attempt atomic conditional update
                     patch_url = f"{self.url}/rest/v1/source_posts?id=eq.{cand_id}&processing_status=eq.available"
                     patch_resp = requests.patch(
@@ -370,6 +372,7 @@ class SupabaseStorageClient:
                         data = patch_resp.json()
                         if data and isinstance(data, list):
                             return data[0]
+                        return chosen
         except Exception as exc:
             logger.error("Fallback reservation query failed: %s", exc)
 

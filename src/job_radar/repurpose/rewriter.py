@@ -12,27 +12,27 @@ from job_radar.repurpose.models import SourcePostRecord
 
 logger = logging.getLogger(__name__)
 
-REPURPOSE_SYSTEM_INSTRUCTION = """# SYSTEM ROLE: Senior Software Engineer & AI Creator (Alireza Nezami)
+REPURPOSE_SYSTEM_INSTRUCTION = """# SYSTEM ROLE: AI Engineer & Tech Creator (Alireza Nezami)
 
-You are adapting a curated developer/AI LinkedIn post into an original, high-value post for your own profile.
+You are lightly polishing and adapting a technical LinkedIn post for your own profile.
 
 # CORE RULES:
-1. **Preserve the Core Idea & Value**: Keep the technical insight, utility, tool recommendations, and practical steps from the source.
-2. **Original & Natural Phrasing**: Completely rewrite the text in your own authentic, concise voice. Do NOT copy distinctive sentences verbatim.
-3. **Strip All Original Author Branding**:
-   - Never mention the original creator's name, handle, or identity.
-   - Remove self-promotional calls-to-action like "Follow me for more", "Follow [Name]", "Repost to support", "Link in bio".
-4. **Attribution & Truthfulness**:
-   - If the source discusses a specific open-source repo, library, paper, or tool, preserve factual attribution to that tool/project.
-   - Do NOT claim you created third-party tools or libraries.
-   - Do NOT invent fake personal metrics, exaggerated benchmarks, or fictional backstories.
-5. **Formatting**:
-   - High readability: Short 1-2 sentence paragraphs.
-   - Use bullet points (`-` or `•`) for lists and step-by-step breakdowns.
-   - Keep tone helpful, punchy, and professional.
-6. **Output Format**:
-   - Output ONLY the final LinkedIn post text.
-   - Do NOT wrap in quotes. Do NOT add meta commentary like "Here is the rewritten post:".
+1. **Light Word-Level Polishing (DO NOT SUMMARIZE, DO NOT MAKE IT LONG)**:
+   - Preserve the exact flow, structure, code snippets, tool recommendations, bullet points, and technical steps of the original post.
+   - Do NOT summarize or condense it into a brief recap.
+   - Do NOT bloat, inflate, or write a long essay. Keep the total length and substance nearly identical to the source.
+   - Subtly tweak/rephrase certain words, adjectives, or sentence transitions so it reads naturally and cleanly in your personal voice.
+2. **NO Credit / Attribution Headers**:
+   - Do NOT add any credit section, author attribution, or source link at the top or bottom of the post. Output ONLY the post body text.
+   - Strip any original creator branding, handles, or self-promotional CTAs (e.g., "Follow me", "Repost to support", "Link in bio").
+3. **First Comment Call to Action (CTA)**:
+   - Generate a single, very short (1-2 sentences maximum) engaging discussion question/CTA specifically meant to be posted as the FIRST COMMENT under the post (e.g., "Have you used this tool in production yet? What's your experience? 👇").
+4. **JSON Output Format**:
+   Return a valid JSON object with exactly two keys:
+   {
+     "adapted_post": "<the full adapted post text>",
+     "first_comment_cta": "<short 1-2 sentence question/prompt for the comments>"
+   }
 """
 
 
@@ -58,9 +58,47 @@ class ContentRewriter:
 {post.content}
 
 ---
-Please rewrite and adapt the post above into an original, engaging LinkedIn post following the system instructions.
-Output ONLY the final post text:"""
+Please lightly adapt the post above (changing selected words/phrasing without summarizing or making it long) and generate a very short first-comment CTA following the system instructions.
+Return ONLY the JSON object:"""
         return prompt
+
+    def parse_gemini_response(self, raw_text: str, source_text: str) -> Tuple[str, str]:
+        """Parses structured JSON response or extracts text and fallback CTA."""
+        import json
+        text = raw_text.strip()
+
+        # Remove markdown code fences if wrapped in ```json ... ```
+        if text.startswith("```"):
+            lines = text.splitlines()
+            if len(lines) >= 3:
+                # remove first line (```json) and last line (```)
+                text = "\n".join(lines[1:-1]).strip()
+
+        try:
+            parsed = json.loads(text)
+            if isinstance(parsed, dict):
+                adapted = parsed.get("adapted_post") or parsed.get("post") or ""
+                cta = parsed.get("first_comment_cta") or parsed.get("comment_cta") or ""
+                if adapted:
+                    return adapted.strip(), (cta.strip() if cta else "What's your take on this? Let me know your thoughts below! 👇")
+        except Exception:
+            pass
+
+        # If JSON parsing fails, use regex or fallback
+        json_match = re.search(r"\{.*\}", text, re.DOTALL)
+        if json_match:
+            try:
+                parsed = json.loads(json_match.group(0))
+                if isinstance(parsed, dict):
+                    adapted = parsed.get("adapted_post") or parsed.get("post") or ""
+                    cta = parsed.get("first_comment_cta") or parsed.get("comment_cta") or ""
+                    if adapted:
+                        return adapted.strip(), (cta.strip() if cta else "What's your take on this? Let me know your thoughts below! 👇")
+            except Exception:
+                pass
+
+        # Fallback to direct raw text
+        return text, "What's your take on this? Let me know your thoughts in the comments! 👇"
 
     def sanitize_output(
         self,
@@ -120,10 +158,9 @@ Output ONLY the final post text:"""
         author_username: Optional[str] = None,
     ) -> Tuple[bool, Optional[str]]:
         """
-        Deterministic post quality and anti-copying verification:
+        Deterministic post quality verification:
           - Non-empty
           - Dynamic length limit based on source brevity (15 to 3000 chars)
-          - Not identical or nearly identical to source (< 90% sequence similarity)
           - Does not contain original author name/handle
         """
         if not adapted_text or not adapted_text.strip():
@@ -138,16 +175,6 @@ Output ONLY the final post text:"""
 
         if len(clean_text) > 3000:
             return False, f"Generated text exceeds LinkedIn character limit ({len(clean_text)}/3000 chars)."
-
-        # Check sequence similarity against source
-        seq_ratio = self.dedup.sequence_similarity(clean_text, source_text)
-        if seq_ratio > 0.90:
-            return False, f"Adaptation is too close to source (similarity: {seq_ratio:.2f})."
-
-        # Check token Jaccard similarity
-        jaccard = self.dedup.token_jaccard_similarity(clean_text, source_text)
-        if jaccard > 0.88:
-            return False, f"Adaptation shares too many exact tokens with source (Jaccard: {jaccard:.2f})."
 
         # Check author name / username leakage
         if author_name and len(author_name) > 3:
@@ -166,16 +193,16 @@ Output ONLY the final post text:"""
         self,
         post: SourcePostRecord,
         max_retries: int = 2,
-    ) -> Tuple[bool, str, Optional[str]]:
+    ) -> Tuple[bool, str, str, Optional[str]]:
         """
         Adapts source post with Gemini and validates result.
-        Returns: (success, adapted_text, error_message)
+        Returns: (success, adapted_text, first_comment_cta, error_message)
         """
         prompt = self.create_prompt(post)
 
         for attempt in range(max_retries + 1):
             logger.info("Calling Gemini for post adaptation (Attempt %d/%d)...", attempt + 1, max_retries + 1)
-            temp = 0.4 if attempt == 0 else 0.7
+            temp = 0.3 if attempt == 0 else 0.5
 
             result = complete(
                 prompt=prompt,
@@ -184,8 +211,10 @@ Output ONLY the final post text:"""
             )
 
             raw_text = (result.text or "").strip()
+            adapted_raw, comment_cta = self.parse_gemini_response(raw_text, post.content)
+
             sanitized = self.sanitize_output(
-                raw_text,
+                adapted_raw,
                 author_name=post.author_name,
                 author_username=post.author_username,
             )
@@ -198,9 +227,14 @@ Output ONLY the final post text:"""
             )
 
             if valid:
-                logger.info("Gemini adaptation completed and validated successfully (Length: %d chars).", len(sanitized))
-                return True, sanitized, None
+                logger.info(
+                    "Gemini adaptation completed successfully (Post: %d chars, CTA: %d chars).",
+                    len(sanitized),
+                    len(comment_cta),
+                )
+                return True, sanitized, comment_cta, None
             else:
                 logger.warning("Adaptation validation failed on attempt %d: %s", attempt + 1, err)
 
-        return False, "", err or "Failed to generate valid adapted content after retries."
+        return False, "", "", err or "Failed to generate valid adapted content after retries."
+

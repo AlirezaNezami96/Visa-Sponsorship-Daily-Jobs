@@ -96,21 +96,48 @@ class LinkedInRepurposePublisher:
 
         return None
 
+    def post_comment(self, post_urn: str, comment_text: str) -> bool:
+        """Posts a first comment CTA under the newly published post."""
+        if not self.is_configured or not post_urn or not comment_text:
+            return False
+
+        import urllib.parse
+        encoded_urn = urllib.parse.quote(post_urn, safe="")
+        comment_url = f"https://api.linkedin.com/rest/socialActions/{encoded_urn}/comments"
+        body = {
+            "actor": self.person_urn,
+            "message": {"text": comment_text.strip()},
+        }
+
+        try:
+            r = requests.post(comment_url, headers=self._get_headers(), json=body, timeout=15)
+            if 200 <= r.status_code < 300:
+                logger.info("Successfully posted first comment CTA to LinkedIn post %s", post_urn)
+                return True
+            else:
+                logger.warning("Posting first comment CTA returned status %d: %s", r.status_code, r.text)
+        except Exception as e:
+            logger.warning("Could not post first comment to LinkedIn: %s", e)
+        return False
+
     def publish_post(
         self,
         text: str,
         media_files: Optional[List[Path]] = None,
         media_type: str = "none",
+        first_comment: Optional[str] = None,
         dry_run: bool = False,
     ) -> Tuple[bool, int, str, str, str]:
         """
-        Publishes text commentary and attached media to LinkedIn.
+        Publishes text commentary, attached media, and optional first-comment CTA to LinkedIn.
         Returns: (success, status_code, post_urn, response_text, post_url)
         """
         if dry_run:
             logger.info("[DRY RUN] LinkedIn publish simulated successfully.")
             sim_urn = "urn:li:share:simulated_dry_run_post_12345"
             sim_url = f"https://www.linkedin.com/feed/update/{sim_urn}/"
+            if first_comment:
+                logger.info("[DRY RUN] First comment CTA simulated: %s", first_comment)
             return True, 201, sim_urn, "Dry run simulated", sim_url
 
         if not self.is_configured:
@@ -178,6 +205,11 @@ class LinkedInRepurposePublisher:
                 post_urn = resp.headers.get("x-restli-id") or resp.headers.get("X-RestLi-Id") or ""
                 post_url = f"https://www.linkedin.com/feed/update/{post_urn}/" if post_urn else ""
                 logger.info("✅ Published successfully to LinkedIn! (URN: %s)", post_urn)
+
+                # Post first-comment CTA if present
+                if first_comment and first_comment.strip() and post_urn:
+                    self.post_comment(post_urn, first_comment)
+
                 return True, status_code, post_urn, res_text, post_url
             else:
                 logger.error("LinkedIn publish failed with status %d: %s", status_code, res_text)

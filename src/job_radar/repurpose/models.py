@@ -15,6 +15,7 @@ class ProcessingStatus(str, Enum):
     PUBLISHED = "published"
     FAILED = "failed"
     SKIPPED = "skipped"
+    REJECTED = "rejected"
 
 
 class MediaType(str, Enum):

@@ -230,14 +230,14 @@ def test_rewriter_sanitize_and_branding_stripping():
     assert "OpenTelemetry" in sanitized
 
 
-def test_rewriter_validation_too_close_to_source():
+def test_rewriter_validation_author_leakage():
     rewriter = ContentRewriter()
     source = "Git worktrees allow you to keep multiple branches active simultaneously."
-    verbatim_copy = "Git worktrees allow you to keep multiple branches active simultaneously."
+    leaked_author = "Git worktrees by Ram Maheshwari allow you to keep multiple branches active simultaneously."
 
-    valid, err = rewriter.validate_adaptation(verbatim_copy, source)
+    valid, err = rewriter.validate_adaptation(leaked_author, source, author_name="Ram Maheshwari")
     assert valid is False
-    assert "too close to source" in err.lower() or "shares too many exact tokens" in err.lower()
+    assert "author name" in err.lower()
 
 
 def test_rewriter_validation_success():

@@ -118,7 +118,7 @@ class RepurposeOrchestrator:
 
             # ── 4. Gemini Content Rewriting ──
             logger.info("Running Gemini 3.7 Flash adaptation...")
-            rewrite_ok, adapted_text, rewrite_err = self.rewriter.adapt_post(post)
+            rewrite_ok, adapted_text, first_comment_cta, rewrite_err = self.rewriter.adapt_post(post)
             if not rewrite_ok or not adapted_text:
                 logger.error("Content rewriting failed: %s", rewrite_err)
                 if post.id and not dry_run:
@@ -148,6 +148,7 @@ class RepurposeOrchestrator:
                 tg_ok, msg_id = self.send_telegram_draft(
                     post=post,
                     adapted_text=adapted_text,
+                    first_comment_cta=first_comment_cta,
                     media_files=media_files,
                     bot_token=bot_token,
                     chat_id=chat_id,
@@ -174,6 +175,7 @@ class RepurposeOrchestrator:
                     "database_id": post.id,
                     "source_post_id": post.source_post_id,
                     "text": adapted_text,
+                    "first_comment_cta": first_comment_cta,
                     "media_type": post.media_type,
                     "media_files": saved_media_paths,
                     "source_url": post.source_url,
@@ -205,9 +207,10 @@ class RepurposeOrchestrator:
                     processed_media_path=str(saved_media_paths[0]) if saved_media_paths else None,
                 )
 
-            # ── 6. Direct LinkedIn Publishing (Auto-Publish mode) ──
-            logger.info("Publishing directly to LinkedIn (Media Count: %d)...", len(media_files))
-            pub_ok, status_code, post_urn, res_text, post_url = self.publisher.publish_post(
+            # ── 6. Direct Auto-Publishing to LinkedIn (Bypassing Telegram) ──
+            logger.info("Directly publishing to LinkedIn without Telegram approval (auto_publish=%s)...", auto_publish)
+            publisher = LinkedInRepurposePublisher()
+            pub_ok, status_code, post_urn, res_text, post_url = publisher.publish_post(
                 text=adapted_text,
                 media_files=media_files,
                 media_type=post.media_type,
@@ -215,24 +218,23 @@ class RepurposeOrchestrator:
             )
 
             if not pub_ok:
-                logger.error("Publishing to LinkedIn failed (%d): %s", status_code, res_text)
+                logger.error("LinkedIn publication failed (Status %d): %s", status_code, res_text)
                 if post.id and not dry_run:
                     self.selector.release_reservation(
                         post.id,
                         execution_id,
                         retryable=True,
-                        error_message=f"LinkedIn publish error ({status_code}): {res_text}",
+                        error_message=f"LinkedIn publish HTTP {status_code}: {res_text}",
                     )
                 return RepurposeJobResult(
                     success=False,
                     source_post_id=post.source_post_id,
                     database_id=post.id,
                     status="failed",
-                    adapted_content=adapted_text,
-                    error_message=f"LinkedIn publish failed ({status_code}): {res_text}",
+                    error_message=res_text,
                 )
 
-            # ── 7. Mark Published Permanently in Database ──
+            # ── 7. Permanent Database Update on Successful Publication ──
             if post.id and not dry_run:
                 self.supabase.update_post_status(
                     post_id=post.id,
@@ -272,6 +274,7 @@ class RepurposeOrchestrator:
         media_files: list[Path],
         bot_token: str,
         chat_id: str,
+        first_comment_cta: Optional[str] = None,
         dry_run: bool = False,
     ) -> tuple[bool, Optional[int]]:
         """
@@ -298,7 +301,7 @@ class RepurposeOrchestrator:
                         files = {"video": (first_media.name, vf, "video/mp4")}
                         data = {
                             "chat_id": chat_id,
-                            "caption": f"🎬 <b>Video Preview ({first_media.name})</b>",
+                            "caption": f"🎬 <b>Video Preview</b>",
                             "parse_mode": "HTML",
                         }
                         v_res = requests.post(video_url, data=data, files=files, timeout=60)
@@ -313,7 +316,7 @@ class RepurposeOrchestrator:
                         files = {"photo": (first_media.name, pf, "image/jpeg")}
                         data = {
                             "chat_id": chat_id,
-                            "caption": f"🖼️ <b>Media Preview ({first_media.name})</b>",
+                            "caption": f"🖼️ <b>Media Preview</b>",
                             "parse_mode": "HTML",
                         }
                         p_res = requests.post(photo_url, data=data, files=files, timeout=30)
@@ -322,19 +325,13 @@ class RepurposeOrchestrator:
                 except Exception as pe:
                     logger.warning("Failed to send Telegram photo preview: %s", pe)
 
-        # Send text message with Accept / Reject / Reject & Generate Another buttons
+        # Send text message with clean post text and first-comment CTA (no credit headers)
         msg_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-        source_link = f'<a href="{html_lib.escape(post.source_url)}">{html_lib.escape(post.source_post_id)}</a>' if post.source_url else html_lib.escape(post.source_post_id)
-        author_info = html_lib.escape(post.author_name or "Unknown Author")
+        comment_section = ""
+        if first_comment_cta and first_comment_cta.strip():
+            comment_section = f"\n\n💬 <b>Call to Action (First Comment):</b>\n<i>{html_lib.escape(first_comment_cta.strip())}</i>"
 
-        formatted_text = (
-            f"📝 <b>New Repurposed LinkedIn Post Pending Approval:</b>\n"
-            f"👤 <b>Original Author:</b> {author_info}\n"
-            f"🔗 <b>Source Post:</b> {source_link}\n"
-            f"🎬 <b>Media:</b> {post.media_type.upper()} ({len(media_files)} files)\n\n"
-            f"{html_lib.escape(adapted_text)}\n\n"
-            f"<i>Please choose an action below:</i>"
-        )
+        formatted_text = f"{html_lib.escape(adapted_text)}{comment_section}"
 
         msg_payload = {
             "chat_id": chat_id,

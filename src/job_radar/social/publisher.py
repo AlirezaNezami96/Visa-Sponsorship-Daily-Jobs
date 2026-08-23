@@ -308,11 +308,13 @@ def check_and_publish_post():
 
         if action in ("approve", "approve_all", "accept"):
             logger.info("Publishing repurposed post %s to LinkedIn...", source_post_id)
+            first_comment = pending_data.get("first_comment_cta")
             publisher = LinkedInRepurposePublisher()
             pub_ok, status_code, post_urn, res_text, post_url = publisher.publish_post(
                 text=post_text,
                 media_files=media_file_paths,
                 media_type=media_type,
+                first_comment=first_comment,
                 dry_run=False,
             )
 
@@ -353,26 +355,29 @@ def check_and_publish_post():
             if db_id:
                 supabase.update_post_status(
                     post_id=db_id,
-                    status=ProcessingStatus.SKIPPED.value,
+                    status=ProcessingStatus.REJECTED.value,
                     execution_id=execution_id,
-                    skipped_reason="Rejected via Telegram",
+                    skipped_reason="Rejected by user via Telegram",
                 )
             if msg_id:
                 edit_telegram_message(bot_token, chat_id, msg_id, f"❌ <b>Draft Rejected & Discarded</b>\n\n<s>{html.escape(post_text)}</s>")
-            send_telegram_message(bot_token, chat_id, "🗑️ <b>Draft Rejected.</b> No new post will be generated.")
+            send_telegram_message(bot_token, chat_id, "🗑️ <b>Draft Rejected.</b> This post has been marked as rejected and will not be suggested again.")
 
         elif action in ("reject_regen", "reject_all"):
             cleanup_state_files()
             if db_id:
+                # Reset back to available so it is NOT flagged as rejected
                 supabase.update_post_status(
                     post_id=db_id,
-                    status=ProcessingStatus.SKIPPED.value,
-                    execution_id=execution_id,
-                    skipped_reason="Rejected via Telegram (requested regeneration)",
+                    status=ProcessingStatus.AVAILABLE.value,
+                    execution_id=None,
+                    reserved_by=None,
+                    reserved_at=None,
+                    skipped_reason=None,
                 )
             if msg_id:
                 edit_telegram_message(bot_token, chat_id, msg_id, f"🔄 <b>Draft Rejected — Generating Next Post...</b>\n\n<s>{html.escape(post_text)}</s>")
-            send_telegram_message(bot_token, chat_id, "🗑️ <b>Draft Rejected.</b> Selecting and preparing the next source post now...")
+            send_telegram_message(bot_token, chat_id, "🗑️ <b>Selecting and preparing the next source post now...</b>")
             trigger_repurpose_workflow()
 
         return
