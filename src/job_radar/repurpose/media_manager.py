@@ -205,7 +205,7 @@ class MediaManager:
                         output_path=badged_video_path,
                         name="Alireza Nezami",
                         username="alireza-nezami",
-                        remove_existing_badge=True,
+                        remove_existing_badge=False,
                     )
                     processed_paths.append(badged_video_path)
                 except Exception as exc:

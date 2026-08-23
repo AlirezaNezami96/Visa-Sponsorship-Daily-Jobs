@@ -54,8 +54,8 @@ class CreatorBadgeConfig:
     avatar_border_width_ratio: float = 0.04
 
     # Existing Badge Cover Settings
-    remove_existing_badge: bool = True
-    existing_badge_cover_color: str = "black@1.0"
+    remove_existing_badge: bool = False
+    existing_badge_cover_color: str = "black@0.0"
     existing_badge_cover_padding_ratio: float = 0.05
 
     # Video Encoding Settings

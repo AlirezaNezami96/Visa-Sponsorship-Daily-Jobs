@@ -55,7 +55,7 @@ class FFmpegService:
             video_width, video_height, badge_width, badge_height
         )
 
-        if self.config.remove_existing_badge:
+        if self.config.remove_existing_badge and self.config.existing_badge_cover_color not in ("none", "transparent", "black@0.0", "black@0", ""):
             pad = int(min(video_width, video_height) * self.config.existing_badge_cover_padding_ratio)
             cover_x = max(0, x - pad)
             cover_y = max(0, y - pad)
