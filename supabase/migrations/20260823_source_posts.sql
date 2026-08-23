@@ -57,7 +57,23 @@ CREATE TABLE IF NOT EXISTS source_post_media (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 4. Supabase Storage Bucket for LinkedIn Media
+-- 4. Row-Level Security Configuration
+-- Disables RLS and creates fallback policies so pipeline worker can read/write freely
+ALTER TABLE source_posts DISABLE ROW LEVEL SECURITY;
+ALTER TABLE source_post_media DISABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+    DROP POLICY IF EXISTS "Allow all access to source_posts" ON source_posts;
+    CREATE POLICY "Allow all access to source_posts" ON source_posts FOR ALL USING (true) WITH CHECK (true);
+
+    DROP POLICY IF EXISTS "Allow all access to source_post_media" ON source_post_media;
+    CREATE POLICY "Allow all access to source_post_media" ON source_post_media FOR ALL USING (true) WITH CHECK (true);
+EXCEPTION
+    WHEN OTHERS THEN NULL;
+END $$;
+
+-- 5. Supabase Storage Bucket for LinkedIn Media
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('linkedin-media', 'linkedin-media', true)
 ON CONFLICT (id) DO NOTHING;
