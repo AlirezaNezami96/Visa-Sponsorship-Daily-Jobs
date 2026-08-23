@@ -16,6 +16,9 @@ logger = logging.getLogger("republish_post")
 
 
 def main() -> None:
+    from job_radar.storage.supabase_client import _load_dotenv_if_needed
+    _load_dotenv_if_needed()
+
     parser = argparse.ArgumentParser(
         prog="job-radar-republish",
         description="Executes the LinkedIn source post repurposing and publishing pipeline.",

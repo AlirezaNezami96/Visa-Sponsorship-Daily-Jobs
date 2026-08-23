@@ -17,6 +17,9 @@ logger = logging.getLogger("import_posts")
 
 
 def main() -> None:
+    from job_radar.storage.supabase_client import _load_dotenv_if_needed
+    _load_dotenv_if_needed()
+
     parser = argparse.ArgumentParser(
         prog="job-radar-import-posts",
         description="Imports and deduplicates source LinkedIn posts from JSON into Supabase.",

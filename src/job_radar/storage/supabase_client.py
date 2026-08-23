@@ -14,6 +14,23 @@ import requests
 logger = logging.getLogger(__name__)
 
 
+def _load_dotenv_if_needed() -> None:
+    from pathlib import Path
+    for env_path in [Path(".env"), Path("engine/.env")]:
+        if env_path.exists():
+            try:
+                with open(env_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith("#") and "=" in line:
+                            k, v = line.split("=", 1)
+                            k, v = k.strip(), v.strip().strip("'\"")
+                            if k and not os.environ.get(k):
+                                os.environ[k] = v
+            except Exception:
+                pass
+
+
 class SupabaseStorageClient:
     """Handles communication with Supabase for source posts and media metadata."""
 
@@ -22,6 +39,7 @@ class SupabaseStorageClient:
         url: Optional[str] = None,
         key: Optional[str] = None,
     ):
+        _load_dotenv_if_needed()
         self.url = (url or os.environ.get("SUPABASE_URL", "")).rstrip("/")
         self.key = (
             key
