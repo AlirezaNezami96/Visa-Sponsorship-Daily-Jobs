@@ -1,17 +1,22 @@
-# Daily LinkedIn Post Generator Workflow
-# Runs daily at 15:30 UTC
-# Generates draft via Z.ai LLM and sends Telegram approval request
+# [DISABLED] Legacy LinkedIn Post Generator Workflow
+# Superseded by the LinkedIn Repurposing Pipeline (.github/workflows/linkedin-republish.yml)
 
-name: Generate LinkedIn Post
+name: "[DISABLED] Generate LinkedIn Post"
 
 on:
-  schedule:
-    - cron: "30 15 * * *"
+  # Triggers disabled to prevent concurrent uncoordinated post generation
   workflow_dispatch:
+    inputs:
+      force_run:
+        description: "Force run legacy generation (disabled by default)"
+        type: boolean
+        default: false
 
-concurrency:
-  group: content-pipeline
-  cancel-in-progress: false
+# Entire job disabled
+jobs:
+  generate:
+    if: ${{ github.event.inputs.force_run == 'true' }}
+    runs-on: ubuntu-latest
 
 permissions:
   contents: write
