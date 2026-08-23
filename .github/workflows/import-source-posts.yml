@@ -65,9 +65,9 @@ jobs:
           "
           fi
 
-          ARGS="--file \"${{ inputs.file_path }}\""
+          EXTRA_FLAGS=""
           if [ "${{ inputs.dry_run }}" = "true" ]; then
-            ARGS="$ARGS --dry-run"
+            EXTRA_FLAGS="--dry-run"
           fi
 
-          python3 scripts/import_source_posts.py $ARGS
+          python3 scripts/import_source_posts.py --file "${{ inputs.file_path }}" $EXTRA_FLAGS
