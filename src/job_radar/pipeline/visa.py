@@ -7,17 +7,28 @@ from typing import List, Tuple
 from job_radar.models.config import JobSearchConfig
 from job_radar.models.enums import AuthFit, VisaConfidence
 from job_radar.models.job import Job
+from job_radar.sources.overseas.geo import visa_type_for_destination
 from job_radar.visa.evaluator import evaluate_job_visa, score_job_visa
 
 logger = logging.getLogger(__name__)
 
-# Ranking map for min_visa_confidence threshold
+# Ranking map for min_visa_confidence threshold.
+# Rank values are internal to this module only (renumbering is safe).
+# Note: with employer_sponsored_region at rank 2, a user selecting
+# min_visa_confidence="on_sponsor_list" (rank 3) will EXCLUDE
+# employer_sponsored_region jobs — that is intentional: registry matches
+# rank above the regional work-permit model.
 CONFIDENCE_RANK = {
     "unknown": 0,
     "historical_filings": 1,
-    "on_sponsor_list": 2,
-    "stated_in_jd": 3,
+    "employer_sponsored_region": 2,
+    "on_sponsor_list": 3,
+    "stated_in_jd": 4,
 }
+
+# Confidence values that count as positive sponsorship evidence for the
+# visa_sponsorship_only filter and the enriched counter.
+_POSITIVE_SIGNALS = ("stated_in_jd", "on_sponsor_list", "historical_filings", "employer_sponsored_region")
 
 
 def evaluate_visa_for_job(job: Job) -> Job:
@@ -51,6 +62,24 @@ def evaluate_visa_for_job(job: Job) -> Job:
         if not job.visa_confidence:
             job.visa_confidence = VisaConfidence.UNKNOWN
 
+    # Employer-sponsored-region model (overseas expansion pack). Applied only
+    # when the registry/JD result is still UNKNOWN and the job came from the
+    # overseas adapter. STATED_IN_JD / ON_SPONSOR_LIST / HISTORICAL_FILINGS /
+    # EXPLICIT_NO from the evaluator above are always stronger and are kept.
+    conf_val_now = job.visa_confidence if isinstance(job.visa_confidence, str) else getattr(job.visa_confidence, "value", "")
+    if conf_val_now == VisaConfidence.UNKNOWN.value and job.metadata.get("overseas"):
+        from job_radar.sources.overseas.geo import normalize_destination
+
+        dest = normalize_destination(job.country or job.location)
+        job.visa_confidence = VisaConfidence.EMPLOYER_SPONSORED_REGION
+        job.visa_sponsorship = True
+        job.visa_type = visa_type_for_destination(dest)
+        job.visa_sponsor_meta = {
+            "model": "employer_sponsored_region",
+            "destination_country": job.country,
+            "disclaimer": "Employer-sponsored work-permit destination; not a verified registry match",
+        }
+
     return job
 
 
@@ -67,7 +96,7 @@ def evaluate_and_filter_visa(jobs: List[Job], config: JobSearchConfig) -> Tuple[
     for job in jobs:
         evaluate_visa_for_job(job)
         conf_val = job.visa_confidence if isinstance(job.visa_confidence, str) else job.visa_confidence.value
-        if conf_val in ("on_sponsor_list", "historical_filings", "stated_in_jd"):
+        if conf_val in _POSITIVE_SIGNALS:
             enriched_count += 1
 
         # 1. Exclude explicit NO if configured
@@ -81,8 +110,8 @@ def evaluate_and_filter_visa(jobs: List[Job], config: JobSearchConfig) -> Tuple[
 
         # 3. Visa sponsorship only filter
         if config.visa_sponsorship_only:
-            # Positive signals: stated_in_jd, on_sponsor_list, historical_filings
-            if conf_val in ("stated_in_jd", "on_sponsor_list", "historical_filings"):
+            # Positive signals: stated_in_jd, on_sponsor_list, historical_filings, employer_sponsored_region
+            if conf_val in _POSITIVE_SIGNALS:
                 passed_jobs.append(job)
             elif conf_val == "unknown" and config.include_unknown_visa:
                 passed_jobs.append(job)
