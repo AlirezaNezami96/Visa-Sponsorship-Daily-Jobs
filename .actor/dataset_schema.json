@@ -20,6 +20,8 @@
     "postedAt": { "type": "string", "title": "Posted At" },
     "applyUrl": { "type": "string", "title": "Apply URL" },
     "source": { "type": "string", "title": "Source" },
+    "sourceCategory": { "type": "string", "title": "Source Category" },
+    "destinationCountry": { "type": "string", "title": "Destination Country" },
     "technologies": { "type": "array", "title": "Technologies" }
   },
   "displayOrder": [
@@ -33,6 +35,8 @@
     "compositeScore",
     "postedAt",
     "applyUrl",
-    "source"
+    "source",
+    "sourceCategory",
+    "destinationCountry"
   ]
 }

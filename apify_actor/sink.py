@@ -25,6 +25,7 @@ class ApifyDatasetSink(JobSink):
         self.emitted_count = 0
         self.ai_classified_count = 0
         self.visa_enriched_count = 0
+        self.overseas_count = 0
         self.limit_reached = False
 
     async def _charge_event(self, event_name: str) -> bool:
@@ -63,6 +64,16 @@ class ApifyDatasetSink(JobSink):
         if not self.limit_reached and item.get("visaSignal") == "on_sponsor_list":
             if await self._charge_event("visa-enriched-job"):
                 self.visa_enriched_count += 1
+
+        # 4. Add-on overseas expansion event (optional, non-fatal)
+        if not self.limit_reached and item.get("sourceCategory"):
+            try:
+                if await self._charge_event("overseas-job"):
+                    self.overseas_count += 1
+            except Exception as e:
+                # New event may not exist yet in the Actor's Console pricing config.
+                # Never let an optional add-on event kill a paying run.
+                logger.warning("overseas-job charge failed (add it in Apify Console → Pricing): %s", e)
 
     async def emit(self, jobs: List[Job]) -> None:
         """Push normalized camelCase jobs to dataset in memory-safe batches and charge PPE events."""
@@ -108,6 +119,7 @@ class ApifyDatasetSink(JobSink):
         Actor.log.info(
             f"ApifyDatasetSink closed: {self.emitted_count} jobs emitted, "
             f"{self.ai_classified_count} AI-classified, "
-            f"{self.visa_enriched_count} visa-enriched. "
+            f"{self.visa_enriched_count} visa-enriched, "
+            f"{self.overseas_count} overseas. "
             f"Limit reached: {self.limit_reached}."
         )

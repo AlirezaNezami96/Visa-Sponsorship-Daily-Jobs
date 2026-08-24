@@ -24,6 +24,7 @@ def input_to_config(actor_input: Optional[Dict[str, Any]]) -> JobSearchConfig:
     ai_sec = raw.get("aiClassification", {}) if isinstance(raw.get("aiClassification"), dict) else {}
     output_sec = raw.get("outputOptions", {}) if isinstance(raw.get("outputOptions"), dict) else {}
     adv_sec = raw.get("advancedOptions", {}) if isinstance(raw.get("advancedOptions"), dict) else {}
+    overseas_sec = raw.get("overseasExpansion", {}) if isinstance(raw.get("overseasExpansion"), dict) else {}
 
     def _get_val(key: str, section_dict: Dict[str, Any], default: Any) -> Any:
         """Helper to get value from either section dict or flat top-level dict."""
@@ -102,6 +103,31 @@ def input_to_config(actor_input: Optional[Dict[str, Any]]) -> JobSearchConfig:
     use_browser_fallback = bool(_get_val("useBrowserFallback", adv_sec, False))
     proxy_configuration = _get_val("proxyConfiguration", adv_sec, None)
 
+    # 8. Overseas Expansion (v1) — flag-gated, defaults preserve current behavior
+    enable_overseas_sources = bool(_get_val("enableOverseasSources", overseas_sec, False))
+    overseas_categories = _get_val(
+        "overseasCategories", overseas_sec,
+        ["government", "manpower_agency", "aggregator", "remote_board", "visa_specialist", "unknown_board"],
+    )
+    if isinstance(overseas_categories, str):
+        overseas_categories = [c.strip() for c in overseas_categories.split(",") if c.strip()]
+    overseas_destination_countries = _get_val("overseasDestinationCountries", overseas_sec, [])
+    if isinstance(overseas_destination_countries, str):
+        overseas_destination_countries = [c.strip() for c in overseas_destination_countries.split(",") if c.strip()]
+    overseas_max_sources_per_run = int(_get_val("overseasMaxSourcesPerRun", overseas_sec, 150))
+    overseas_concurrency = int(_get_val("overseasConcurrency", overseas_sec, 20))
+    overseas_budget_secs = int(_get_val("overseasBudgetSecs", overseas_sec, 600))
+    overseas_fetch_details = bool(_get_val("overseasFetchDetails", overseas_sec, False))
+    overseas_max_detail_fetches = int(_get_val("overseasMaxDetailFetches", overseas_sec, 300))
+    overseas_simhash_dedup = bool(_get_val("overseasSimhashDedup", overseas_sec, True))
+    overseas_simhash_threshold = int(_get_val("overseasSimhashThreshold", overseas_sec, 6))
+    respect_robots_txt = bool(_get_val("respectRobotsTxt", overseas_sec, True))
+
+    # Clamp overseas knobs to sane/safe bounds (budget capped at 80% of max runtime).
+    overseas_budget_secs = max(60, min(overseas_budget_secs, int(max_runtime_secs * 0.8)))
+    overseas_concurrency = max(5, min(overseas_concurrency, 40))
+    overseas_max_sources_per_run = max(10, min(overseas_max_sources_per_run, 573))
+
     return JobSearchConfig(
         keywords=keywords,
         exclude_keywords=exclude_keywords,
@@ -139,4 +165,15 @@ def input_to_config(actor_input: Optional[Dict[str, Any]]) -> JobSearchConfig:
         max_runtime_secs=max_runtime_secs,
         use_browser_fallback=use_browser_fallback,
         proxy_configuration=proxy_configuration,
+        enable_overseas_sources=enable_overseas_sources,
+        overseas_categories=overseas_categories,
+        overseas_destination_countries=overseas_destination_countries,
+        overseas_max_sources_per_run=overseas_max_sources_per_run,
+        overseas_concurrency=overseas_concurrency,
+        overseas_budget_secs=overseas_budget_secs,
+        overseas_fetch_details=overseas_fetch_details,
+        overseas_max_detail_fetches=overseas_max_detail_fetches,
+        overseas_simhash_dedup=overseas_simhash_dedup,
+        overseas_simhash_threshold=overseas_simhash_threshold,
+        respect_robots_txt=respect_robots_txt,
     )

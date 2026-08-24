@@ -235,6 +235,8 @@ class Job(BaseModel):
             "jobUrl": self.job_url or self.url or self.apply_url or "",
             "source": self.source,
             "ats": self.ats or self.source,
+            "sourceCategory": self.metadata.get("source_category"),
+            "destinationCountry": self.country if self.metadata.get("overseas") else None,
             "technologies": self.technologies,
             "visaSignal": conf_str,
             "visaConfidence": round(float(VISA_CONFIDENCE_FLOAT_MAP.get(conf_str, 0.25)), 2),

@@ -78,10 +78,11 @@
       "description": "Minimum confidence level required for emitted jobs.",
       "editor": "select",
       "default": "unknown",
-      "enum": ["unknown", "historical_filings", "on_sponsor_list", "stated_in_jd"],
+      "enum": ["unknown", "historical_filings", "employer_sponsored_region", "on_sponsor_list", "stated_in_jd"],
       "enumTitles": [
         "Any / Unknown (Most jobs)",
         "Historical Filings (US DOL LCA records)",
+        "Employer-Sponsored Region (Gulf/SE-Asia work permits)",
         "On Sponsor List (UK/US Official Sponsor Registry)",
         "Stated in Job Description (Explicit sponsorship statement)"
       ]
@@ -304,6 +305,102 @@
       "default": 300,
       "minimum": 10,
       "maximum": 3600
+    },
+    "enableOverseasSources": {
+      "title": "Enable Overseas Sources",
+      "type": "boolean",
+      "description": "Include 248 verified overseas government portals, manpower agencies, and niche boards (India/Pakistan/Bangladesh → Gulf & beyond).",
+      "default": false,
+      "sectionCaption": "7. Overseas Expansion (Optional)",
+      "sectionDescription": "Verified government portals, manpower agencies, and niche boards for migration corridors (India/Pakistan/Bangladesh → Gulf, East Asia, Europe, Canada, Australia). Off by default; existing sources are unaffected."
+    },
+    "overseasCategories": {
+      "title": "Overseas Source Categories",
+      "type": "array",
+      "description": "Which verified overseas source categories to include.",
+      "editor": "select",
+      "items": {
+        "type": "string",
+        "enum": ["government", "manpower_agency", "aggregator", "remote_board", "visa_specialist", "unknown_board"],
+        "enumTitles": [
+          "Government Portals",
+          "Manpower Agencies",
+          "Aggregators",
+          "Remote Boards",
+          "Visa Specialists",
+          "Niche Boards (Uncategorized)"
+        ]
+      },
+      "default": ["government", "manpower_agency", "aggregator", "remote_board", "visa_specialist", "unknown_board"]
+    },
+    "overseasDestinationCountries": {
+      "title": "Overseas Destination Countries",
+      "type": "array",
+      "description": "Keep only jobs destined for these countries (jobs with unknown destinations are always kept). Empty = all destinations.",
+      "editor": "select",
+      "items": {
+        "type": "string",
+        "enum": ["UAE", "Saudi Arabia", "Qatar", "Kuwait", "Oman", "Bahrain", "Malaysia", "Singapore", "Japan", "South Korea", "Germany", "United Kingdom", "Canada", "Australia", "New Zealand"]
+      },
+      "default": []
+    },
+    "overseasMaxSourcesPerRun": {
+      "title": "Max Overseas Sources Per Run",
+      "type": "integer",
+      "description": "How many overseas sources to fetch in a single run.",
+      "default": 150,
+      "minimum": 10,
+      "maximum": 573
+    },
+    "overseasConcurrency": {
+      "title": "Overseas Concurrency",
+      "type": "integer",
+"description": "Concurrent overseas page fetches (per-host is further limited to 2).",
+      "default": 20,
+      "minimum": 5,
+      "maximum": 40
+    },
+    "overseasBudgetSecs": {
+      "title": "Overseas Budget (Seconds)",
+      "type": "integer",
+      "description": "Time budget for overseas fetching. When enabling overseas sources, raise maxRuntimeSecs to at least 900. The budget is automatically capped at 80% of maxRuntimeSecs.",
+      "default": 600,
+      "minimum": 60,
+      "maximum": 3000
+    },
+    "overseasFetchDetails": {
+      "title": "Fetch Overseas Detail Pages",
+      "type": "boolean",
+      "description": "Fetch job detail pages for richer descriptions and better dedup (slower, more requests).",
+      "default": false
+    },
+    "overseasMaxDetailFetches": {
+      "title": "Max Overseas Detail Fetches",
+      "type": "integer",
+      "description": "Maximum number of overseas detail pages to fetch per run.",
+      "default": 300,
+      "minimum": 0,
+      "maximum": 2000
+    },
+    "overseasSimhashDedup": {
+      "title": "SimHash Near-Duplicate Dedup",
+      "type": "boolean",
+      "description": "Remove copy-pasted duplicate job descriptions across overseas agencies using SimHash.",
+      "default": true
+    },
+    "overseasSimhashThreshold": {
+      "title": "SimHash Threshold",
+      "type": "integer",
+      "description": "Hamming distance at or below which two overseas jobs are treated as near-duplicates (lower = stricter).",
+      "default": 6,
+      "minimum": 0,
+      "maximum": 32
+    },
+    "respectRobotsTxt": {
+      "title": "Respect robots.txt",
+      "type": "boolean",
+      "description": "Honor robots.txt rules on overseas sources before fetching.",
+      "default": true
     }
   }
 }
