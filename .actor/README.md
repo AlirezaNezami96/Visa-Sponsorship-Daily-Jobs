@@ -57,9 +57,10 @@ Every dataset record delivers clean, normalized camelCase JSON:
 ## 🛡️ What Makes This Different?
 
 - **🛂 Official Visa Intelligence**: Checks company names against official UK Skilled Worker sponsor registers and US DOL LCA historical filings.
-- **📊 5-Tier Signal Model**:
+- **📊 6-Tier Signal Model**:
   - `stated_in_jd` (1.00): Job description explicitly mentions visa sponsorship or relocation support.
   - `on_sponsor_list` (0.85): Company is an active licensed sponsor on official government registers.
+  - `employer_sponsored_region` (0.70): Destination uses an employer-sponsored work-permit model (Gulf/EPS/SSW) — overseas pack only, not a registry match.
   - `historical_filings` (0.65): Company has certified US DOL LCA filings in the past 12 months.
   - `unknown` (0.25): No explicit signal either way.
   - `explicit_no` (0.00): Job explicitly states no sponsorship is available (filtered out by default).
@@ -79,6 +80,7 @@ You only pay for the exact volume of data emitted:
 | `job-result` | Per normalized job returned | $2.00 / 1,000 jobs |
 | `visa-enriched-job` | Per job verified against official government registers | +$1.00 / 1,000 jobs |
 | `ai-classified-job` | Per job analyzed with AI technical scoring | +$3.00 / 1,000 jobs |
+| `overseas-job` | Per job from the overseas expansion pack *(optional; final price set in Apify Console)* | +$1.50 / 1,000 jobs |
 
 *Filtered-out and duplicate listings are NEVER charged.*
 
@@ -90,9 +92,9 @@ You only pay for the exact volume of data emitted:
 |---|---|---|---|
 | `keywords` | `array` | `[]` | Job titles, skills, or stack terms (e.g. `["Machine Learning", "Kotlin", "Python"]`). |
 | `countries` | `array` | `[]` | Country filter (e.g. `["United Kingdom", "Germany", "United States"]`). |
-| `visaSponsorshipOnly` | `boolean` | `true` | When true, returns jobs with confirmed sponsorship signals (`on_sponsor_list`, `stated_in_jd`, `historical_filings`). |
+| `visaSponsorshipOnly` | `boolean` | `true` | When true, returns jobs with confirmed sponsorship signals (`on_sponsor_list`, `stated_in_jd`, `historical_filings`, `employer_sponsored_region`). |
 | `includeUnknownVisa` | `boolean` | `false` | When `visaSponsorshipOnly` is enabled, set to true to also include unknown visa status jobs. |
-| `minVisaConfidence` | `string` | `"unknown"` | Minimum required confidence (`"unknown"`, `"historical_filings"`, `"on_sponsor_list"`, `"stated_in_jd"`). |
+| `minVisaConfidence` | `string` | `"unknown"` | Minimum required confidence (`"unknown"`, `"historical_filings"`, `"employer_sponsored_region"`, `"on_sponsor_list"`, `"stated_in_jd"`). |
 | `sources` | `array` | `["greenhouse", "lever", ...]` | Target ATS endpoints and job boards to query. |
 | `companyUrls` | `array` | `[]` | Specific ATS career page URLs to auto-extract. |
 | `postedWithinDays` | `integer` | `30` | Maximum posting age in days. |
@@ -120,3 +122,59 @@ run = client.actor("alireza_nezami/visa-sponsorship-jobs-scraper").call(
 for job in client.dataset(run["defaultDatasetId"]).iterate_items():
     print(f"{job['company']} - {job['title']} (Signal: {job['visaSignal']}, Score: {job['visaConfidence']}) -> {job['applyUrl']}")
 ```
+
+---
+
+## 🌍 Overseas Expansion (Optional)
+
+> **Off by default.** Nothing changes unless you set `enableOverseasSources: true`.
+
+This optional pack adds **248 build-time-verified overseas sources** for the India/Pakistan/Bangladesh → Gulf, Europe, East Asia, Canada and Australia migration corridors: government labor portals, licensed manpower agencies, niche job boards, aggregators, and visa-specialist sites. Sources were DNS+HTTP probed before inclusion and are shipped as a curated data file — they are never invented or auto-discovered at runtime. This Actor does not scrape LinkedIn, Indeed, or Glassdoor; those domains (plus ZipRecruiter, Monster, CareerBuilder, SimplyHired, Snagajob, Ladders and Dice) are hard-blacklisted and unfetchable. Overseas sources are public pages fetched with robots.txt respect and per-host rate limits.
+
+**Categories** (selectable via `overseasCategories`): `government`, `manpower_agency`, `aggregator`, `remote_board`, `visa_specialist`, `unknown_board`.
+
+### An honest visa signal: `employer_sponsored_region`
+
+Jobs from Gulf and East-Asia destinations can never match the UK/US sponsor registries. The destination-country employment model (UAE/Saudi/Qatar/Kuwait/Oman/Bahrain work permits, Japan SSW, Korea EPS E-9) is **employer-sponsored by construction**, so these jobs get their own confidence level instead of being dropped:
+
+- `employer_sponsored_region` (0.70): destination uses an employer-sponsored work-permit model. **This is NOT a verified registry match** — it records the destination's employment model honestly. If the job description itself mentions sponsorship, the stronger `stated_in_jd` signal is kept instead; `explicit_no` always wins and the job is excluded.
+
+### Overseas input parameters
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `enableOverseasSources` | `boolean` | `false` | Include the 248 verified overseas sources. Raise `maxRuntimeSecs` to ≥ 900 when enabling. |
+| `overseasCategories` | `array` | all six | Source categories to include. |
+| `overseasDestinationCountries` | `array` | `[]` (all) | Keep only jobs for these destinations (jobs with unknown destination are kept). |
+| `overseasMaxSourcesPerRun` | `integer` | `150` | Max sources fetched per run (10–573). |
+| `overseasConcurrency` | `integer` | `20` | Concurrent overseas page fetches (5–40). |
+| `overseasBudgetSecs` | `integer` | `600` | Time budget in seconds (60–3000, auto-clamped to 80% of `maxRuntimeSecs`). |
+| `overseasFetchDetails` | `boolean` | `false` | Fetch job detail pages for richer descriptions and better dedup (slower, more requests). |
+| `overseasMaxDetailFetches` | `integer` | `300` | Max detail-page fetches per run (0–2000). |
+| `overseasSimhashDedup` | `boolean` | `true` | SimHash near-duplicate removal for copy-pasted agency JDs. |
+| `respectRobotsTxt` | `boolean` | `true` | Honor robots.txt on overseas domains. |
+
+### Sample overseas record
+
+```json
+{
+  "id": "ov-gulfagency.example-8f2c1a9b3e4d5c67",
+  "title": "Mason – Dubai construction vacancy",
+  "company": "Al Rashid Manpower",
+  "location": "Dubai",
+  "country": "UAE",
+  "salaryMin": 2500,
+  "salaryCurrency": "AED",
+  "salaryPeriod": "month",
+  "applyUrl": "https://gulfagency.example/vacancies/mason-dubai/",
+  "source": "overseas",
+  "ats": "gulfagency.example",
+  "sourceCategory": "manpower_agency",
+  "destinationCountry": "UAE",
+  "visaSignal": "employer_sponsored_region",
+  "visaConfidence": 0.7,
+  "visaType": "UAE Work Permit"
+}
+```
+
+*When enabling overseas in the Actor UI: set `maxRuntimeSecs ≥ 900` and consider raising memory to 2048 MB if also enabling `overseasFetchDetails`.*
