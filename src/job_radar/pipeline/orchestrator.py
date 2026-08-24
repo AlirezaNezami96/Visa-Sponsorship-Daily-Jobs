@@ -14,6 +14,7 @@ from job_radar.pipeline.dedupe import deduplicate_jobs
 from job_radar.pipeline.filter import filter_jobs
 from job_radar.pipeline.scoring import score_and_rank_jobs
 from job_radar.pipeline.sink import JobSink
+from job_radar.pipeline.simhash import simhash_deduplicate
 from job_radar.pipeline.visa import evaluate_and_filter_visa
 from job_radar.sources.base import SourceAdapter
 from job_radar.sources.registry import get_enabled_sources
@@ -112,9 +113,13 @@ async def run_pipeline(
         deduped_jobs, duplicate_count = filtered_jobs, 0
     total_deduped = len(deduped_jobs)
 
-    # 3b. SimHash near-duplicate stage (overseas copy-pasted JDs). Runs only
-    # when overseas is enabled; wired fully in Part 5. 0 when the stage is off.
+    # 3b. SimHash near-duplicate dedup (overseas copy-pasted JDs). Runs only
+    # when overseas sources are enabled and the SimHash stage is on.
+    # Reports 0 when the stage is off.
     simhash_dup_count = 0
+    if getattr(config, "enable_overseas_sources", False) and getattr(config, "overseas_simhash_dedup", False):
+        deduped_jobs, simhash_dup_count = simhash_deduplicate(deduped_jobs, config)
+        total_deduped = len(deduped_jobs)
 
     # 4. Visa Intelligence and registry matching (Free, deterministic)
     visa_passed_jobs, visa_enriched_count = evaluate_and_filter_visa(deduped_jobs, config)
