@@ -121,12 +121,14 @@ def input_to_config(actor_input: Optional[Dict[str, Any]]) -> JobSearchConfig:
     overseas_max_detail_fetches = int(_get_val("overseasMaxDetailFetches", overseas_sec, 300))
     overseas_simhash_dedup = bool(_get_val("overseasSimhashDedup", overseas_sec, True))
     overseas_simhash_threshold = int(_get_val("overseasSimhashThreshold", overseas_sec, 6))
+    overseas_min_results = int(_get_val("overseasMinResults", overseas_sec, 20))
     respect_robots_txt = bool(_get_val("respectRobotsTxt", overseas_sec, True))
 
     # Clamp overseas knobs to sane/safe bounds (budget capped at 80% of max runtime).
     overseas_budget_secs = max(60, min(overseas_budget_secs, int(max_runtime_secs * 0.8)))
     overseas_concurrency = max(5, min(overseas_concurrency, 40))
     overseas_max_sources_per_run = max(10, min(overseas_max_sources_per_run, 573))
+    overseas_min_results = max(0, min(overseas_min_results, max_results))
 
     return JobSearchConfig(
         keywords=keywords,
@@ -175,5 +177,6 @@ def input_to_config(actor_input: Optional[Dict[str, Any]]) -> JobSearchConfig:
         overseas_max_detail_fetches=overseas_max_detail_fetches,
         overseas_simhash_dedup=overseas_simhash_dedup,
         overseas_simhash_threshold=overseas_simhash_threshold,
+        overseas_min_results=overseas_min_results,
         respect_robots_txt=respect_robots_txt,
     )

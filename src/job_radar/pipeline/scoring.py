@@ -14,6 +14,9 @@ logger = logging.getLogger(__name__)
 VISA_SCORE_MAP = {
     VisaConfidence.STATED_IN_JD.value: 100.0,
     VisaConfidence.ON_SPONSOR_LIST.value: 85.0,
+    # Only overseas jobs can carry this confidence (flag-gated), so flag-off
+    # scoring is unchanged. Aligned with VISA_CONFIDENCE_FLOAT_MAP (0.70).
+    VisaConfidence.EMPLOYER_SPONSORED_REGION.value: 70.0,
     VisaConfidence.HISTORICAL_FILINGS.value: 65.0,
     VisaConfidence.UNKNOWN.value: 25.0,
     VisaConfidence.EXPLICIT_NO.value: 0.0,

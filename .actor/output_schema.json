@@ -1,0 +1,32 @@
+{
+  "actorOutputSchemaVersion": 1,
+  "title": "Visa Sponsorship Jobs — Run Outputs",
+  "description": "Machine-readable jobs Dataset plus human-friendly run reports (HTML, JSON, statistics).",
+  "type": "object",
+  "properties": {
+    "results": {
+      "type": "string",
+      "title": "Jobs Dataset",
+      "description": "All normalized visa-enriched jobs as JSON. Canonical machine-readable output; exportable to CSV/Excel/JSON via the Dataset API.",
+      "template": "{{links.apiDefaultDatasetUrl}}/items"
+    },
+    "reportHtml": {
+      "type": "string",
+      "title": "HTML Report",
+      "description": "Beautiful standalone run report: key statistics, top opportunities, country / company / visa / source breakdowns, and methodology.",
+      "template": "{{links.apiDefaultKeyValueStoreUrl}}/records/REPORT.html"
+    },
+    "reportJson": {
+      "type": "string",
+      "title": "Run Summary (JSON)",
+      "description": "Machine-readable run summary: search criteria, statistics, top matches, and aggregations. Useful for API consumers and AI agents.",
+      "template": "{{links.apiDefaultKeyValueStoreUrl}}/records/REPORT.json"
+    },
+    "runStats": {
+      "type": "string",
+      "title": "Run Statistics",
+      "description": "Low-level pipeline execution statistics (fetched, filtered, deduplicated, enriched, duration, source health).",
+      "template": "{{links.apiDefaultKeyValueStoreUrl}}/records/RUN_STATS"
+    }
+  }
+}

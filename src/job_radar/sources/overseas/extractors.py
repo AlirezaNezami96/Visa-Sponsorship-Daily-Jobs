@@ -34,6 +34,10 @@ STRATEGY_DOM = "dom_cards"
 _ANCHOR_RE = re.compile(r"job|vacanc|career|position|apply|walk-?in", re.IGNORECASE)
 _NAV_TEXT_RE = re.compile(r"\b(home|about|contact|login|sign\s*in|register|privacy|terms|faq|search)\b", re.IGNORECASE)
 _COMPANY_RE = re.compile(r"(?:Company|Employer|Organization)\s*:\s*([^|;\n]{2,80})", re.IGNORECASE)
+_LOCATION_RE = re.compile(
+    r"(?:Work\s+|Job\s+)?(?:Location|Destination|Place\s+of\s+(?:Work|Posting))\s*:\s*([^|;\n]{2,80})",
+    re.IGNORECASE,
+)
 _CURRENCIES = r"AED|SAR|QAR|KWD|OMR|BHD|USD|EUR|GBP|PKR|INR|BDT"
 _SALARY_RANGE_RE = re.compile(
     r"(\d[\d,]*(?:\.\d+)?)\s*(?:-|\u2013|to)\s*(\d[\d,]*(?:\.\d+)?)\s?(" + _CURRENCIES + r")\b"
@@ -577,7 +581,12 @@ def extract_dom_cards(html: str, base_url: str) -> List[RawOverseasJob]:
         if cm:
             company = _collapse_ws(cm.group(1))
 
-        location = normalize_destination(description)
+        location: Optional[str] = None
+        lm = _LOCATION_RE.search(description)
+        if lm:
+            location = normalize_destination(_collapse_ws(lm.group(1)))
+        if location is None:
+            location = normalize_destination(description)
         salary_min, salary_max, currency = _parse_salary_from_text(description)
         posted_at = _parse_card_date(description)
 

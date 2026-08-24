@@ -71,6 +71,57 @@ async def fetch_all_sources(config: JobSearchConfig) -> Tuple[List[Job], List[st
     return all_raw_jobs, successful_sources, failed_sources
 
 
+def _is_overseas(job: Job) -> bool:
+    return bool(getattr(job, "metadata", None) and job.metadata.get("overseas"))
+
+
+def _ensure_overseas_slots(
+    ranked_jobs: List[Job],
+    config: JobSearchConfig,
+) -> Tuple[List[Job], int, int]:
+    """Slice ranked jobs to maxResults, guaranteeing overseas representation.
+
+    Overseas records rank below registry-enriched baseline jobs on composite
+    score, so a plain top-N slice can emit zero overseas records — silently
+    disabling the expansion (and its `overseas-job` PPE event). When the pack
+    is enabled, reserve up to `overseas_min_results` slots for the best
+    overseas jobs and fill the rest with the best remaining jobs.
+
+    Returns (final_jobs, overseas_emitted, overseas_guaranteed).
+    `overseas_guaranteed` counts overseas jobs pulled in beyond what a plain
+    top-N slice would have emitted naturally.
+    """
+    max_results = int(config.max_results or 0)
+    if max_results <= 0:
+        emitted = sum(1 for j in ranked_jobs if _is_overseas(j))
+        return ranked_jobs, emitted, 0
+
+    min_overseas = int(getattr(config, "overseas_min_results", 0) or 0)
+    if not getattr(config, "enable_overseas_sources", False) or min_overseas <= 0:
+        final_jobs = ranked_jobs[:max_results]
+        emitted = sum(1 for j in final_jobs if _is_overseas(j))
+        return final_jobs, emitted, 0
+
+    natural_overseas = sum(1 for j in ranked_jobs[:max_results] if _is_overseas(j))
+
+    target = min(min_overseas, max_results)
+    overseas_pool = [j for j in ranked_jobs if _is_overseas(j)]
+    overseas_pick = overseas_pool[:target]
+    picked_ids = {id(j) for j in overseas_pick}
+    fill_pool = [j for j in ranked_jobs if id(j) not in picked_ids]
+    final_jobs = fill_pool[: max_results - len(overseas_pick)] + overseas_pick
+    final_jobs = score_and_rank_jobs(final_jobs, config)
+
+    emitted = len(overseas_pick)
+    guaranteed = max(0, emitted - natural_overseas)
+    if guaranteed:
+        logger.info(
+            "overseas: slot guarantee pulled in %d overseas jobs (emitted %d of target %d)",
+            guaranteed, emitted, target,
+        )
+    return final_jobs, emitted, guaranteed
+
+
 async def run_pipeline(
     config: JobSearchConfig,
     sink: JobSink,
@@ -162,7 +213,7 @@ async def run_pipeline(
 
     # 7. Final Composite scoring, re-ranking, and truncation to maxResults
     ranked_jobs = score_and_rank_jobs(ai_passed_jobs, config)
-    final_jobs = ranked_jobs[: config.max_results] if config.max_results else ranked_jobs
+    final_jobs, overseas_emitted, overseas_guaranteed = _ensure_overseas_slots(ranked_jobs, config)
     total_emitted = len(final_jobs)
 
     duration_secs = round(time.perf_counter() - t_start, 2)
@@ -181,6 +232,11 @@ async def run_pipeline(
         "failedSources": failed_sources,
         "durationSeconds": duration_secs,
     }
+    # Overseas-specific stats are only present when the pack is enabled, so
+    # flag-off runs keep a byte-identical stats key set.
+    if getattr(config, "enable_overseas_sources", False):
+        stats["overseasEmitted"] = overseas_emitted
+        stats["overseasGuaranteed"] = overseas_guaranteed
 
     # 8. Emit to sink (sink.close is owned by the caller/wrapper)
     await sink.emit(final_jobs)

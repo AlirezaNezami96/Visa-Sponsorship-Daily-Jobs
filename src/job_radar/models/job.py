@@ -245,6 +245,7 @@ class Job(BaseModel):
             "authFit": self.auth_fit,
             "relevanceScore": self.relevance_score,
             "compositeScore": self.composite_score,
+            "opportunityScore": (int(round(float(self.composite_score) * 100)) if self.composite_score is not None else None),
             "classificationReason": self.classification_reason or self.relevance_why,
             "isAiRole": self.is_ai_role,
             "hiringContacts": self.hiring_contacts if self.hiring_contacts is not None else [],

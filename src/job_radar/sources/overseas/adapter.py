@@ -52,12 +52,35 @@ _ALLOWED_CONTENT_TYPES = (
 JobTuple = Tuple[RawOverseasJob, OverseasSource, str]
 
 
+# Category priority for source selection when overseasMaxSourcesPerRun truncates.
+# Migration-corridor sources (manpower agencies + government labor portals) lead,
+# then visa specialists and remote boards; generic aggregators and unknown boards
+# (often domestic circular sites or anti-bot-blocked) are tried last.
+_CATEGORY_PRIORITY: Dict[str, int] = {
+    "manpower_agency": 0,
+    "government": 1,
+    "visa_specialist": 2,
+    "remote_board": 3,
+    "aggregator": 4,
+    "unknown_board": 5,
+}
+
+
+def _source_priority(source: OverseasSource) -> Tuple[int, int, str]:
+    """Sort key: priority category first, then tier1, then stable by domain."""
+    category_rank = _CATEGORY_PRIORITY.get(source.category, 9)
+    tier_rank = 0 if str(source.tier).startswith("tier1") else 1
+    return (category_rank, tier_rank, source.domain)
+
+
 class OverseasAdapter(SourceAdapter):
     """Aggregates the build-time-verified overseas source registry."""
 
     def __init__(self, config: JobSearchConfig) -> None:
         categories = set(config.overseas_categories or [])
         self.sources: List[OverseasSource] = get_enabled_sources(categories=categories or None)
+        # Prioritize so budget-limited runs hit the highest-value corridors first.
+        self.sources.sort(key=_source_priority)
         self.sources = self.sources[: max(0, int(config.overseas_max_sources_per_run or 0))]
         self.fetch_timeout_secs: int = int(config.overseas_budget_secs or 600)
         self.failed_sources: List[Dict[str, str]] = []

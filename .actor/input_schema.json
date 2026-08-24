@@ -396,6 +396,14 @@
       "minimum": 0,
       "maximum": 32
     },
+    "overseasMinResults": {
+      "title": "Overseas Minimum Results",
+      "type": "integer",
+      "description": "Guarantee at least this many overseas jobs in the output (they otherwise rank below registry-enriched jobs and can be truncated to zero). Set to 0 to disable the guarantee. Clamped to maxResults.",
+      "default": 20,
+      "minimum": 0,
+      "maximum": 500
+    },
     "respectRobotsTxt": {
       "title": "Respect robots.txt",
       "type": "boolean",

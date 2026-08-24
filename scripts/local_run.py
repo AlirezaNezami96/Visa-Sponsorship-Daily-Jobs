@@ -37,6 +37,8 @@ sys.path.insert(0, str(repo_root / "src"))
 sys.path.insert(0, str(repo_root))
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 from apify_actor.config_mapper import input_to_config  # noqa: E402
 from job_radar.pipeline.orchestrator import run_pipeline  # noqa: E402

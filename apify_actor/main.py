@@ -11,6 +11,11 @@ from job_radar.pipeline.orchestrator import run_pipeline
 
 logger = logging.getLogger("apify_main")
 
+# One httpx log line per request (hundreds per run) drowns the actor log;
+# keep warnings/errors only. The adapter logs its own fetch summaries.
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+
 
 async def main() -> None:
     """Main Actor execution routine with runtime timeout enforcement and guaranteed cleanup."""
@@ -38,6 +43,18 @@ async def main() -> None:
             Actor.log.info(
                 f"Actor run finished successfully: {result.stats.get('totalEmitted', 0)} jobs emitted. "
                 f"Duration: {result.stats.get('durationSeconds', 0)}s."
+            )
+
+            # 5. Generate human-friendly reports (REPORT.json / REPORT.html) in the
+            #    Key-Value Store. Additive and non-fatal: failures are logged only.
+            from apify_actor.report_writer import write_apify_reports
+            await write_apify_reports(
+                config=config,
+                jobs=result.jobs,
+                stats=result.stats,
+                successful_sources=result.successful_sources,
+                failed_sources=result.failed_sources,
+                status="completed",
             )
         except asyncio.TimeoutError:
             Actor.log.warning(

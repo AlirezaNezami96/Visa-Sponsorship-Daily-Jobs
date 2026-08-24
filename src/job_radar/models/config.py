@@ -71,4 +71,5 @@ class JobSearchConfig:
     overseas_max_detail_fetches: int = 300
     overseas_simhash_dedup: bool = True
     overseas_simhash_threshold: int = 6
+    overseas_min_results: int = 20
     respect_robots_txt: bool = True

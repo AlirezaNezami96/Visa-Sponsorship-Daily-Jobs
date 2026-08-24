@@ -15,7 +15,7 @@ import yaml
 
 from job_radar.visa.db import load_all_aliases, load_all_sponsors, DEFAULT_DB_PATH
 from job_radar.visa.models import AuthFit, SponsorRecord, VisaConfidence
-from job_radar.visa.normalizer import match_company_to_sponsor
+from job_radar.visa.normalizer import build_token_index, match_company_to_sponsor
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +56,8 @@ class VisaEvaluator:
         self.db_path = db_path
         self._sponsors: Optional[Dict[str, SponsorRecord]] = None
         self._aliases: Optional[Dict[str, str]] = None
+        self._token_index: Optional[Dict[str, Any]] = None
+        self._match_cache: Dict[str, Tuple[Any, str]] = {}
         self._thresholds: Dict[str, Any] = {}
         self._load_thresholds()
 
@@ -71,6 +73,11 @@ class VisaEvaluator:
         if self._sponsors is None:
             self._sponsors = load_all_sponsors(db_path=self.db_path)
             self._aliases = load_all_aliases(db_path=self.db_path)
+            # Inverted token index over ~125k sponsor names: turns each fuzzy
+            # registry scan from O(all sponsors) into O(token-sharing
+            # candidates) with identical >= 0.92 results (see normalizer).
+            self._token_index = build_token_index(self._sponsors)
+            self._match_cache = {}
 
     def evaluate_job(
         self,
@@ -123,6 +130,8 @@ class VisaEvaluator:
             company_name=company,
             sponsors_by_norm=self._sponsors or {},
             alias_map=self._aliases or {},
+            token_index=self._token_index,
+            match_cache=self._match_cache,
         )
 
         if matched_sponsor:
@@ -183,6 +192,8 @@ class VisaEvaluator:
             company_name=company,
             sponsors_by_norm=self._sponsors or {},
             alias_map=self._aliases or {},
+            token_index=self._token_index,
+            match_cache=self._match_cache,
         )
 
         reg_val = 0.0
