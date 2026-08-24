@@ -189,12 +189,14 @@ class OverseasAdapter(SourceAdapter):
             logger.debug("overseas: robots.txt disallows %s, skipping", source.domain)
             return []
 
+        last_error: Optional[str] = None
         async with sem:
             for url in source.start_urls:
                 if monotonic() > deadline:
                     return []
-                content, content_type = await self._get_page(client, url, host_sem_factory(source.domain))
+                content, content_type, err = await self._get_page(client, url, host_sem_factory(source.domain))
                 if content is None:
+                    last_error = err or last_error
                     continue
                 jobs, _strategy = extract_all(content, url, rss_capable=source.rss_capable, content_type=content_type)
                 if not jobs:
@@ -204,6 +206,8 @@ class OverseasAdapter(SourceAdapter):
                 if config.overseas_fetch_details and state["detail_fetches"] < config.overseas_max_detail_fetches:
                     tuples = await self._enrich_details(client, tuples, host_sem_factory(source.domain), state, config)
                 return tuples
+            if last_error:
+                self.failed_sources.append({"domain": source.domain, "error": last_error})
             return []
 
     # ── HTTP primitives ──
@@ -213,18 +217,21 @@ class OverseasAdapter(SourceAdapter):
         client: httpx.AsyncClient,
         url: str,
         host_sem: asyncio.Semaphore,
-    ) -> Tuple[Optional[str], str]:
-        """Fetch a page with streaming body cap. Returns (text_or_None, content_type)."""
+    ) -> Tuple[Optional[str], str, Optional[str]]:
+        """Fetch a page with streaming body cap.
+
+        Returns (text_or_None, content_type, error_or_None).
+        """
         async with host_sem:
             try:
                 async with client.stream("GET", url) as resp:
                     if resp.status_code >= 400:
                         logger.debug("overseas: %s -> HTTP %d", url, resp.status_code)
-                        return None, ""
+                        return None, "", f"http_{resp.status_code}"
                     ct_low = (resp.headers.get("content-type", "") or "").lower()
                     if ct_low and not any(t in ct_low for t in _ALLOWED_CONTENT_TYPES):
                         logger.debug("overseas: %s -> unsupported content type %s", url, ct_low)
-                        return None, ""
+                        return None, "", f"content_type_{ct_low.split(';')[0].strip()}"
                     chunks: List[bytes] = []
                     total = 0
                     async for chunk in resp.aiter_bytes():
@@ -233,13 +240,13 @@ class OverseasAdapter(SourceAdapter):
                         if total >= MAX_BODY_BYTES:
                             break
                     body = b"".join(chunks)
-                    return body.decode("utf-8", errors="replace"), ct_low
+                    return body.decode("utf-8", errors="replace"), ct_low.split(";")[0].strip(), None
             except httpx.HTTPError as e:
                 logger.debug("overseas: fetch %s failed: %s", url, e)
-                return None, ""
+                return None, "", type(e).__name__
             except Exception as e:
                 logger.debug("overseas: fetch %s unexpected error: %s", url, e)
-                return None, ""
+                return None, "", type(e).__name__
 
     async def _robots_allow(
         self,
@@ -290,7 +297,7 @@ class OverseasAdapter(SourceAdapter):
                 enriched.append((raw, source, desc_source))
                 continue
             state["detail_fetches"] += 1
-            content, _ct = await self._get_page(client, raw.detail_url, host_sem)
+            content, _ct, _err = await self._get_page(client, raw.detail_url, host_sem)
             if not content:
                 enriched.append((raw, source, desc_source))
                 continue

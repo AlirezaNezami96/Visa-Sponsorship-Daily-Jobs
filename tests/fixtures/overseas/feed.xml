@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel>
+  <title>Overseas Jobs Daily – Gulf Edition</title>
+  <link>https://overseasjobs.example</link>
+  <description>Manpower recruitment announcements for Gulf countries</description>
+  <item>
+    <title>Scaffolder – Dubai walk-in interview</title>
+    <link>https://overseasjobs.example/jobs/scaffolder-dubai</link>
+    <description><![CDATA[<p>Urgent requirement for scaffolders in <b>Dubai</b>. Salary AED 2100 with free accommodation and transport provided by the company.</p>]]></description>
+    <pubDate>Mon, 18 Aug 2026 08:00:00 GMT</pubDate>
+    <dc:creator>Emirates Workforce Recruitment LLC</dc:creator>
+  </item>
+  <item>
+    <title>Tile Mason – Jeddah Saudi Arabia</title>
+    <link>https://overseasjobs.example/jobs/tile-mason-jeddah</link>
+    <description><![CDATA[<p>Tile mason needed for a housing project in Jeddah. Two years of experience required. Iqama transfer available.</p>]]></description>
+    <pubDate>Tue, 19 Aug 2026 09:30:00 GMT</pubDate>
+  </item>
+  <item>
+    <title>Forklift Operator – Doha position</title>
+    <link>https://overseasjobs.example/jobs/forklift-operator-doha</link>
+    <description><![CDATA[<p>Forklift operator required in Doha. Valid GCC licence preferred. Salary QAR 2800 plus food allowance.</p>]]></description>
+    <pubDate>Wed, 20 Aug 2026 11:15:00 GMT</pubDate>
+    <dc:creator>admin</dc:creator>
+  </item>
+  <item>
+    <title>Hotel Housekeeping Staff – Muscat</title>
+    <link>https://overseasjobs.example/jobs/housekeeping-muscat</link>
+    <description><![CDATA[<p>Housekeeping staff wanted for a five star hotel in Muscat. Accommodation and duty meals provided.</p>]]></description>
+    <pubDate>Thu, 21 Aug 2026 07:45:00 GMT</pubDate>
+  </item>
+  <item>
+    <title>AC Technician – Bahrain opening</title>
+    <link>https://overseasjobs.example/jobs/ac-technician-bahrain</link>
+    <description><![CDATA[<p>Air conditioning technician needed in Manama. HVAC diploma and three years of experience required.</p>]]></description>
+    <pubDate>Fri, 22 Aug 2026 10:00:00 GMT</pubDate>
+    <dc:creator>Gulf Careers Support Team</dc:creator>
+  </item>
+</channel>
+</rss>

@@ -34,10 +34,15 @@ STRATEGY_DOM = "dom_cards"
 _ANCHOR_RE = re.compile(r"job|vacanc|career|position|apply|walk-?in", re.IGNORECASE)
 _NAV_TEXT_RE = re.compile(r"\b(home|about|contact|login|sign\s*in|register|privacy|terms|faq|search)\b", re.IGNORECASE)
 _COMPANY_RE = re.compile(r"(?:Company|Employer|Organization)\s*:\s*([^|;\n]{2,80})", re.IGNORECASE)
+_CURRENCIES = r"AED|SAR|QAR|KWD|OMR|BHD|USD|EUR|GBP|PKR|INR|BDT"
 _SALARY_RANGE_RE = re.compile(
-    r"(\d[\d,]*(?:\.\d+)?)\s*(?:-|to)\s*(\d[\d,]*(?:\.\d+)?)\s*(AED|SAR|QAR|KWD|OMR|BHD|USD|EUR|GBP|PKR|INR|BDT)"
+    r"(\d[\d,]*(?:\.\d+)?)\s*(?:-|\u2013|to)\s*(\d[\d,]*(?:\.\d+)?)\s?(" + _CURRENCIES + r")\b"
 )
-_SALARY_SINGLE_RE = re.compile(r"(\d[\d,]*(?:\.\d+)?)\s?(AED|SAR|QAR|KWD|OMR|BHD|USD|EUR|GBP|PKR|INR|BDT)\b")
+_SALARY_SINGLE_RE = re.compile(r"(\d[\d,]*(?:\.\d+)?)\s?(" + _CURRENCIES + r")\b")
+_SALARY_CUR_FIRST_RE = re.compile(r"(" + _CURRENCIES + r")\s?(\d[\d,]*(?:\.\d+)?)")
+_SALARY_CUR_FIRST_RANGE_RE = re.compile(
+    r"(" + _CURRENCIES + r")\s?(\d[\d,]*(?:\.\d+)?)\s*(?:-|\u2013|to)\s*(\d[\d,]*(?:\.\d+)?)"
+)
 _DATE_ISO_RE = re.compile(r"(\d{4}-\d{2}-\d{2})")
 _DATE_DMY_RE = re.compile(
     r"(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December|"
@@ -153,13 +158,29 @@ def _parse_card_date(text: str) -> Optional[datetime]:
 
 
 def _parse_salary_from_text(text: str) -> Tuple[Optional[float], Optional[float], Optional[str]]:
-    """Return (min, max, currency) parsed from free text."""
+    """Return (min, max, currency) parsed from free text.
+
+    Handles both number-first ("2500 AED") and currency-first ("AED 2500")
+    formats, with optional ranges.
+    """
     if not text:
         return None, None, None
+    m = _SALARY_CUR_FIRST_RANGE_RE.search(text)
+    if m:
+        try:
+            return float(m.group(2).replace(",", "")), float(m.group(3).replace(",", "")), m.group(1).upper()
+        except ValueError:
+            pass
     m = _SALARY_RANGE_RE.search(text)
     if m:
         try:
             return float(m.group(1).replace(",", "")), float(m.group(2).replace(",", "")), m.group(3).upper()
+        except ValueError:
+            pass
+    m = _SALARY_CUR_FIRST_RE.search(text)
+    if m:
+        try:
+            return float(m.group(2).replace(",", "")), None, m.group(1).upper()
         except ValueError:
             pass
     m = _SALARY_SINGLE_RE.search(text)
