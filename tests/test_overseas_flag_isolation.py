@@ -104,3 +104,85 @@ def test_overseas_job_output_includes_overseas_keys():
     out = job.to_apify_dict()
     assert out["sourceCategory"] == "manpower_agency"
     assert out["destinationCountry"] == "UAE"
+
+
+def _long_overseas_job(job_id: str, domain: str, company: str = "Agency") -> Job:
+    desc = (
+        "We are looking for an experienced mason to join our construction team in Dubai. "
+        "Responsibilities include bricklaying, concrete work, reading blueprints, and working with "
+        "site supervisors to complete villa projects on time. Food and accommodation provided. "
+        "Minimum two years of Gulf experience preferred. Immediate deployment available for selected candidates."
+    )
+    return Job(
+        id=job_id,
+        source="overseas",
+        ats=domain,
+        title="Mason",
+        company=company,
+        description=desc,
+        country="UAE",
+        apply_url=f"https://{domain}/jobs/{job_id}",
+        metadata={
+            "overseas": True,
+            "source_category": "manpower_agency",
+            "source_domain": domain,
+        },
+    )
+
+
+def test_pipeline_stats_include_simhash_duplicates_key_flag_off():
+    import asyncio
+    from unittest.mock import patch
+
+    from job_radar.pipeline.orchestrator import run_pipeline
+    from job_radar.pipeline.sink import InMemoryJobSink
+
+    async def _test():
+        config = JobSearchConfig(
+            keywords=["Mason"],
+            visa_sponsorship_only=False,
+            max_results=10,
+            enable_overseas_sources=False,
+        )
+        sink = InMemoryJobSink()
+        jobs = [
+            Job(id="gh-1", source="greenhouse", company="Acme", title="Mason", description="Masonry work"),
+        ]
+        with patch("job_radar.pipeline.orchestrator.fetch_all_sources") as mock_fetch:
+            mock_fetch.return_value = (jobs, ["greenhouse"], [])
+            result = await run_pipeline(config, sink)
+        assert "simhashDuplicates" in result.stats
+        assert result.stats["simhashDuplicates"] == 0
+
+    asyncio.run(_test())
+
+
+def test_pipeline_stats_simhash_duplicates_flag_on():
+    import asyncio
+    from unittest.mock import patch
+
+    from job_radar.pipeline.orchestrator import run_pipeline
+    from job_radar.pipeline.sink import InMemoryJobSink
+
+    async def _test():
+        cfg = JobSearchConfig(
+            keywords=["Mason"],
+            visa_sponsorship_only=False,
+            max_results=10,
+            enable_overseas_sources=True,
+            overseas_simhash_dedup=True,
+        )
+        sink = InMemoryJobSink()
+        # Two copy-pasted JDs from different agencies: fingerprint dedupe cannot
+        # catch them (different company domains), SimHash must.
+        jobs = [
+            _long_overseas_job("ov-a.example-1", "a.example", company="Alpha Manpower"),
+            _long_overseas_job("ov-b.example-2", "b.example", company="Beta Recruiting"),
+        ]
+        with patch("job_radar.pipeline.orchestrator.fetch_all_sources") as mock_fetch:
+            mock_fetch.return_value = (jobs, ["overseas"], [])
+            result = await run_pipeline(cfg, sink)
+        assert result.stats["simhashDuplicates"] == 1
+        assert result.stats["totalEmitted"] == 1
+
+    asyncio.run(_test())
