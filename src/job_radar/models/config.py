@@ -59,3 +59,16 @@ class JobSearchConfig:
     max_runtime_secs: int = 300
     use_browser_fallback: bool = False
     proxy_configuration: Optional[Dict[str, Any]] = None
+
+    # Overseas Expansion (v1) — flag-gated; defaults preserve current behavior
+    enable_overseas_sources: bool = False
+    overseas_categories: List[str] = field(default_factory=lambda: ["government", "manpower_agency", "aggregator", "remote_board", "visa_specialist", "unknown_board"])
+    overseas_destination_countries: List[str] = field(default_factory=list)   # adapter-level filter; empty = all
+    overseas_max_sources_per_run: int = 150
+    overseas_concurrency: int = 20
+    overseas_budget_secs: int = 600
+    overseas_fetch_details: bool = False
+    overseas_max_detail_fetches: int = 300
+    overseas_simhash_dedup: bool = True
+    overseas_simhash_threshold: int = 6
+    respect_robots_txt: bool = True
