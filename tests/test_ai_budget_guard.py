@@ -1,10 +1,12 @@
 """Tests for budget check prior to AI classification stage."""
 import asyncio
+import os
 from unittest.mock import AsyncMock, patch
 
 from job_radar.models.config import JobSearchConfig
 from job_radar.models.enums import VisaConfidence
 from job_radar.models.job import Job
+from job_radar.pipeline.classify import classify_jobs_stage
 from job_radar.pipeline.orchestrator import run_pipeline
 from job_radar.pipeline.sink import JobSink
 
@@ -51,5 +53,28 @@ def test_ai_skipped_when_limit_reached():
             assert mock_classify.call_count == 0
             assert result.stats["aiClassifiedJobs"] == 0
             assert len(result.jobs) == 2
+
+    asyncio.run(_test())
+
+
+def test_ai_skipped_when_actor_max_total_charge_usd_exhausted():
+    async def _test():
+        jobs = [
+            Job(id="1", source="greenhouse", company="Stripe", title="SWE", location="Remote"),
+            Job(id="2", source="greenhouse", company="DeepMind", title="SWE", location="Remote"),
+        ]
+
+        config = JobSearchConfig(
+            enable_ai_classification=True,
+            max_results=10,
+        )
+
+        # Total budget = $0.06 (projected base cost $0.05 + 2*0.002 = $0.054 -> 90% of budget)
+        with patch.dict(os.environ, {"ACTOR_MAX_TOTAL_CHARGE_USD": "0.06"}):
+            with patch("job_radar.pipeline.classify.classify_job", new_callable=AsyncMock) as mock_classify_single:
+                passed, count = await classify_jobs_stage(jobs, config)
+                assert count == 0
+                assert mock_classify_single.call_count == 0
+                assert len(passed) == 2
 
     asyncio.run(_test())

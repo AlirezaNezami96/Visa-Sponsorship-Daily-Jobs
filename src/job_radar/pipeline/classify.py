@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 from typing import Any, Dict, List, Optional, Tuple
 
 from job_radar.llm.router import complete
@@ -96,10 +97,49 @@ async def classify_jobs_stage(
 ) -> Tuple[List[Job], int]:
     """
     Executes non-blocking AI classification across candidate jobs with bounded concurrency (3).
+    Skips AI classification if the user's spending limit or ACTOR_MAX_TOTAL_CHARGE_USD budget is >= 80% exhausted.
     Returns (qualified_jobs, classified_count).
     """
     if not config.enable_ai_classification or not jobs:
         return jobs, 0
+
+    # 1. Budget Guard: Check ACTOR_MAX_TOTAL_CHARGE_USD spending ceiling
+    max_charge_str = os.environ.get("ACTOR_MAX_TOTAL_CHARGE_USD")
+    if max_charge_str:
+        try:
+            max_charge = float(max_charge_str)
+            estimated_base_cost = 0.05 + (len(jobs) * 0.002)
+            if max_charge > 0 and (estimated_base_cost / max_charge) >= 0.80:
+                logger.warning(
+                    "ACTOR_MAX_TOTAL_CHARGE_USD ($%.2f) budget >= 80%% exhausted (projected base cost: $%.3f). Skipping AI classification to protect user wallet.",
+                    max_charge,
+                    estimated_base_cost,
+                )
+                return jobs, 0
+        except ValueError:
+            pass
+
+    # 2. ChargingManager Guard (if running inside Apify environment)
+    try:
+        from apify import Actor
+        cm = getattr(Actor, "charging_manager", None)
+        if cm:
+            if getattr(cm, "is_limit_reached", False):
+                logger.warning("Apify ChargingManager reports charge limit reached. Skipping AI classification.")
+                return jobs, 0
+            max_total = getattr(cm, "max_total_charge_usd", None)
+            total_charged = getattr(cm, "total_charged_usd", None)
+            if max_total is not None and total_charged is not None and max_total > 0:
+                if (total_charged / max_total) >= 0.80:
+                    logger.warning(
+                        "Apify budget at %.1f%% ($%.3f / $%.3f >= 80%%). Skipping AI classification to protect user wallet.",
+                        (total_charged / max_total) * 100,
+                        total_charged,
+                        max_total,
+                    )
+                    return jobs, 0
+    except Exception:
+        pass
 
     max_calls = config.max_ai_calls if config.max_ai_calls is not None else 200
     min_score = config.minimum_relevance_score or 0.0
