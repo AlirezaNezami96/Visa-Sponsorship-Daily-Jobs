@@ -45,7 +45,7 @@ async def fetch_all_sources(config: JobSearchConfig) -> Tuple[List[Job], List[st
     async def _fetch_single(adapter: SourceAdapter) -> Tuple[str, List[Job], Optional[str]]:
         async with semaphore:
             try:
-                timeout = config.timeout_per_source_secs or 30
+                timeout = getattr(adapter, "fetch_timeout_secs", None) or config.timeout_per_source_secs or 30
                 jobs = await asyncio.wait_for(adapter.fetch(config), timeout=timeout)
                 return (adapter.name, jobs, None)
             except asyncio.TimeoutError:
@@ -112,6 +112,10 @@ async def run_pipeline(
         deduped_jobs, duplicate_count = filtered_jobs, 0
     total_deduped = len(deduped_jobs)
 
+    # 3b. SimHash near-duplicate stage (overseas copy-pasted JDs). Runs only
+    # when overseas is enabled; wired fully in Part 5. 0 when the stage is off.
+    simhash_dup_count = 0
+
     # 4. Visa Intelligence and registry matching (Free, deterministic)
     visa_passed_jobs, visa_enriched_count = evaluate_and_filter_visa(deduped_jobs, config)
     total_visa_passed = len(visa_passed_jobs)
@@ -163,6 +167,7 @@ async def run_pipeline(
         "totalFiltered": total_filtered,
         "totalDeduplicated": duplicate_count,
         "uniqueSurvivingJobs": total_deduped,
+        "simhashDuplicates": simhash_dup_count,
         "visaPassedJobs": total_visa_passed,
         "visaEnrichedJobs": visa_enriched_count,
         "aiClassifiedJobs": ai_classified_count,
