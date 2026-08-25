@@ -37,6 +37,7 @@
       "title": "Remote Only",
       "type": "boolean",
       "description": "Only return remote job positions.",
+      "editor": "checkbox",
       "default": false
     },
     "remoteRegions": {
@@ -50,6 +51,7 @@
       "title": "Visa Sponsorship Only",
       "type": "boolean",
       "description": "When enabled, filters for jobs with confirmed sponsorship signals (on sponsor list, historical filings, or stated in JD).",
+      "editor": "checkbox",
       "default": true,
       "sectionCaption": "2. Visa Filters (The Moat)",
       "sectionDescription": "Cross-reference against official government sponsor registries and check explicit sponsorship statements."
@@ -58,6 +60,7 @@
       "title": "Include Unknown Visa Status",
       "type": "boolean",
       "description": "When Visa Sponsorship Only is enabled, also include jobs where sponsorship status is unknown. Disable this for stricter sponsorship-only results.",
+      "editor": "checkbox",
       "default": false
     },
     "visaRegistryCountries": {
@@ -67,10 +70,19 @@
       "editor": "select",
       "items": {
         "type": "string",
-        "enum": ["UK", "US"],
-        "enumTitles": ["UK (Register of Licensed Sponsors)", "US (DOL LCA Certified Filings)"]
+        "enum": [
+          "UK",
+          "US"
+        ],
+        "enumTitles": [
+          "UK (Register of Licensed Sponsors)",
+          "US (DOL LCA Certified Filings)"
+        ]
       },
-      "default": ["UK", "US"]
+      "default": [
+        "UK",
+        "US"
+      ]
     },
     "minVisaConfidence": {
       "title": "Minimum Visa Confidence",
@@ -78,7 +90,13 @@
       "description": "Minimum confidence level required for emitted jobs.",
       "editor": "select",
       "default": "unknown",
-      "enum": ["unknown", "historical_filings", "employer_sponsored_region", "on_sponsor_list", "stated_in_jd"],
+      "enum": [
+        "unknown",
+        "historical_filings",
+        "employer_sponsored_region",
+        "on_sponsor_list",
+        "stated_in_jd"
+      ],
       "enumTitles": [
         "Any / Unknown (Most jobs)",
         "Historical Filings (US DOL LCA records)",
@@ -91,6 +109,7 @@
       "title": "Exclude Explicit 'No Visa' Listings",
       "type": "boolean",
       "description": "Exclude jobs with explicit statements like 'Must already have right to work' or 'No sponsorship'.",
+      "editor": "checkbox",
       "default": true
     },
     "sources": {
@@ -129,7 +148,13 @@
           "Jobicy"
         ]
       },
-      "default": ["greenhouse", "lever", "ashby", "remoteok", "remotive"],
+      "default": [
+        "greenhouse",
+        "lever",
+        "ashby",
+        "remoteok",
+        "remotive"
+      ],
       "sectionCaption": "3. Data Sources",
       "sectionDescription": "Select public ATS endpoints and job board feeds."
     },
@@ -154,8 +179,22 @@
       "editor": "select",
       "items": {
         "type": "string",
-        "enum": ["intern", "junior", "mid", "senior", "lead", "executive"],
-        "enumTitles": ["Internship", "Junior / Entry", "Mid-Level", "Senior", "Lead / Staff", "Executive"]
+        "enum": [
+          "intern",
+          "junior",
+          "mid",
+          "senior",
+          "lead",
+          "executive"
+        ],
+        "enumTitles": [
+          "Internship",
+          "Junior / Entry",
+          "Mid-Level",
+          "Senior",
+          "Lead / Staff",
+          "Executive"
+        ]
       },
       "default": [],
       "sectionCaption": "4. Job Filters",
@@ -168,8 +207,18 @@
       "editor": "select",
       "items": {
         "type": "string",
-        "enum": ["full_time", "part_time", "contract", "internship"],
-        "enumTitles": ["Full-time", "Part-time", "Contract", "Internship"]
+        "enum": [
+          "full_time",
+          "part_time",
+          "contract",
+          "internship"
+        ],
+        "enumTitles": [
+          "Full-time",
+          "Part-time",
+          "Contract",
+          "Internship"
+        ]
       },
       "default": []
     },
@@ -177,6 +226,7 @@
       "title": "Posted Within Days",
       "type": "integer",
       "description": "Maximum age of job postings in days.",
+      "editor": "number",
       "default": 30,
       "minimum": 1,
       "maximum": 365
@@ -185,12 +235,14 @@
       "title": "Minimum Salary",
       "type": "number",
       "description": "Minimum annual compensation floor (jobs without listed salary are retained).",
+      "editor": "number",
       "minimum": 0
     },
     "salaryCurrency": {
       "title": "Salary Currency",
       "type": "string",
       "description": "ISO currency code (e.g. USD, EUR, GBP).",
+      "editor": "textfield",
       "default": "USD"
     },
     "technologies": {
@@ -204,6 +256,7 @@
       "title": "Enable AI Classification",
       "type": "boolean",
       "description": "Use LLM router (Gemini, Groq, OpenRouter) to evaluate deep technical relevance and score job match quality.",
+      "editor": "checkbox",
       "default": false,
       "sectionCaption": "5. AI Classification & Output",
       "sectionDescription": "AI relevance scoring, sorting, and output limits."
@@ -212,6 +265,7 @@
       "title": "Minimum AI Relevance Score",
       "type": "number",
       "description": "Minimum AI score (0.0 to 1.0) required to include a job when AI classification is enabled.",
+      "editor": "number",
       "default": 0.5,
       "minimum": 0.0,
       "maximum": 1.0
@@ -220,6 +274,7 @@
       "title": "Max AI Calls Budget",
       "type": "integer",
       "description": "Maximum number of LLM classification calls allowed per run.",
+      "editor": "number",
       "default": 200,
       "minimum": 1
     },
@@ -233,6 +288,7 @@
       "title": "Max Results",
       "type": "integer",
       "description": "Maximum number of matching jobs to output.",
+      "editor": "number",
       "default": 200,
       "minimum": 1,
       "maximum": 10000
@@ -243,7 +299,13 @@
       "description": "Field to sort the output jobs by.",
       "editor": "select",
       "default": "composite_score",
-      "enum": ["composite_score", "relevance_score", "posted_at", "salary", "visa_confidence"],
+      "enum": [
+        "composite_score",
+        "relevance_score",
+        "posted_at",
+        "salary",
+        "visa_confidence"
+      ],
       "enumTitles": [
         "Composite Score (Recommended)",
         "AI Relevance Score",
@@ -258,25 +320,34 @@
       "description": "Ascending or descending order.",
       "editor": "select",
       "default": "desc",
-      "enum": ["asc", "desc"],
-      "enumTitles": ["Descending (Highest/Newest first)", "Ascending (Lowest/Oldest first)"]
+      "enum": [
+        "asc",
+        "desc"
+      ],
+      "enumTitles": [
+        "Descending (Highest/Newest first)",
+        "Ascending (Lowest/Oldest first)"
+      ]
     },
     "includeDescription": {
       "title": "Include Full Description",
       "type": "boolean",
       "description": "Include full text/HTML job description in dataset output.",
+      "editor": "checkbox",
       "default": true
     },
     "deduplicateWithinRun": {
       "title": "Deduplicate Within Run",
       "type": "boolean",
       "description": "Deduplicate listings within the current execution based on company, title, and location fingerprint.",
+      "editor": "checkbox",
       "default": true
     },
     "maxPerSource": {
       "title": "Max Jobs Per Source",
       "type": "integer",
       "description": "Maximum jobs to fetch from each individual ATS/board.",
+      "editor": "number",
       "default": 500,
       "minimum": 1,
       "sectionCaption": "6. Advanced Options",
@@ -286,6 +357,7 @@
       "title": "Source Concurrency",
       "type": "integer",
       "description": "Number of concurrent sources to fetch simultaneously.",
+      "editor": "number",
       "default": 5,
       "minimum": 1,
       "maximum": 20
@@ -294,6 +366,7 @@
       "title": "Timeout Per Source (Seconds)",
       "type": "integer",
       "description": "HTTP request timeout per source in seconds.",
+      "editor": "number",
       "default": 30,
       "minimum": 5,
       "maximum": 120
@@ -302,6 +375,7 @@
       "title": "Max Runtime (Seconds)",
       "type": "integer",
       "description": "Maximum allowed runtime for the Actor before graceful termination.",
+      "editor": "number",
       "default": 300,
       "minimum": 10,
       "maximum": 3600
@@ -310,6 +384,7 @@
       "title": "Enable Overseas Sources",
       "type": "boolean",
       "description": "Include 248 verified overseas government portals, manpower agencies, and niche boards (India/Pakistan/Bangladesh → Gulf & beyond).",
+      "editor": "checkbox",
       "default": false,
       "sectionCaption": "7. Overseas Expansion (Optional)",
       "sectionDescription": "Verified government portals, manpower agencies, and niche boards for migration corridors (India/Pakistan/Bangladesh → Gulf, East Asia, Europe, Canada, Australia). Off by default; existing sources are unaffected."
@@ -321,7 +396,14 @@
       "editor": "select",
       "items": {
         "type": "string",
-        "enum": ["government", "manpower_agency", "aggregator", "remote_board", "visa_specialist", "unknown_board"],
+        "enum": [
+          "government",
+          "manpower_agency",
+          "aggregator",
+          "remote_board",
+          "visa_specialist",
+          "unknown_board"
+        ],
         "enumTitles": [
           "Government Portals",
           "Manpower Agencies",
@@ -331,7 +413,14 @@
           "Niche Boards (Uncategorized)"
         ]
       },
-      "default": ["government", "manpower_agency", "aggregator", "remote_board", "visa_specialist", "unknown_board"]
+      "default": [
+        "government",
+        "manpower_agency",
+        "aggregator",
+        "remote_board",
+        "visa_specialist",
+        "unknown_board"
+      ]
     },
     "overseasDestinationCountries": {
       "title": "Overseas Destination Countries",
@@ -340,7 +429,23 @@
       "editor": "select",
       "items": {
         "type": "string",
-        "enum": ["UAE", "Saudi Arabia", "Qatar", "Kuwait", "Oman", "Bahrain", "Malaysia", "Singapore", "Japan", "South Korea", "Germany", "United Kingdom", "Canada", "Australia", "New Zealand"]
+        "enum": [
+          "UAE",
+          "Saudi Arabia",
+          "Qatar",
+          "Kuwait",
+          "Oman",
+          "Bahrain",
+          "Malaysia",
+          "Singapore",
+          "Japan",
+          "South Korea",
+          "Germany",
+          "United Kingdom",
+          "Canada",
+          "Australia",
+          "New Zealand"
+        ]
       },
       "default": []
     },
@@ -348,6 +453,7 @@
       "title": "Max Overseas Sources Per Run",
       "type": "integer",
       "description": "How many overseas sources to fetch in a single run.",
+      "editor": "number",
       "default": 150,
       "minimum": 10,
       "maximum": 573
@@ -355,7 +461,8 @@
     "overseasConcurrency": {
       "title": "Overseas Concurrency",
       "type": "integer",
-"description": "Concurrent overseas page fetches (per-host is further limited to 2).",
+      "description": "Concurrent overseas page fetches (per-host is further limited to 2).",
+      "editor": "number",
       "default": 20,
       "minimum": 5,
       "maximum": 40
@@ -364,6 +471,7 @@
       "title": "Overseas Budget (Seconds)",
       "type": "integer",
       "description": "Time budget for overseas fetching. When enabling overseas sources, raise maxRuntimeSecs to at least 900. The budget is automatically capped at 80% of maxRuntimeSecs.",
+      "editor": "number",
       "default": 600,
       "minimum": 60,
       "maximum": 3000
@@ -372,12 +480,14 @@
       "title": "Fetch Overseas Detail Pages",
       "type": "boolean",
       "description": "Fetch job detail pages for richer descriptions and better dedup (slower, more requests).",
+      "editor": "checkbox",
       "default": false
     },
     "overseasMaxDetailFetches": {
       "title": "Max Overseas Detail Fetches",
       "type": "integer",
       "description": "Maximum number of overseas detail pages to fetch per run.",
+      "editor": "number",
       "default": 300,
       "minimum": 0,
       "maximum": 2000
@@ -386,12 +496,14 @@
       "title": "SimHash Near-Duplicate Dedup",
       "type": "boolean",
       "description": "Remove copy-pasted duplicate job descriptions across overseas agencies using SimHash.",
+      "editor": "checkbox",
       "default": true
     },
     "overseasSimhashThreshold": {
       "title": "SimHash Threshold",
       "type": "integer",
       "description": "Hamming distance at or below which two overseas jobs are treated as near-duplicates (lower = stricter).",
+      "editor": "number",
       "default": 6,
       "minimum": 0,
       "maximum": 32
@@ -400,6 +512,7 @@
       "title": "Overseas Minimum Results",
       "type": "integer",
       "description": "Guarantee at least this many overseas jobs in the output (they otherwise rank below registry-enriched jobs and can be truncated to zero). Set to 0 to disable the guarantee. Clamped to maxResults.",
+      "editor": "number",
       "default": 20,
       "minimum": 0,
       "maximum": 500
@@ -408,6 +521,7 @@
       "title": "Respect robots.txt",
       "type": "boolean",
       "description": "Honor robots.txt rules on overseas sources before fetching.",
+      "editor": "checkbox",
       "default": true
     }
   }

@@ -3,7 +3,7 @@
   "title": "Visa Sponsorship Jobs Output",
   "description": "Normalized visa-enriched job records. The Overview view is ordered by opportunity score so the strongest rows appear first.",
   "fields": {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "properties": {
       "id": {
@@ -76,10 +76,26 @@
         "description": "intern | new_grad | junior | mid | senior | lead | executive.",
         "example": "senior"
       },
-      "salaryMin": { "type": "number", "title": "Salary Min", "example": 75000 },
-      "salaryMax": { "type": "number", "title": "Salary Max", "example": 95000 },
-      "salaryCurrency": { "type": "string", "title": "Currency", "example": "GBP" },
-      "salaryPeriod": { "type": "string", "title": "Salary Period", "description": "hourly | daily | monthly | yearly." },
+      "salaryMin": {
+        "type": "number",
+        "title": "Salary Min",
+        "example": 75000
+      },
+      "salaryMax": {
+        "type": "number",
+        "title": "Salary Max",
+        "example": 95000
+      },
+      "salaryCurrency": {
+        "type": "string",
+        "title": "Currency",
+        "example": "GBP"
+      },
+      "salaryPeriod": {
+        "type": "string",
+        "title": "Salary Period",
+        "description": "hourly | daily | monthly | yearly."
+      },
       "postedAt": {
         "type": "string",
         "title": "Posted At",
@@ -92,7 +108,11 @@
         "description": "Direct link to apply for the role.",
         "example": "https://boards.greenhouse.io/stripe/jobs/4921049"
       },
-      "jobUrl": { "type": "string", "title": "Job URL", "description": "Canonical job posting URL." },
+      "jobUrl": {
+        "type": "string",
+        "title": "Job URL",
+        "description": "Canonical job posting URL."
+      },
       "source": {
         "type": "string",
         "title": "Source",
@@ -120,7 +140,14 @@
         "title": "Visa Signal",
         "description": "Six-tier sponsorship signal: stated_in_jd | on_sponsor_list | employer_sponsored_region | historical_filings | unknown | explicit_no.",
         "example": "on_sponsor_list",
-        "enum": ["stated_in_jd", "on_sponsor_list", "employer_sponsored_region", "historical_filings", "unknown", "explicit_no"]
+        "enum": [
+          "stated_in_jd",
+          "on_sponsor_list",
+          "employer_sponsored_region",
+          "historical_filings",
+          "unknown",
+          "explicit_no"
+        ]
       },
       "visaConfidence": {
         "type": "number",
@@ -206,22 +233,70 @@
       "display": {
         "component": "table",
         "properties": {
-          "opportunityScore": { "label": "Opportunity Score", "format": "number" },
-          "title": { "label": "Job Title", "format": "text" },
-          "company": { "label": "Company", "format": "text" },
-          "location": { "label": "Location", "format": "text" },
-          "country": { "label": "Country", "format": "text" },
-          "remote": { "label": "Remote", "format": "boolean" },
-          "visaSignal": { "label": "Visa Signal", "format": "text" },
-          "visaConfidence": { "label": "Visa Confidence", "format": "number" },
-          "visaType": { "label": "Visa Type", "format": "text" },
-          "salaryMin": { "label": "Salary Min", "format": "number" },
-          "salaryMax": { "label": "Salary Max", "format": "number" },
-          "salaryCurrency": { "label": "Currency", "format": "text" },
-          "seniority": { "label": "Seniority", "format": "text" },
-          "postedAt": { "label": "Posted At", "format": "date" },
-          "source": { "label": "Source", "format": "text" },
-          "applyUrl": { "label": "Apply", "format": "link" }
+          "opportunityScore": {
+            "label": "Opportunity Score",
+            "format": "number"
+          },
+          "title": {
+            "label": "Job Title",
+            "format": "text"
+          },
+          "company": {
+            "label": "Company",
+            "format": "text"
+          },
+          "location": {
+            "label": "Location",
+            "format": "text"
+          },
+          "country": {
+            "label": "Country",
+            "format": "text"
+          },
+          "remote": {
+            "label": "Remote",
+            "format": "boolean"
+          },
+          "visaSignal": {
+            "label": "Visa Signal",
+            "format": "text"
+          },
+          "visaConfidence": {
+            "label": "Visa Confidence",
+            "format": "number"
+          },
+          "visaType": {
+            "label": "Visa Type",
+            "format": "text"
+          },
+          "salaryMin": {
+            "label": "Salary Min",
+            "format": "number"
+          },
+          "salaryMax": {
+            "label": "Salary Max",
+            "format": "number"
+          },
+          "salaryCurrency": {
+            "label": "Currency",
+            "format": "text"
+          },
+          "seniority": {
+            "label": "Seniority",
+            "format": "text"
+          },
+          "postedAt": {
+            "label": "Posted At",
+            "format": "date"
+          },
+          "source": {
+            "label": "Source",
+            "format": "text"
+          },
+          "applyUrl": {
+            "label": "Apply",
+            "format": "link"
+          }
         }
       }
     },
@@ -229,15 +304,36 @@
       "title": "Visa Evidence",
       "description": "Visa signal, confidence, registry evidence, and destination country for sponsorship analysis.",
       "transformation": {
-        "fields": ["title", "company", "visaSignal", "visaConfidence", "visaType", "visaSponsorMeta", "authFit", "country", "destinationCountry", "sourceCategory", "applyUrl"],
+        "fields": [
+          "title",
+          "company",
+          "visaSignal",
+          "visaConfidence",
+          "visaType",
+          "visaSponsorMeta",
+          "authFit",
+          "country",
+          "destinationCountry",
+          "sourceCategory",
+          "applyUrl"
+        ],
         "desc": true
       },
       "display": {
         "component": "table",
         "properties": {
-          "visaConfidence": { "label": "Visa Confidence", "format": "number" },
-          "visaSponsorMeta": { "label": "Sponsor Registry Info", "format": "object" },
-          "applyUrl": { "label": "Apply", "format": "link" }
+          "visaConfidence": {
+            "label": "Visa Confidence",
+            "format": "number"
+          },
+          "visaSponsorMeta": {
+            "label": "Sponsor Registry Info",
+            "format": "object"
+          },
+          "applyUrl": {
+            "label": "Apply",
+            "format": "link"
+          }
         }
       }
     }
