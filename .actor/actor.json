@@ -13,6 +13,10 @@
   "storages": {
     "dataset": "./dataset_schema.json"
   },
+  "environmentVariables": {
+    "RESEND_API_KEY": "@RESEND_API_KEY",
+    "EMAIL_TO": "@EMAIL_TO"
+  },
   "minMemoryMbytes": 512,
   "maxMemoryMbytes": 1024
 }
