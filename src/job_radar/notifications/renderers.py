@@ -390,3 +390,189 @@ def build_justjoin_html(
 
 _build_radar_html = build_radar_html
 
+
+def build_worker_run_alert_html(
+    run_id: str,
+    status: str,
+    inputs: Optional[Dict[str, Any]] = None,
+    stats: Optional[Dict[str, Any]] = None,
+    error_message: Optional[str] = None,
+    run_url: Optional[str] = None,
+    dataset_url: Optional[str] = None,
+) -> str:
+    """Build an HTML email alert for a worker / Apify Actor execution."""
+    inputs = inputs or {}
+    stats = stats or {}
+    now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
+
+    normalized_status = status.lower()
+    if normalized_status in ("completed", "success", "succeeded"):
+        badge_bg = "#DCFCE7"
+        badge_color = "#15803D"
+        badge_border = "#86EFAC"
+        status_label = "✅ COMPLETED"
+        header_gradient = "linear-gradient(135deg, #064E3B 0%, #065F46 50%, #047857 100%)"
+    elif normalized_status in ("timed_out", "timeout"):
+        badge_bg = "#FEF3C7"
+        badge_color = "#92400E"
+        badge_border = "#FCD34D"
+        status_label = "⏱️ TIMED OUT"
+        header_gradient = "linear-gradient(135deg, #78350F 0%, #92400E 50%, #B45309 100%)"
+    elif normalized_status in ("started", "running"):
+        badge_bg = "#DBEAFE"
+        badge_color = "#1E40AF"
+        badge_border = "#93C5FD"
+        status_label = "🚀 STARTED"
+        header_gradient = "linear-gradient(135deg, #1E1B4B 0%, #1E40AF 50%, #2563EB 100%)"
+    else:
+        badge_bg = "#FEE2E2"
+        badge_color = "#991B1B"
+        badge_border = "#FCA5A5"
+        status_label = "❌ FAILED"
+        header_gradient = "linear-gradient(135deg, #7F1D1D 0%, #991B1B 50%, #B91C1C 100%)"
+
+    total_fetched = stats.get("totalFetched", stats.get("scannedCount", "-"))
+    total_emitted = stats.get("totalEmitted", stats.get("emittedCount", "-"))
+    visa_enriched = stats.get("visaEnrichedJobs", stats.get("visaPassedJobs", "-"))
+    duration = stats.get("durationSeconds", "-")
+    if duration != "-" and isinstance(duration, (int, float)):
+        duration_display = f"{duration:.1f}s"
+    else:
+        duration_display = str(duration)
+
+    def _fmt_list(val: Any) -> str:
+        if not val:
+            return "<i>(Default / None)</i>"
+        if isinstance(val, list):
+            return html_lib.escape(", ".join(str(x) for x in val))
+        return html_lib.escape(str(val))
+
+    job_titles_str = _fmt_list(inputs.get("jobTitles") or inputs.get("job_titles"))
+    keywords_str = _fmt_list(inputs.get("keywords") or inputs.get("searchKeywords"))
+    countries_str = _fmt_list(inputs.get("countries") or inputs.get("destinationCountries"))
+    overseas_enabled = inputs.get("enableOverseasSources", False)
+    ai_enabled = inputs.get("enableAiClassification", False)
+    max_results = inputs.get("maxResults", inputs.get("max_results", "200"))
+
+    error_section = ""
+    if error_message:
+        escaped_err = html_lib.escape(str(error_message))
+        error_section = f"""
+        <div style="margin-top:20px;padding:14px;background:#FEF2F2;border:1px solid #F87171;border-radius:8px;">
+          <div style="font-size:13px;font-weight:700;color:#991B1B;margin-bottom:6px;">⚠️ Failure Reason / Trace:</div>
+          <pre style="font-family:ui-monospace,monospace;font-size:12px;color:#7F1D1D;margin:0;white-space:pre-wrap;word-break:break-word;">{escaped_err}</pre>
+        </div>
+        """
+
+    buttons = []
+    if run_url:
+        buttons.append(
+            f'<a href="{html_lib.escape(run_url)}" target="_blank" style="display:inline-block;background:#2563EB;color:#FFFFFF;padding:10px 18px;font-size:13px;font-weight:700;text-decoration:none;border-radius:6px;margin-right:10px;">View Run on Apify ↗</a>'
+        )
+    if dataset_url:
+        buttons.append(
+            f'<a href="{html_lib.escape(dataset_url)}" target="_blank" style="display:inline-block;background:#475569;color:#FFFFFF;padding:10px 18px;font-size:13px;font-weight:700;text-decoration:none;border-radius:6px;">View Dataset ↗</a>'
+        )
+    button_section = ""
+    if buttons:
+        button_section = f"""
+        <div style="margin-top:24px;text-align:center;">
+          {''.join(buttons)}
+        </div>
+        """
+
+    html = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:24px 0;background-color:#F8FAFC;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1E293B;">
+  <div style="max-width:620px;margin:0 auto;background:#FFFFFF;border-radius:12px;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
+    
+    <!-- Header -->
+    <div style="background:{header_gradient};padding:24px 28px;color:#FFFFFF;">
+      <div style="display:inline-block;padding:4px 10px;background:{badge_bg};color:{badge_color};border:1px solid {badge_border};border-radius:20px;font-size:11px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px;">
+        {status_label}
+      </div>
+      <h1 style="margin:0;font-size:22px;font-weight:800;letter-spacing:-0.5px;">⚡ Worker Run Notification</h1>
+      <p style="margin:6px 0 0 0;font-size:13px;color:rgba(255,255,255,0.85);">
+        Run ID: <code style="background:rgba(255,255,255,0.2);padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px;">{html_lib.escape(run_id)}</code> · {now_str}
+      </p>
+    </div>
+
+    <!-- Main Content -->
+    <div style="padding:24px 28px;">
+      
+      <!-- Metrics Grid -->
+      <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+        <tr>
+          <td style="width:25%;padding:10px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px 0 0 8px;text-align:center;">
+            <div style="font-size:20px;font-weight:800;color:#0F172A;">{total_fetched}</div>
+            <div style="font-size:11px;font-weight:600;color:#64748B;text-transform:uppercase;margin-top:2px;">Scanned</div>
+          </td>
+          <td style="width:25%;padding:10px;background:#F8FAFC;border:1px solid #E2E8F0;text-align:center;">
+            <div style="font-size:20px;font-weight:800;color:#2563EB;">{total_emitted}</div>
+            <div style="font-size:11px;font-weight:600;color:#64748B;text-transform:uppercase;margin-top:2px;">Matched</div>
+          </td>
+          <td style="width:25%;padding:10px;background:#F8FAFC;border:1px solid #E2E8F0;text-align:center;">
+            <div style="font-size:20px;font-weight:800;color:#059669;">{visa_enriched}</div>
+            <div style="font-size:11px;font-weight:600;color:#64748B;text-transform:uppercase;margin-top:2px;">Visa-Tagged</div>
+          </td>
+          <td style="width:25%;padding:10px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:0 8px 8px 0;text-align:center;">
+            <div style="font-size:20px;font-weight:800;color:#7C3AED;">{duration_display}</div>
+            <div style="font-size:11px;font-weight:600;color:#64748B;text-transform:uppercase;margin-top:2px;">Duration</div>
+          </td>
+        </tr>
+      </table>
+
+      <!-- Input Parameters -->
+      <div style="margin-bottom:20px;">
+        <h2 style="font-size:14px;color:#334155;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 10px 0;border-bottom:1px solid #E2E8F0;padding-bottom:6px;">
+          ⚙️ Run Configuration & Inputs
+        </h2>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <tr>
+            <td style="padding:6px 0;color:#64748B;font-weight:600;width:35%;">Job Titles</td>
+            <td style="padding:6px 0;color:#0F172A;">{job_titles_str}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:#64748B;font-weight:600;">Keywords</td>
+            <td style="padding:6px 0;color:#0F172A;">{keywords_str}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:#64748B;font-weight:600;">Target Countries</td>
+            <td style="padding:6px 0;color:#0F172A;">{countries_str}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:#64748B;font-weight:600;">Overseas Sources</td>
+            <td style="padding:6px 0;color:#0F172A;">{'🟢 Enabled' if overseas_enabled else '⚪ Disabled'}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:#64748B;font-weight:600;">AI Classification</td>
+            <td style="padding:6px 0;color:#0F172A;">{'🟢 Enabled' if ai_enabled else '⚪ Disabled'}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:#64748B;font-weight:600;">Max Results</td>
+            <td style="padding:6px 0;color:#0F172A;">{max_results}</td>
+          </tr>
+        </table>
+      </div>
+
+      {error_section}
+      {button_section}
+
+    </div>
+
+    <!-- Footer -->
+    <div style="background:#F1F5F9;padding:14px 28px;border-top:1px solid #E2E8F0;font-size:12px;color:#64748B;text-align:center;">
+      Automated notification sent via {html_lib.escape(inputs.get("email_provider", "Resend"))} · Visa Sponsorship Daily Jobs
+    </div>
+
+  </div>
+</body>
+</html>
+"""
+    return html
+
+

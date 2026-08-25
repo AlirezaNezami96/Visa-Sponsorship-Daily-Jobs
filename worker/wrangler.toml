@@ -11,3 +11,7 @@ compatibility_date = "2024-01-01"
 # - GH_PAT
 # - GH_OWNER
 # - GH_REPO
+# - RESEND_API_KEY
+# - EMAIL_TO
+# - EMAIL_FROM (optional, defaults to onboarding@resend.dev)
+

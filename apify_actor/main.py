@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from apify import Actor
 
 from apify_actor.config_mapper import input_to_config
 from apify_actor.sink import ApifyDatasetSink
+from job_radar.notifications.email import send_worker_run_alert
 from job_radar.pipeline.orchestrator import run_pipeline
 
 logger = logging.getLogger("apify_main")
@@ -21,8 +23,15 @@ async def main() -> None:
     """Main Actor execution routine with runtime timeout enforcement and guaranteed cleanup."""
     async with Actor:
         # 1. Read input from Apify environment
-        actor_input = await Actor.get_input()
+        actor_input = await Actor.get_input() or {}
         Actor.log.info("Loaded Apify Actor input payload.")
+
+        # Determine Apify identifiers for console links
+        actor_id = getattr(Actor.config, "actor_id", None) or os.getenv("APIFY_ACTOR_ID", "")
+        run_id = getattr(Actor.config, "actor_run_id", None) or os.getenv("APIFY_ACTOR_RUN_ID", "")
+        run_url = f"https://console.apify.com/actors/{actor_id}/runs/{run_id}" if (actor_id and run_id) else None
+        dataset_id = getattr(Actor.config, "default_dataset_id", None) or os.getenv("APIFY_DEFAULT_DATASET_ID", "")
+        dataset_url = f"https://console.apify.com/storage/datasets/{dataset_id}" if dataset_id else None
 
         # 2. Map input to canonical JobSearchConfig
         config = input_to_config(actor_input)
@@ -56,6 +65,20 @@ async def main() -> None:
                 failed_sources=result.failed_sources,
                 status="completed",
             )
+
+            # 6. Send email notification to owner (uses RESEND_API_KEY & EMAIL_TO if set)
+            try:
+                send_worker_run_alert(
+                    run_id=run_id or "actor-run",
+                    status="completed",
+                    inputs=actor_input,
+                    stats=result.stats,
+                    run_url=run_url,
+                    dataset_url=dataset_url,
+                )
+            except Exception as notify_err:
+                Actor.log.warning(f"Worker run email notification skipped or failed: {notify_err}")
+
         except asyncio.TimeoutError:
             Actor.log.warning(
                 f"Actor reached maximum runtime timeout of {config.max_runtime_secs}s. Gracefully stopping."
@@ -66,8 +89,31 @@ async def main() -> None:
                 "emittedCount": sink.emitted_count,
             }
             await sink.emit_stats(timeout_stats)
+            try:
+                send_worker_run_alert(
+                    run_id=run_id or "actor-run",
+                    status="timed_out",
+                    inputs=actor_input,
+                    stats=timeout_stats,
+                    run_url=run_url,
+                    dataset_url=dataset_url,
+                )
+            except Exception as notify_err:
+                Actor.log.warning(f"Worker timeout email notification skipped or failed: {notify_err}")
+
         except Exception as e:
             Actor.log.error(f"Pipeline failed: {e}")
+            try:
+                send_worker_run_alert(
+                    run_id=run_id or "actor-run",
+                    status="failed",
+                    inputs=actor_input,
+                    error_message=str(e),
+                    run_url=run_url,
+                    dataset_url=dataset_url,
+                )
+            except Exception as notify_err:
+                Actor.log.warning(f"Worker failure email notification skipped or failed: {notify_err}")
             raise
         finally:
             await sink.close()
@@ -75,3 +121,4 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
+
