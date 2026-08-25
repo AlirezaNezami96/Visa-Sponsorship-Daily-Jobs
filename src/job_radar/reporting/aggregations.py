@@ -27,18 +27,38 @@ from job_radar.pipeline.scoring import SOURCE_QUALITY_MAP
 # ISO-ish display name -> emoji flag. Conservative list of destinations this
 # Actor actually targets; unknown countries simply get no flag glyph.
 _COUNTRY_FLAGS: Dict[str, str] = {
+    # Europe
     "United Kingdom": "🇬🇧", "UK": "🇬🇧", "Germany": "🇩🇪", "Netherlands": "🇳🇱",
     "France": "🇫🇷", "Ireland": "🇮🇪", "Spain": "🇪🇸", "Italy": "🇮🇹",
     "Sweden": "🇸🇪", "Norway": "🇳🇴", "Denmark": "🇩🇰", "Finland": "🇫🇮",
     "Poland": "🇵🇱", "Portugal": "🇵🇹", "Belgium": "🇧🇪", "Austria": "🇦🇹",
-    "Switzerland": "🇨🇭", "Luxembourg": "🇱🇺", "United States": "🇺🇸", "USA": "🇺🇸",
-    "Canada": "🇨🇦", "Australia": "🇦🇺", "New Zealand": "🇳🇿", "Singapore": "🇸🇬",
-    "Japan": "🇯🇵", "South Korea": "🇰🇷", "UAE": "🇦🇪", "United Arab Emirates": "🇦🇪",
-    "Saudi Arabia": "🇸🇦", "Qatar": "🇶🇦", "Kuwait": "🇰🇼", "Oman": "🇴🇲",
-    "Bahrain": "🇧🇭", "Malaysia": "🇲🇾", "India": "🇮🇳", "Pakistan": "🇵🇰",
-    "Bangladesh": "🇧🇩", "Israel": "🇮🇱", "Estonia": "🇪🇪", "Czech Republic": "🇨🇿",
-    "Czechia": "🇨🇿", "Romania": "🇷🇴", "Hungary": "🇭🇺", "Greece": "🇬🇷",
-    "Malta": "🇲🇹", "Cyprus": "🇨🇾",
+    "Switzerland": "🇨🇭", "Luxembourg": "🇱🇺", "Estonia": "🇪🇪", "Latvia": "🇱🇻",
+    "Lithuania": "🇱🇹", "Czech Republic": "🇨🇿", "Czechia": "🇨🇿", "Romania": "🇷🇴",
+    "Hungary": "🇭🇺", "Greece": "🇬🇷", "Bulgaria": "🇧🇬", "Croatia": "🇭🇷",
+    "Slovakia": "🇸🇰", "Slovenia": "🇸🇮", "Malta": "🇲🇹", "Cyprus": "🇨🇾",
+    "Iceland": "🇮🇸", "Serbia": "🇷🇸", "Ukraine": "🇺🇦",
+
+    # North America
+    "United States": "🇺🇸", "USA": "🇺🇸", "Canada": "🇨🇦", "Mexico": "🇲🇽",
+
+    # South America
+    "Brazil": "🇧🇷", "Argentina": "🇦🇷", "Chile": "🇨🇱", "Colombia": "🇨🇴",
+    "Peru": "🇵🇪", "Uruguay": "🇺🇾",
+
+    # East Asia, Southeast Asia & South Asia
+    "Japan": "🇯🇵", "South Korea": "🇰🇷", "Singapore": "🇸🇬", "Hong Kong": "🇭🇰",
+    "Taiwan": "🇹🇼", "China": "🇨🇳", "Malaysia": "🇲🇾", "Thailand": "🇹🇭",
+    "Vietnam": "🇻🇳", "Indonesia": "🇮🇩", "Philippines": "🇵🇭", "India": "🇮🇳",
+    "Pakistan": "🇵🇰", "Bangladesh": "🇧🇩",
+
+    # Arab Countries & Middle East
+    "United Arab Emirates": "🇦🇪", "UAE": "🇦🇪", "Saudi Arabia": "🇸🇦",
+    "Qatar": "🇶🇦", "Kuwait": "🇰🇼", "Oman": "🇴🇲", "Bahrain": "🇧🇭",
+    "Egypt": "🇪🇬", "Jordan": "🇯🇴", "Lebanon": "🇱🇧", "Morocco": "🇲🇦",
+    "Israel": "🇮🇱",
+
+    # Oceania
+    "Australia": "🇦🇺", "New Zealand": "🇳🇿",
 }
 
 # Ordered longest-first so "United Kingdom" wins before any shorter substring.
@@ -47,15 +67,26 @@ _COUNTRY_NAMES: List[str] = sorted(_COUNTRY_FLAGS.keys(), key=len, reverse=True)
 # Common city -> country hints used only as a fallback when the location string
 # carries a well-known capital/hub but no country name. These are unambiguous.
 _CITY_COUNTRY: Dict[str, str] = {
-    "london": "United Kingdom", "berlin": "Germany", "munich": "Germany",
+    "london": "United Kingdom", "berlin": "Germany", "munich": "Germany", "frankfurt": "Germany",
     "amsterdam": "Netherlands", "rotterdam": "Netherlands", "paris": "France",
     "dublin": "Ireland", "stockholm": "Sweden", "oslo": "Norway",
     "copenhagen": "Denmark", "helsinki": "Finland", "madrid": "Spain",
-    "barcelona": "Spain", "lisbon": "Portugal", "zurich": "Switzerland",
-    "vienna": "Austria", "brussels": "Belgium", "toronto": "Canada",
-    "vancouver": "Canada", "sydney": "Australia", "melbourne": "Australia",
-    "auckland": "New Zealand", "new york": "United States", "tokyo": "Japan",
-    "seoul": "South Korea", "dubai": "UAE", "doha": "Qatar", "riyadh": "Saudi Arabia",
+    "barcelona": "Spain", "lisbon": "Portugal", "zurich": "Switzerland", "geneva": "Switzerland",
+    "vienna": "Austria", "brussels": "Belgium", "warsaw": "Poland", "prague": "Czech Republic",
+    "budapest": "Hungary", "athens": "Greece", "bucharest": "Romania", "tallinn": "Estonia",
+    "riga": "Latvia", "vilnius": "Lithuania", "zagreb": "Croatia", "sofia": "Bulgaria",
+    "toronto": "Canada", "vancouver": "Canada", "montreal": "Canada",
+    "sydney": "Australia", "melbourne": "Australia", "auckland": "New Zealand",
+    "new york": "United States", "san francisco": "United States", "seattle": "United States",
+    "mexico city": "Mexico", "sao paulo": "Brazil", "buenos aires": "Argentina",
+    "santiago": "Chile", "bogota": "Colombia", "lima": "Peru", "montevideo": "Uruguay",
+    "tokyo": "Japan", "seoul": "South Korea", "singapore": "Singapore", "hong kong": "Hong Kong",
+    "taipei": "Taiwan", "beijing": "China", "shanghai": "China", "kuala lumpur": "Malaysia",
+    "bangkok": "Thailand", "hanoi": "Vietnam", "ho chi minh": "Vietnam", "jakarta": "Indonesia",
+    "manila": "Philippines", "dubai": "United Arab Emirates", "abu dhabi": "United Arab Emirates",
+    "doha": "Qatar", "riyadh": "Saudi Arabia", "jeddah": "Saudi Arabia", "kuwait city": "Kuwait",
+    "muscat": "Oman", "manama": "Bahrain", "cairo": "Egypt", "amman": "Jordan",
+    "beirut": "Lebanon", "casablanca": "Morocco", "tel aviv": "Israel",
 }
 
 REMOTE_COUNTRY_LABEL = "Remote"
