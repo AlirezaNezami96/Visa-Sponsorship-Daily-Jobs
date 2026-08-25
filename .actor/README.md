@@ -47,10 +47,34 @@ Every dataset record delivers clean, normalized camelCase JSON:
 
   "relevanceScore": 0.94,
   "compositeScore": 0.91,
+  "opportunityScore": 91,
   "classificationReason": "Core ML platform engineering role managing distributed GPU training clusters.",
   "isAiRole": true
 }
 ```
+
+---
+
+## 📦 Run Output & Reports
+
+Every run produces a **machine-readable Dataset** *and* a set of **human-friendly reports**, so you get both an API-ready feed and a polished intelligence summary.
+
+**Output tab links** (defined in the Actor output schema):
+
+| Output | What it is |
+|---|---|
+| 📊 **Jobs Dataset** | All normalized, visa-enriched jobs. Canonical output for APIs, automation, and CSV/Excel/JSON export. Ordered by `opportunityScore` in the Console table. |
+| 🌐 **HTML Report** | Beautiful standalone report: key statistics, top opportunities, country / company / visa / source breakdowns, methodology, and disclaimers. Opens directly in the Output tab. |
+| 📄 **Run Summary (JSON)** | Machine-readable run summary — search criteria, statistics, top matches, and aggregations. Useful for downstream agents and pipelines. |
+| 📈 **Run Statistics** | Low-level pipeline execution statistics (fetched, filtered, deduplicated, enriched, duration, source health). |
+
+**New dataset column — `opportunityScore` (0–100):** a single transparent ranking number (`compositeScore × 100`) combining visa evidence, relevance, recency, seniority fit, salary, and source trust. Sort the Dataset by it descending to surface the strongest opportunities first.
+
+**Top-opportunity cards** in the HTML report show, per job: opportunity score, title, company, location + country, visa evidence badge with explanation, seniority/employment, remote/hybrid, salary, technologies, posted date, the data-backed reasons it is recommended, and a direct **Apply** link.
+
+**Empty runs are still useful:** if no jobs match, the report explains how many jobs and sources were scanned and gives concrete suggestions to broaden the search.
+
+> Reports are generated from the already-produced pipeline results — no extra fetching, no extra billing.
 
 ---
 

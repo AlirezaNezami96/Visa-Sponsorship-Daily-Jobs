@@ -7,7 +7,7 @@ an Apify Console iframe or downloaded. All dynamic values are HTML-escaped.
 from __future__ import annotations
 
 import html
-from typing import Any, Dict, List
+from typing import Any, List
 
 from job_radar.reporting.model import RunReport, TopJobView
 
@@ -433,7 +433,7 @@ def _methodology_section(report: RunReport) -> str:
     bits = [
         f"Sources searched: {_fmt_num(s.get('successfulSourceCount', 0))} ok, {_fmt_num(s.get('failedSourceCount', 0))} failed.",
         f"AI classification: {'enabled' if sc.get('enableAIClassification', False) else 'disabled'}.",
-        f"Filters: keywords, countries, seniority, posted-within, and visa criteria as listed above.",
+        "Filters: keywords, countries, seniority, posted-within, and visa criteria as listed above.",
         "Limitations: signals are inferred from public data and may lag reality; always confirm with the employer.",
     ]
     items = "".join(f"<li>{_esc(b)}</li>" for b in bits)

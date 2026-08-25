@@ -43,6 +43,7 @@ logging.getLogger("httpcore").setLevel(logging.WARNING)
 from apify_actor.config_mapper import input_to_config  # noqa: E402
 from job_radar.pipeline.orchestrator import run_pipeline  # noqa: E402
 from job_radar.pipeline.sink import InMemoryJobSink  # noqa: E402
+from job_radar.reporting import build_run_report, report_to_json_string, render_report_html  # noqa: E402
 
 PRESETS: dict[str, dict] = {
     "baseline": {
@@ -102,12 +103,12 @@ PRESETS: dict[str, dict] = {
 }
 
 
-async def _run(actor_input: dict) -> tuple[list[dict], dict]:
+async def _run(actor_input: dict) -> tuple[list[dict], dict, object, object]:
     config = input_to_config(actor_input)
     sink = InMemoryJobSink()
     result = await asyncio.wait_for(run_pipeline(config, sink), timeout=float(config.max_runtime_secs))
     records = [j.to_apify_dict(include_description=config.include_description) for j in sink.jobs]
-    return records, result.stats
+    return records, result.stats, config, result
 
 
 def _print_report(records: list[dict], stats: dict, show: int, actor_input: dict) -> None:
@@ -147,6 +148,10 @@ def main() -> None:
     parser.add_argument("--input", help="Path to an Apify-style input JSON file.")
     parser.add_argument("--show", type=int, default=2, help="Print first N records in full.")
     parser.add_argument("--output", help="Write all emitted records to this JSON file.")
+    parser.add_argument(
+        "--report-dir",
+        help="Also generate the human-friendly REPORT.json and REPORT.html into this directory.",
+    )
     args = parser.parse_args()
 
     if args.input:
@@ -156,12 +161,28 @@ def main() -> None:
     else:
         parser.error("Pass --preset <name> or --input <file.json>")
 
-    records, stats = asyncio.run(_run(actor_input))
+    records, stats, config, result = asyncio.run(_run(actor_input))
     _print_report(records, stats, args.show, actor_input)
 
     if args.output:
         Path(args.output).write_text(json.dumps(records, indent=2, ensure_ascii=False), encoding="utf-8")
         print(f"\nWrote {len(records)} records to {args.output}")
+
+    if args.report_dir:
+        report_dir = Path(args.report_dir)
+        report_dir.mkdir(parents=True, exist_ok=True)
+        report = build_run_report(
+            jobs=result.jobs,
+            config=config,
+            stats=result.stats,
+            successful_sources=result.successful_sources,
+            failed_sources=result.failed_sources,
+            status="completed",
+        )
+        (report_dir / "REPORT.json").write_text(report_to_json_string(report), encoding="utf-8")
+        (report_dir / "REPORT.html").write_text(render_report_html(report), encoding="utf-8")
+        print(f"\nWrote REPORT.json and REPORT.html to {report_dir.resolve()}")
+        print(f"Open the HTML report in a browser: open {report_dir.resolve() / 'REPORT.html'}")
 
 
 if __name__ == "__main__":

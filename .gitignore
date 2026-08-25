@@ -10,8 +10,14 @@ dist/
 *.egg
 .pytest_cache/
 .ruff_cache/
+.mypy_cache/
 .coverage
 htmlcov/
+
+# Apify local storage & generated artifacts
+storage/
+report_preview/
+results.json
 
 # Node.js / Cloudflare Worker
 node_modules/
