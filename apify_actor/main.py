@@ -27,10 +27,14 @@ async def main() -> None:
         Actor.log.info("Loaded Apify Actor input payload.")
 
         # Determine Apify identifiers for console links
-        actor_id = getattr(Actor.config, "actor_id", None) or os.getenv("APIFY_ACTOR_ID", "")
-        run_id = getattr(Actor.config, "actor_run_id", None) or os.getenv("APIFY_ACTOR_RUN_ID", "")
+        try:
+            apify_env = Actor.get_env() if hasattr(Actor, "get_env") else {}
+        except Exception:
+            apify_env = {}
+        actor_id = apify_env.get("actor_id") or apify_env.get("id") or os.getenv("APIFY_ACTOR_ID", "")
+        run_id = apify_env.get("run_id") or apify_env.get("actor_run_id") or os.getenv("APIFY_ACTOR_RUN_ID", "")
         run_url = f"https://console.apify.com/actors/{actor_id}/runs/{run_id}" if (actor_id and run_id) else None
-        dataset_id = getattr(Actor.config, "default_dataset_id", None) or os.getenv("APIFY_DEFAULT_DATASET_ID", "")
+        dataset_id = apify_env.get("default_dataset_id") or os.getenv("APIFY_DEFAULT_DATASET_ID", "")
         dataset_url = f"https://console.apify.com/storage/datasets/{dataset_id}" if dataset_id else None
 
         # 2. Map input to canonical JobSearchConfig
