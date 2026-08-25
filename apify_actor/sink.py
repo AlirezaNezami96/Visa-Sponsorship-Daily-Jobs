@@ -28,6 +28,16 @@ class ApifyDatasetSink(JobSink):
         self.overseas_count = 0
         self.limit_reached = False
 
+    def is_limit_reached(self) -> bool:
+        """Check if limit has been reached either locally or via Actor charging manager."""
+        if self.limit_reached:
+            return True
+        cm = getattr(Actor, "charging_manager", None)
+        if cm and getattr(cm, "is_limit_reached", False):
+            self.limit_reached = True
+            return True
+        return False
+
     async def _charge_event(self, event_name: str) -> bool:
         """
         Charge a single PPE event.

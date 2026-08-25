@@ -192,18 +192,9 @@ async def run_pipeline(
 
     # 6. Check budget and spending limits before burning LLM tokens (FIX 4: Prevent LLM Money Leak)
     skip_ai = False
-    if getattr(sink, "limit_reached", False):
+    if getattr(sink, "limit_reached", False) or (callable(getattr(sink, "is_limit_reached", None)) and sink.is_limit_reached()):
         logger.warning("User spending limit reached before AI stage. Skipping AI classification.")
         skip_ai = True
-
-    try:
-        from apify import Actor
-        cm = getattr(Actor, "charging_manager", None)
-        if cm and getattr(cm, "is_limit_reached", False):
-            logger.warning("Apify ChargingManager reports charge limit reached. Skipping AI classification.")
-            skip_ai = True
-    except Exception:
-        pass
 
     if config.enable_ai_classification and not skip_ai:
         ai_passed_jobs, ai_classified_count = await classify_jobs_stage(candidates_for_ai, config)

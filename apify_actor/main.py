@@ -40,6 +40,10 @@ async def main() -> None:
         # 2. Map input to canonical JobSearchConfig
         config = input_to_config(actor_input)
 
+        # Fast-fail if no search keywords, sources, company URLs, or enabled sources are provided
+        if not config.keywords and not config.sources and not config.company_urls and not config.company_names and not config.enable_overseas_sources:
+            raise ValueError("No search criteria provided: specify at least one keyword, source, or company URL.")
+
         # 3. Instantiate Apify dataset sink with PPE support
         sink = ApifyDatasetSink(
             include_description=config.include_description,
