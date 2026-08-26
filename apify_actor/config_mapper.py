@@ -60,13 +60,11 @@ def input_to_config(actor_input: Optional[Dict[str, Any]]) -> JobSearchConfig:
     min_visa_confidence = str(_get_val("minVisaConfidence", visa_filt, "unknown")).lower()
     exclude_explicit_no_sponsorship = bool(_get_val("excludeExplicitNoSponsorship", visa_filt, True))
 
-    # 3. Data Sources (Fallback to DEFAULT_SOURCES if empty)
+    # 3. Data Sources (Fallback to DEFAULT_SOURCES if empty / not specified)
     sources = _get_val("sources", sources_sec, [])
     if isinstance(sources, str):
         sources = [s.strip() for s in sources.split(",") if s.strip()]
-    if not sources and not isinstance(raw.get("sources"), list):
-        sources = list(DEFAULT_SOURCES)
-    elif isinstance(sources, list) and len(sources) == 0 and "sources" not in raw:
+    if not sources:
         sources = list(DEFAULT_SOURCES)
 
     company_urls = _get_val("companyUrls", sources_sec, [])

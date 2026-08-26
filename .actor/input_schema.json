@@ -198,7 +198,7 @@
     "sources": {
       "title": "Data Sources",
       "type": "array",
-      "description": "Select ATS platforms and job boards to query.",
+      "description": "Select specific ATS platforms and job boards to query (leave empty to search all 12 available sources by default).",
       "editor": "select",
       "items": {
         "type": "string",
@@ -231,16 +231,7 @@
           "Jobicy"
         ]
       },
-      "default": [
-        "greenhouse",
-        "lever",
-        "ashby",
-        "remoteok",
-        "remotive",
-        "arbeitnow",
-        "himalayas",
-        "jobicy"
-      ],
+      "default": [],
       "sectionCaption": "Advanced Settings",
       "sectionDescription": "Fine-tune sources, visa registries, proxy, deduplication, and execution parameters."
     },

@@ -18,11 +18,18 @@ def _make_job(job_id: str = "1") -> Job:
 
 
 def test_default_sources_fallback():
-    """Verify that when sources is omitted from input, DEFAULT_SOURCES is automatically applied."""
+    """Verify that when sources is omitted or empty from input, DEFAULT_SOURCES (all 12 sources) is automatically applied."""
     cfg = input_to_config({})
+    assert len(cfg.sources) == 12
     assert cfg.sources == DEFAULT_SOURCES
     assert "greenhouse" in cfg.sources
     assert "himalayas" in cfg.sources
+    assert "workable" in cfg.sources
+    assert "smartrecruiters" in cfg.sources
+
+    cfg_empty = input_to_config({"sources": []})
+    assert len(cfg_empty.sources) == 12
+    assert cfg_empty.sources == DEFAULT_SOURCES
 
 
 def test_custom_sources_respected():
