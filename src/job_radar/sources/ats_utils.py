@@ -69,7 +69,7 @@ def get_curated_companies_for_ats(ats_name: str, limit: Optional[int] = None) ->
         Path("/app/data"),
     ]
 
-    filenames = ["ai_companies.json", "companies.json", "remote_companies.json"]
+    filenames = ["curated_ats_slugs.json", "ai_companies.json", "companies.json", "remote_companies.json"]
     seen_names: Set[str] = set()
     results: List[Dict[str, Any]] = []
 
@@ -83,16 +83,31 @@ def get_curated_companies_for_ats(ats_name: str, limit: Optional[int] = None) ->
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                entries = data.get("scrapable", []) + data.get("custom_ats", [])
+
+                # Check curated_ats_slugs.json format: {"greenhouse": ["slug1", ...], ...}
+                if fname == "curated_ats_slugs.json" and isinstance(data, dict):
+                    slug_list = data.get(ats_name.lower(), [])
+                    for slug in slug_list:
+                        slug_str = str(slug).strip().lower()
+                        if slug_str and slug_str not in seen_names:
+                            seen_names.add(slug_str)
+                            results.append({"slug": slug_str, "name": slug_str, "ats": ats_name.lower()})
+                            if limit and len(results) >= limit:
+                                break
+
+                # Check standard companies.json format
+                entries = data.get("scrapable", []) + data.get("custom_ats", []) if isinstance(data, dict) else []
                 for c in entries:
                     if not isinstance(c, dict):
                         continue
                     c_ats = c.get("ats", "").lower()
                     c_name = c.get("name", "").strip()
-                    if not c_name or c_name in seen_names:
+                    c_slug = c.get("slug", c_name).strip().lower()
+                    if not c_name or c_slug in seen_names or c_name.lower() in seen_names:
                         continue
                     if c_ats == ats_name.lower():
-                        seen_names.add(c_name)
+                        seen_names.add(c_slug)
+                        seen_names.add(c_name.lower())
                         results.append(c)
                         if limit and len(results) >= limit:
                             break

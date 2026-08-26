@@ -31,9 +31,10 @@ class RemoteScope(str, Enum):
 
 class VisaConfidence(str, Enum):
     """Authoritative visa confidence levels.
-    Priority rule: EXPLICIT_NO > STATED_IN_JD > ON_SPONSOR_LIST > EMPLOYER_SPONSORED_REGION > HISTORICAL_FILINGS > UNKNOWN
+    Priority rule: EXPLICIT_NO > KNOWN_SPONSOR > STATED_IN_JD > ON_SPONSOR_LIST > EMPLOYER_SPONSORED_REGION > HISTORICAL_FILINGS > UNKNOWN
     """
     EXPLICIT_NO = "explicit_no"           # JD says "no sponsorship" / "must have right to work"
+    KNOWN_SPONSOR = "known_sponsor"       # Company is on confirmed known visa sponsor allowlist
     STATED_IN_JD = "stated_in_jd"         # JD explicitly offers visa/relocation/sponsorship
     ON_SPONSOR_LIST = "on_sponsor_list"   # Company matches official government registry
     EMPLOYER_SPONSORED_REGION = "employer_sponsored_region"  # destination-country work-permit model (Gulf/EPS/SSW), no registry check

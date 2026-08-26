@@ -27,6 +27,7 @@ class ApifyDatasetSink(JobSink):
         self.visa_enriched_count = 0
         self.overseas_count = 0
         self.limit_reached = False
+        self._unconfigured_events: set[str] = set()
 
     def is_limit_reached(self) -> bool:
         """Check if limit has been reached either locally or via Actor charging manager."""
@@ -40,8 +41,9 @@ class ApifyDatasetSink(JobSink):
 
     async def _charge_event(self, event_name: str) -> bool:
         """
-        Charge a single PPE event.
-        Raises exception on billing failure and sets limit_reached if budget ceiling is hit.
+        Charge a single PPE event safely.
+        If user spending limit is reached, halts emission.
+        If event is unconfigured in Apify Console, logs a single warning and allows emission to continue.
         """
         if self.limit_reached:
             return False
@@ -53,8 +55,15 @@ class ApifyDatasetSink(JobSink):
                 return False
             return True
         except Exception as e:
-            logger.error(f"Billing failed for event '{event_name}': {e}")
-            raise
+            if event_name not in self._unconfigured_events:
+                self._unconfigured_events.add(event_name)
+                logger.warning(
+                    "PPE event '%s' not configured or failed in Apify Console: %s. "
+                    "Configure it in Apify Console → Pricing tab. Continuing run without charging for this event.",
+                    event_name,
+                    e,
+                )
+            return True
 
     async def _charge_job_events(self, item: Dict[str, Any]) -> None:
         """Charge PPE events corresponding to the features present in the emitted job."""
@@ -70,20 +79,15 @@ class ApifyDatasetSink(JobSink):
             if await self._charge_event("ai-classified-job"):
                 self.ai_classified_count += 1
 
-        # 3. Add-on official visa registry enrichment event
-        if not self.limit_reached and item.get("visaSignal") == "on_sponsor_list":
+        # 3. Add-on official visa registry / known sponsor enrichment event
+        if not self.limit_reached and item.get("visaSignal") in ("on_sponsor_list", "known_sponsor"):
             if await self._charge_event("visa-enriched-job"):
                 self.visa_enriched_count += 1
 
-        # 4. Add-on overseas expansion event (optional, non-fatal)
+        # 4. Add-on overseas expansion event
         if not self.limit_reached and item.get("sourceCategory"):
-            try:
-                if await self._charge_event("overseas-job"):
-                    self.overseas_count += 1
-            except Exception as e:
-                # New event may not exist yet in the Actor's Console pricing config.
-                # Never let an optional add-on event kill a paying run.
-                logger.warning("overseas-job charge failed (add it in Apify Console → Pricing): %s", e)
+            if await self._charge_event("overseas-job"):
+                self.overseas_count += 1
 
     async def emit(self, jobs: List[Job]) -> None:
         """Push normalized camelCase jobs to dataset in memory-safe batches and charge PPE events."""

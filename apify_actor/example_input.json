@@ -1,19 +1,19 @@
 {
   "visaSponsorshipOnly": true,
   "keywords": ["Software Engineer", "Machine Learning", "Python"],
-  "countries": ["United Kingdom", "Germany"],
+  "countries": ["United Kingdom", "Germany", "United States", "United Arab Emirates"],
   "remoteOnly": false,
   "seniorityLevels": ["mid", "senior"],
   "maxResults": 500,
-  "postedWithinDays": 30,
+  "postedWithinDays": 60,
   "enableAIClassification": false,
-  "sources": ["greenhouse", "lever", "ashby", "remoteok", "remotive"],
+  "sources": ["greenhouse", "lever", "ashby", "remoteok", "remotive", "arbeitnow", "himalayas", "jobicy"],
   "visaRegistryCountries": ["UK", "US"],
   "minVisaConfidence": "unknown",
   "includeUnknownVisa": false,
   "employmentTypes": ["full_time"],
   "sortBy": "composite_score",
   "includeDescription": true,
-  "concurrency": 5,
+  "concurrency": 10,
   "maxRuntimeSecs": 300
 }

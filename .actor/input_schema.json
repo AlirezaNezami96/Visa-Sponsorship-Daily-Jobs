@@ -146,14 +146,14 @@
       "description": "Maximum number of jobs to return.",
       "default": 500,
       "minimum": 10,
-      "maximum": 5000,
+      "maximum": 10000,
       "unit": "jobs"
     },
     "postedWithinDays": {
       "title": "Posted Within",
       "type": "integer",
       "description": "Only include jobs posted in the last N days.",
-      "default": 30,
+      "default": 60,
       "minimum": 1,
       "maximum": 365,
       "unit": "days"
@@ -205,7 +205,10 @@
         "lever",
         "ashby",
         "remoteok",
-        "remotive"
+        "remotive",
+        "arbeitnow",
+        "himalayas",
+        "jobicy"
       ],
       "sectionCaption": "Advanced Settings",
       "sectionDescription": "Fine-tune sources, visa registries, and execution parameters."
@@ -241,12 +244,14 @@
         "unknown",
         "historical_filings",
         "on_sponsor_list",
+        "known_sponsor",
         "stated_in_jd"
       ],
       "enumTitles": [
         "Any (include unknown)",
         "Historical Filings+",
         "On Sponsor List+",
+        "Known Sponsor+",
         "Stated in JD only"
       ]
     },
@@ -307,9 +312,9 @@
       "title": "Concurrency",
       "type": "integer",
       "description": "Number of sources to fetch in parallel (advanced).",
-      "default": 5,
+      "default": 10,
       "minimum": 1,
-      "maximum": 20
+      "maximum": 50
     },
     "maxRuntimeSecs": {
       "title": "Max Runtime",

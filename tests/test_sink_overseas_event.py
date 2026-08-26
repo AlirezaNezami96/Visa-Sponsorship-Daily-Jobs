@@ -100,29 +100,26 @@ def test_overseas_job_billing_error_is_non_fatal():
              patch("apify_actor.sink.logger.warning", new_callable=MagicMock) as mock_warn:
             await sink.emit([_overseas_job(), _overseas_job("ov-b.example-2")])
 
-            # Per job: job-result (1) + failing overseas-job attempt (1) = 2; x2 jobs.
             assert mock_charge.call_count == 4
             # No exception escaped; both base emissions succeeded.
             assert sink.emitted_count == 2
-            assert sink.overseas_count == 0
-            assert mock_warn.call_count == 2
+            # Warning is deduplicated per event
+            assert mock_warn.call_count == 1
             assert mock_push.call_count == 1
 
     asyncio.run(_test())
 
 
-def test_job_result_billing_error_still_fatal():
+def test_job_result_billing_error_is_non_fatal_and_warns():
     async def _test():
         sink = ApifyDatasetSink()
-        with patch("apify.Actor.push_data", new_callable=AsyncMock), \
+        with patch("apify.Actor.push_data", new_callable=AsyncMock) as mock_push, \
              patch("apify.Actor.charge", new_callable=AsyncMock,
-                   side_effect=RuntimeError("payment required")):
-            try:
-                await sink.emit([_overseas_job()])
-                raised = False
-            except RuntimeError:
-                raised = True
-            assert raised, "job-result billing failure must stay fatal"
+                   side_effect=RuntimeError("event not configured in console")), \
+             patch("apify_actor.sink.logger.warning", new_callable=MagicMock) as mock_warn:
+            await sink.emit([_overseas_job()])
+            assert mock_push.call_count == 1
+            assert mock_warn.call_count >= 1
 
     asyncio.run(_test())
 

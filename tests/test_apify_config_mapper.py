@@ -74,4 +74,4 @@ def test_config_mapper_flat_input():
     assert config.include_unknown_visa is False
     assert config.max_results == 50
     assert config.enable_ai_classification is False
-    assert config.posted_within_days == 30  # Default preserved
+    assert config.posted_within_days == 60  # Default updated to 60

@@ -59,11 +59,12 @@ def test_visa_priority_stated_in_jd_positive():
 
 def test_visa_priority_on_sponsor_list():
     evaluator = VisaEvaluator()
+    norm_name = normalize_company_name("Acme Innovations UK Ltd")
     evaluator._sponsors = {
-        "deepmind": SponsorRecord(
-            normalized_name="deepmind",
+        norm_name: SponsorRecord(
+            normalized_name=norm_name,
             country="GB",
-            legal_name="Google DeepMind Ltd",
+            legal_name="Acme Innovations UK Ltd",
             rating="A",
             routes=["Skilled Worker"],
             source="govuk_register",
@@ -72,6 +73,21 @@ def test_visa_priority_on_sponsor_list():
     evaluator._aliases = {}
 
     job = {
+        "company": "Acme Innovations UK Ltd",
+        "title": "Research Engineer",
+        "location": "London, UK",
+        "description": "Work on backend systems.",
+    }
+
+    conf, auth, meta = evaluator.evaluate_job(job)
+    assert conf == VisaConfidence.ON_SPONSOR_LIST
+    assert auth == AuthFit.SPONSOR_REQUIRED_AND_PLAUSIBLE
+    assert meta.get("rating") == "A"
+
+
+def test_visa_known_sponsor_fast_path():
+    evaluator = VisaEvaluator()
+    job = {
         "company": "DeepMind",
         "title": "Research Engineer",
         "location": "London, UK",
@@ -79,6 +95,6 @@ def test_visa_priority_on_sponsor_list():
     }
 
     conf, auth, meta = evaluator.evaluate_job(job)
-    assert conf == VisaConfidence.ON_SPONSOR_LIST
+    assert conf == VisaConfidence.KNOWN_SPONSOR
     assert auth == AuthFit.SPONSOR_REQUIRED_AND_PLAUSIBLE
-    assert meta.get("rating") == "A"
+    assert meta.get("source") == "known_sponsors_allowlist"

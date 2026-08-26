@@ -18,6 +18,7 @@ from job_radar.models.enums import (
 )
 
 VISA_CONFIDENCE_FLOAT_MAP: Dict[str, float] = {
+    "known_sponsor": 0.95,
     "stated_in_jd": 1.0,
     "on_sponsor_list": 0.85,
     "employer_sponsored_region": 0.70,

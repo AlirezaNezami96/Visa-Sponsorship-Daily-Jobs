@@ -42,18 +42,22 @@ def test_spending_limit_stops_emission():
     asyncio.run(_test())
 
 
-def test_billing_failure_raises_error():
+def test_billing_failure_logs_warning_once():
     async def _test():
         sink = ApifyDatasetSink(include_description=True)
         jobs = [
             Job(id="1", company="A", title="SWE", location="Remote", visa_confidence=VisaConfidence.UNKNOWN),
+            Job(id="2", company="B", title="SWE", location="Remote", visa_confidence=VisaConfidence.UNKNOWN),
         ]
 
-        with patch("apify.Actor.push_data", new_callable=AsyncMock), \
-             patch("apify.Actor.charge", new_callable=AsyncMock, side_effect=RuntimeError("Payment failed")), \
-             patch("apify.Actor.log.error", new_callable=MagicMock):
+        with patch("apify.Actor.push_data", new_callable=AsyncMock) as mock_push, \
+             patch("apify.Actor.charge", new_callable=AsyncMock, side_effect=RuntimeError("Event not configured")), \
+             patch("apify_actor.sink.logger.warning", new_callable=MagicMock) as mock_warn:
 
-            with pytest.raises(RuntimeError, match="Payment failed"):
-                await sink.emit(jobs)
+            await sink.emit(jobs)
+
+            assert mock_push.call_count == 1
+            # Warning is logged once per unconfigured event
+            assert mock_warn.call_count == 1
 
     asyncio.run(_test())

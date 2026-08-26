@@ -13,6 +13,77 @@ from job_radar.models.job import Job
 logger = logging.getLogger(__name__)
 
 
+KEYWORD_SYNONYMS = {
+    "software engineer": ["software developer", "swe", "software dev", "dev", "programmer"],
+    "machine learning": ["ml", "ml engineer", "ai engineer", "data scientist"],
+    "android": ["mobile", "kotlin", "android developer", "android engineer", "android dev"],
+    "frontend": ["front-end", "front end", "ui", "react", "web developer"],
+    "backend": ["back-end", "back end", "server", "api"],
+    "fullstack": ["full-stack", "full stack"],
+    "data engineer": ["data platform", "etl", "data pipeline"],
+    "devops": ["sre", "site reliability", "platform engineer", "infrastructure"],
+    "product manager": ["pm", "product owner"],
+    "designer": ["ux", "ui designer", "product designer"],
+}
+
+
+def expand_keywords(keywords: List[str]) -> List[str]:
+    """Expand keywords with synonyms for broader matching."""
+    expanded = set(keywords)
+    for kw in keywords:
+        kw_lower = kw.lower().strip()
+        if kw_lower in KEYWORD_SYNONYMS:
+            expanded.update(KEYWORD_SYNONYMS[kw_lower])
+        for syn_key, syn_list in KEYWORD_SYNONYMS.items():
+            if syn_key in kw_lower or kw_lower in syn_key:
+                expanded.update(syn_list)
+    return list(expanded)
+
+
+def matches_keywords(job_title: str, job_description: str, keywords: List[str]) -> bool:
+    """
+    Permissive keyword matching.
+    - OR logic: match ANY keyword, not ALL
+    - Case-insensitive
+    - Word-boundary aware but allows partial matches for compound terms
+    - Also checks common abbreviations and synonyms
+    """
+    if not keywords:
+        return True
+
+    title_lower = (job_title or "").lower()
+    desc_lower = (job_description or "").lower()[:500]
+
+    all_keywords = expand_keywords(keywords)
+
+    for keyword in all_keywords:
+        kw = keyword.lower().strip()
+        if not kw:
+            continue
+
+        if kw in title_lower or re.search(r"\b" + re.escape(kw) + r"\b", title_lower):
+            return True
+
+        variations = [
+            kw,
+            kw.replace(" ", "-"),
+            kw.replace(" ", ""),
+            kw.replace("engineer", "dev"),
+            kw.replace("engineer", "developer"),
+            kw.replace("developer", "engineer"),
+            kw.replace("software", "swe"),
+        ]
+
+        for var in variations:
+            if var in title_lower or re.search(r"\b" + re.escape(var) + r"\b", title_lower):
+                return True
+
+        if kw in desc_lower or re.search(r"\b" + re.escape(kw) + r"\b", desc_lower):
+            return True
+
+    return False
+
+
 def is_job_fresh(job: Job, max_age_days: int) -> bool:
     """Check if job posting date is within max_age_days. Fails open if date is unknown."""
     if not max_age_days or max_age_days <= 0:
@@ -57,20 +128,14 @@ def filter_job(job: Job, config: JobSearchConfig) -> bool:
             ):
                 return False
 
-    # 3. Include keywords (if provided, at least one must match)
+    # 3. Include keywords (if provided, permissive matching)
     if config.keywords:
-        matched_any = False
-        for kw in config.keywords:
-            kw_clean = kw.lower().strip()
-            if kw_clean and (
-                kw_clean in title_lower
-                or kw_clean in combined_text
-                or any(kw_clean in t.lower() for t in job.technologies)
-            ):
-                matched_any = True
-                break
-        if not matched_any:
-            return False
+        desc_raw = job.description or job.snippet or ""
+        if not matches_keywords(job.title or "", desc_raw, config.keywords):
+            techs_lower = [t.lower() for t in job.technologies]
+            all_kw = expand_keywords(config.keywords)
+            if not any(any(kw.lower() in t for t in techs_lower) for kw in all_kw):
+                return False
 
     # 4. Remote filter
     if config.remote_only:

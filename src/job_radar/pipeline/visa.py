@@ -23,12 +23,13 @@ CONFIDENCE_RANK = {
     "historical_filings": 1,
     "employer_sponsored_region": 2,
     "on_sponsor_list": 3,
-    "stated_in_jd": 4,
+    "known_sponsor": 4,
+    "stated_in_jd": 5,
 }
 
 # Confidence values that count as positive sponsorship evidence for the
 # visa_sponsorship_only filter and the enriched counter.
-_POSITIVE_SIGNALS = ("stated_in_jd", "on_sponsor_list", "historical_filings", "employer_sponsored_region")
+_POSITIVE_SIGNALS = ("known_sponsor", "stated_in_jd", "on_sponsor_list", "historical_filings", "employer_sponsored_region")
 
 
 def evaluate_visa_for_job(job: Job) -> Job:
@@ -43,8 +44,10 @@ def evaluate_visa_for_job(job: Job) -> Job:
         job.auth_fit = auth.value if hasattr(auth, "value") else str(auth)
         job.visa_sponsor_meta = meta
 
-        if conf == VisaConfidence.STATED_IN_JD:
+        if conf in (VisaConfidence.STATED_IN_JD, VisaConfidence.KNOWN_SPONSOR):
             job.visa_sponsorship = True
+            if conf == VisaConfidence.KNOWN_SPONSOR and not job.visa_type:
+                job.visa_type = "International Visa Sponsorship"
         elif conf in (VisaConfidence.ON_SPONSOR_LIST, VisaConfidence.HISTORICAL_FILINGS):
             job.visa_sponsorship = True
             if meta and meta.get("matched_sponsor"):
@@ -110,11 +113,25 @@ def evaluate_and_filter_visa(jobs: List[Job], config: JobSearchConfig) -> Tuple[
 
         # 3. Visa sponsorship only filter
         if config.visa_sponsorship_only:
-            # Positive signals: stated_in_jd, on_sponsor_list, historical_filings, employer_sponsored_region
+            # Positive signals: known_sponsor, stated_in_jd, on_sponsor_list, historical_filings, employer_sponsored_region
             if conf_val in _POSITIVE_SIGNALS:
                 passed_jobs.append(job)
-            elif conf_val == "unknown" and config.include_unknown_visa:
-                passed_jobs.append(job)
+            elif conf_val == "unknown":
+                if config.include_unknown_visa:
+                    passed_jobs.append(job)
+                else:
+                    # Check permissive heuristics: known sponsor or JD sponsorship terms
+                    from job_radar.visa.evaluator import check_known_sponsor
+                    if check_known_sponsor(job.company):
+                        passed_jobs.append(job)
+                    else:
+                        desc_lower = (job.description or job.snippet or "").lower()
+                        if any(term in desc_lower for term in [
+                            "relocation", "visa", "sponsorship", "work permit",
+                            "work authorization", "immigration", "right to work",
+                            "international candidates", "relocate"
+                        ]):
+                            passed_jobs.append(job)
             else:
                 # Excluded when include_unknown_visa is False
                 continue

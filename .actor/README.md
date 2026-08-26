@@ -80,9 +80,10 @@ Every run produces a **machine-readable Dataset** *and* a set of **human-friendl
 
 ## 🛡️ What Makes This Different?
 
-- **🛂 Official Visa Intelligence**: Checks company names against official UK Skilled Worker sponsor registers and US DOL LCA historical filings.
-- **📊 6-Tier Signal Model**:
+- **🛂 Official Visa Intelligence**: Checks company names against confirmed visa sponsor allowlists, official UK Skilled Worker sponsor registers, and US DOL LCA historical filings.
+- **📊 7-Tier Signal Model**:
   - `stated_in_jd` (1.00): Job description explicitly mentions visa sponsorship or relocation support.
+  - `known_sponsor` (0.95): Confirmed top employer with large-scale global visa sponsorship programs (Google, Amazon, Meta, Microsoft, Stripe, OpenAI, Anthropic, etc.).
   - `on_sponsor_list` (0.85): Company is an active licensed sponsor on official government registers.
   - `employer_sponsored_region` (0.70): Destination uses an employer-sponsored work-permit model (Gulf/EPS/SSW) — overseas pack only, not a registry match.
   - `historical_filings` (0.65): Company has certified US DOL LCA filings in the past 12 months.
@@ -102,7 +103,7 @@ You only pay for the exact volume of data emitted:
 |---|---|---|
 | `apify-actor-start` | Actor start fee *(Configured in Apify Console)* | $0.05 / run |
 | `job-result` | Per normalized job returned | $2.00 / 1,000 jobs |
-| `visa-enriched-job` | Per job verified against official government registers | +$1.00 / 1,000 jobs |
+| `visa-enriched-job` | Per job verified against official government registers or known sponsor allowlists | +$1.00 / 1,000 jobs |
 | `ai-classified-job` | Per job analyzed with AI technical scoring | +$3.00 / 1,000 jobs |
 | `overseas-job` | Per job from the overseas expansion pack *(optional; final price set in Apify Console)* | +$1.50 / 1,000 jobs |
 
@@ -114,16 +115,16 @@ You only pay for the exact volume of data emitted:
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `keywords` | `array` | `[]` | Job titles, skills, or stack terms (e.g. `["Machine Learning", "Kotlin", "Python"]`). |
-| `countries` | `array` | `[]` | Country filter (e.g. `["United Kingdom", "Germany", "United States"]`). |
-| `visaSponsorshipOnly` | `boolean` | `true` | When true, returns jobs with confirmed sponsorship signals (`on_sponsor_list`, `stated_in_jd`, `historical_filings`, `employer_sponsored_region`). |
+| `keywords` | `array` | `[]` | Job titles, skills, or stack terms (e.g. `["Machine Learning", "Kotlin", "Python"]`). Supports permissive synonyms (e.g. SWE ↔ Software Engineer). |
+| `countries` | `array` | `[]` | Country filter (supports 69+ countries across Europe, East Asia, Americas, Arab countries, and more). |
+| `visaSponsorshipOnly` | `boolean` | `true` | When true, returns jobs with confirmed sponsorship signals (`known_sponsor`, `on_sponsor_list`, `stated_in_jd`, `historical_filings`, `employer_sponsored_region`). |
 | `includeUnknownVisa` | `boolean` | `false` | When `visaSponsorshipOnly` is enabled, set to true to also include unknown visa status jobs. |
-| `minVisaConfidence` | `string` | `"unknown"` | Minimum required confidence (`"unknown"`, `"historical_filings"`, `"employer_sponsored_region"`, `"on_sponsor_list"`, `"stated_in_jd"`). |
+| `minVisaConfidence` | `string` | `"unknown"` | Minimum required confidence (`"unknown"`, `"historical_filings"`, `"employer_sponsored_region"`, `"on_sponsor_list"`, `"known_sponsor"`, `"stated_in_jd"`). |
 | `sources` | `array` | `["greenhouse", "lever", ...]` | Target ATS endpoints and job boards to query. |
 | `companyUrls` | `array` | `[]` | Specific ATS career page URLs to auto-extract. |
-| `postedWithinDays` | `integer` | `30` | Maximum posting age in days. |
+| `postedWithinDays` | `integer` | `60` | Maximum posting age in days. |
 | `enableAIClassification` | `boolean` | `false` | Enable LLM technical relevance scoring. |
-| `maxResults` | `integer` | `200` | Maximum jobs to return. |
+| `maxResults` | `integer` | `500` | Maximum jobs to return. |
 
 ---
 

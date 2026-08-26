@@ -73,7 +73,7 @@ def input_to_config(actor_input: Optional[Dict[str, Any]]) -> JobSearchConfig:
     # 4. Job Filters
     seniority_levels = _get_val("seniorityLevels", job_filt, [])
     employment_types = _get_val("employmentTypes", job_filt, [])
-    posted_within_days = int(_get_val("postedWithinDays", job_filt, 30))
+    posted_within_days = int(_get_val("postedWithinDays", job_filt, 60))
     min_salary_raw = _get_val("minSalary", job_filt, None)
     min_salary = float(min_salary_raw) if min_salary_raw is not None else None
     salary_currency = str(_get_val("salaryCurrency", job_filt, "USD")).upper()
@@ -88,7 +88,7 @@ def input_to_config(actor_input: Optional[Dict[str, Any]]) -> JobSearchConfig:
     classification_prompt = _get_val("classificationPrompt", ai_sec, None)
 
     # 6. Output Options
-    max_results = int(_get_val("maxResults", output_sec, 200))
+    max_results = int(_get_val("maxResults", output_sec, 500))
     sort_by = str(_get_val("sortBy", output_sec, "composite_score"))
     sort_order = str(_get_val("sortOrder", output_sec, "desc"))
     include_description = bool(_get_val("includeDescription", output_sec, True))
@@ -97,7 +97,7 @@ def input_to_config(actor_input: Optional[Dict[str, Any]]) -> JobSearchConfig:
 
     # 7. Advanced Options
     max_per_source = int(_get_val("maxPerSource", adv_sec, 500))
-    concurrency = int(_get_val("concurrency", adv_sec, 5))
+    concurrency = int(_get_val("concurrency", adv_sec, 10))
     timeout_per_source_secs = int(_get_val("timeoutPerSourceSecs", adv_sec, 30))
     max_runtime_secs = int(_get_val("maxRuntimeSecs", adv_sec, 300))
     use_browser_fallback = bool(_get_val("useBrowserFallback", adv_sec, False))

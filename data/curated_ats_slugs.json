@@ -1,0 +1,25 @@
+{
+  "greenhouse": [
+    "stripe", "airbnb", "coinbase", "datadog", "hubspot", "mongodb",
+    "notion", "figma", "linear", "ramp", "anthropic", "databricks",
+    "scale", "together", "perplexity", "cohere", "huggingface",
+    "weights", "mistral", "deepmind", "spotify", "revolut", "wise",
+    "booking", "adyen", "personio", "celonis", "n26", "mollie",
+    "zalando", "deliveryhero", "flixbus", "biontech", "asml",
+    "salesforce", "adobe", "oracle", "atlassian", "canva",
+    "shopify", "palantir", "snowflake", "nvidia", "uber",
+    "doordash", "instacart", "plaid", "brex", "gusto", "rippling",
+    "vercel", "supabase", "resend", "planetscale", "neon",
+    "mercury", "calcom", "openai", "stability", "waymo", "tesla"
+  ],
+  "lever": [
+    "netflix", "shopify", "palantir", "roblox", "brex", "plaid",
+    "rippling", "gusto", "substack", "vercel", "kobo", "bolt",
+    "attentive", "figure", "whatnot", "ramp", "mercury"
+  ],
+  "ashby": [
+    "openai", "ramp", "linear", "mercury", "calcom", "supabase",
+    "resend", "vercel", "planetscale", "neon", "anthropic",
+    "perplexity", "cohere", "huggingface", "mistral"
+  ]
+}
