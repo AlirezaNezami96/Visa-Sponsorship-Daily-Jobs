@@ -97,13 +97,36 @@ async def classify_jobs_stage(
 ) -> Tuple[List[Job], int]:
     """
     Executes non-blocking AI classification across candidate jobs with bounded concurrency (3).
+    Zero-liability: skips classification if no API key is provided, emitting 0 AI events.
     Skips AI classification if the user's spending limit or ACTOR_MAX_TOTAL_CHARGE_USD budget is >= 80% exhausted.
     Returns (qualified_jobs, classified_count).
     """
     if not config.enable_ai_classification or not jobs:
         return jobs, 0
 
-    # 1. Budget Guard: Check ACTOR_MAX_TOTAL_CHARGE_USD spending ceiling
+    # 1. Zero-Liability Guard: Ensure LLM API key is present
+    has_api_key = bool(
+        config.llm_api_key
+        or os.getenv("GEMINI_API_KEY")
+        or os.getenv("GROQ_API_KEY")
+        or os.getenv("OPENAI_API_KEY")
+    )
+    if not has_api_key:
+        logger.warning(
+            "AI classification requested ('enableAIClassification': true), but no LLM API key ('llmApiKey') was provided. "
+            "Skipping AI enrichment without error or charge."
+        )
+        return jobs, 0
+
+    # Inject user-supplied key into environment for router resolution
+    if config.llm_api_key:
+        provider = (config.llm_provider or "gemini").lower()
+        if provider == "gemini":
+            os.environ["GEMINI_API_KEY"] = config.llm_api_key
+        elif provider == "groq":
+            os.environ["GROQ_API_KEY"] = config.llm_api_key
+
+    # 2. Budget Guard: Check ACTOR_MAX_TOTAL_CHARGE_USD spending ceiling
     max_charge_str = os.environ.get("ACTOR_MAX_TOTAL_CHARGE_USD")
     if max_charge_str:
         try:
@@ -118,8 +141,6 @@ async def classify_jobs_stage(
                 return jobs, 0
         except ValueError:
             pass
-
-
 
     max_calls = config.max_ai_calls if config.max_ai_calls is not None else 200
     min_score = config.minimum_relevance_score or 0.0
@@ -152,6 +173,8 @@ async def classify_jobs_stage(
                     for t in clf["technologies"]:
                         if t not in existing_tech:
                             job.technologies.append(t)
+        else:
+            job.metadata["ai_skipped"] = True
 
         # Apply minimum relevance score filter if classified
         if job.relevance_score is not None and job.relevance_score < min_score:

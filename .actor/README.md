@@ -1,10 +1,52 @@
-# Visa Sponsorship Jobs Scraper & API
+# Visa Sponsorship Jobs Intelligence Feed
 
-Find sponsorship-friendly jobs by combining live public ATS job APIs with official government sponsor registry intelligence.
+> Cross-referenced directly with official immigration registries (UK Home Office & US DOL LCA). Filter out noise, avoid unverified listings, and automate daily job tracking with zero duplicate charges.
 
-Stop wasting time on jobs that don't sponsor. Most job scrapers return thousands of listings that explicitly require existing work authorization. This Actor cross-references employer names against **official government sponsor registers** (UK Home Office Skilled Worker Register & US Department of Labor LCA disclosure filings) to deliver actionable visa intelligence.
+Stop wasting time on job listings that secretly require existing citizenship or permanent residency. Most job scrapers return thousands of listings that explicitly require work authorization. This Actor cross-references employer names against **official government sponsor registers** (UK Home Office Skilled Worker Register & US Department of Labor LCA disclosure filings) and verified global tech sponsor programs with **atomic Pay-Per-Event (PPE) monetization**.
 
-> **Disclaimer**: *This Actor provides evidence of sponsorship capability via official registries, not a guarantee of employment.*
+> [!NOTE]
+> **Data Sources & Limitations Disclaimer**:
+> This Actor checks employer eligibility against official government sponsor registries and confirmed corporate sponsorship programs. **Registration on a sponsor list signifies legal capacity and license to sponsor, not a guarantee that a specific individual opening will offer visa sponsorship or relocation assistance.** Job seekers should always verify specific sponsorship terms directly with the employer.
+
+---
+
+## ⚡ Memory & Execution Sizing
+
+- **Standard Runs (Default ATS & Public Boards)**: **1024 MB** memory is recommended.
+- **Overseas Expansion with Detail Fetching (`overseasFetchDetails: true`)**: **2048 MB** memory and `maxRuntimeSecs ≥ 900` is recommended.
+
+---
+
+## 🎟️ Pay-Per-Event (PPE) Pricing
+
+You only pay for verified, delivered results matching your search criteria:
+
+| Event | Description | Price |
+| :--- | :--- | :--- |
+| `apify-actor-start` | Actor start fee *(Configured in Apify Console)* | $0.05 / run |
+| `job-result` | Per normalized job returned | $2.00 / 1,000 jobs |
+| `visa-enriched-job` | Per job verified against official government registers or known sponsor allowlists | +$1.00 / 1,000 jobs |
+| `ai-classified-job` | Per job analyzed with AI technical scoring *(Requires user-supplied LLM API key)* | +$3.00 / 1,000 jobs |
+| `overseas-job` | Per job from the overseas expansion pack | +$1.50 / 1,000 jobs |
+
+### Cost Estimation Matrix
+
+| Mode / Permutation | Typical Cost (per 1,000 Jobs) | Included Events | Recommended Use Case |
+| :--- | :--- | :--- | :--- |
+| **Standard Mode** | **$3.00 – $4.00** | `job-result` | General tech & remote job scraping from ATS platforms. |
+| **Visa Verified** | **$5.00 – $6.50** | `job-result` + `visa-enriched-job` | Candidates seeking verified UK/US visa sponsorship eligibility. |
+| **Global Corridor** | **$6.50 – $8.00** | `job-result` + `visa-enriched-job` + `overseas-job` | International relocations and agency-sponsored corridors. |
+| **Full Intelligence** | **$9.00 – $11.00** | `job-result` + `visa-enriched-job` + `overseas-job` + `ai-classified-job` | High-precision screening with deep AI role relevance scoring. |
+
+*Filtered-out and duplicate listings are NEVER charged.*
+
+---
+
+## 🛡️ Anti-Duplicate & Zero-Liability Guarantees
+
+1. **Atomic Charge-Before-Push**: Every record is charged before push. If your Apify Actor spending limit is reached, uncharged records are discarded immediately.
+2. **Cross-Run Deduplication**: When `deduplicationAcrossRuns: true` is enabled, repeat scheduled runs remember previously seen job fingerprints in a persistent Named Key-Value store (`visa-jobs-dedup-state`). You are never double-billed for identical jobs.
+3. **Zero Operator LLM Liabilities**: AI classification uses a Zero-Liability model requiring a user-supplied API key (`llmApiKey`). If omitted, AI evaluation gracefully bypasses without error, and 0 `ai-classified-job` charges occur.
 
 ---
 
@@ -93,21 +135,7 @@ Every run produces a **machine-readable Dataset** *and* a set of **human-friendl
 - **🤖 Optional AI Classification**: Provider-agnostic LLM relevance evaluation (Gemini, Groq, OpenRouter) scoring tech stack match quality.
 - **⚡ Fast, HTTP-First Architecture**: Lightweight API requests without heavy headless browser overhead.
 
----
 
-## 💰 Pay-Per-Event (PPE) Pricing
-
-You only pay for the exact volume of data emitted:
-
-| Event | Description | Price |
-|---|---|---|
-| `apify-actor-start` | Actor start fee *(Configured in Apify Console)* | $0.05 / run |
-| `job-result` | Per normalized job returned | $2.00 / 1,000 jobs |
-| `visa-enriched-job` | Per job verified against official government registers or known sponsor allowlists | +$1.00 / 1,000 jobs |
-| `ai-classified-job` | Per job analyzed with AI technical scoring | +$3.00 / 1,000 jobs |
-| `overseas-job` | Per job from the overseas expansion pack *(optional; final price set in Apify Console)* | +$1.50 / 1,000 jobs |
-
-*Filtered-out and duplicate listings are NEVER charged.*
 
 ---
 

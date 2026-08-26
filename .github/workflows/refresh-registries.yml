@@ -1,0 +1,45 @@
+name: Weekly Sponsor Registry Refresh & Build
+
+on:
+  schedule:
+    - cron: '0 3 * * 0'  # Every Sunday at 03:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: weekly-sponsor-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh-sponsors:
+    name: Download Official Registers & Refresh SQLite DB
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Bake fresh official sponsor registry
+        run: |
+          python scripts/build_sponsors_db.py
+
+      - name: Run verification tests
+        run: |
+          pytest tests/test_visa_evaluator.py tests/test_sponsors_db_enforcement.py -q
+
+      - name: Deploy Actor to Apify (if APIFY_TOKEN configured)
+        if: env.APIFY_TOKEN != ''
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+        run: |
+          npx -y apify-cli push --force

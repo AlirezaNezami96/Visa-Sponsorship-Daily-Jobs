@@ -36,7 +36,7 @@ def test_spending_limit_stops_emission():
 
             # Spending limit encountered -> limit_reached set to True and warning logged
             assert sink.limit_reached is True
-            assert mock_push.call_count == 1
+            assert mock_push.call_count == 0
             assert mock_warn.call_count >= 1
 
     asyncio.run(_test())

@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, Optional
 
+from apify_actor.defaults import DEFAULT_SOURCES
 from job_radar.models.config import JobSearchConfig
 
 logger = logging.getLogger(__name__)
@@ -59,10 +60,15 @@ def input_to_config(actor_input: Optional[Dict[str, Any]]) -> JobSearchConfig:
     min_visa_confidence = str(_get_val("minVisaConfidence", visa_filt, "unknown")).lower()
     exclude_explicit_no_sponsorship = bool(_get_val("excludeExplicitNoSponsorship", visa_filt, True))
 
-    # 3. Data Sources
+    # 3. Data Sources (Fallback to DEFAULT_SOURCES if empty)
     sources = _get_val("sources", sources_sec, [])
     if isinstance(sources, str):
         sources = [s.strip() for s in sources.split(",") if s.strip()]
+    if not sources and not isinstance(raw.get("sources"), list):
+        sources = list(DEFAULT_SOURCES)
+    elif isinstance(sources, list) and len(sources) == 0 and "sources" not in raw:
+        sources = list(DEFAULT_SOURCES)
+
     company_urls = _get_val("companyUrls", sources_sec, [])
     if isinstance(company_urls, str):
         company_urls = [u.strip() for u in company_urls.split(",") if u.strip()]
@@ -83,8 +89,12 @@ def input_to_config(actor_input: Optional[Dict[str, Any]]) -> JobSearchConfig:
 
     # 5. AI Classification
     enable_ai_classification = bool(_get_val("enableAIClassification", ai_sec, False))
+    llm_provider = str(_get_val("llmProvider", ai_sec, "gemini")).lower()
+    llm_api_key = _get_val("llmApiKey", ai_sec, None)
     minimum_relevance_score = float(_get_val("minimumRelevanceScore", ai_sec, 0.5))
-    max_ai_calls = int(_get_val("maxAICalls", ai_sec, 200))
+    max_ai_calls = int(_get_val("maxAICalls", ai_sec, 50))
+    max_total_ai_charge_usd_raw = _get_val("maxTotalAIChargeUsd", ai_sec, None)
+    max_total_ai_charge_usd = float(max_total_ai_charge_usd_raw) if max_total_ai_charge_usd_raw is not None else None
     classification_prompt = _get_val("classificationPrompt", ai_sec, None)
 
     # 6. Output Options
@@ -94,6 +104,9 @@ def input_to_config(actor_input: Optional[Dict[str, Any]]) -> JobSearchConfig:
     include_description = bool(_get_val("includeDescription", output_sec, True))
     include_raw_metadata = bool(_get_val("includeRawMetadata", output_sec, False))
     deduplicate_within_run = bool(_get_val("deduplicateWithinRun", output_sec, True))
+    deduplication_across_runs = bool(_get_val("deduplicationAcrossRuns", output_sec, True))
+    deduplication_ttl_days = int(_get_val("deduplicationTtlDays", output_sec, 30))
+    reset_dedup_state = bool(_get_val("resetDedupState", output_sec, False))
 
     # 7. Advanced Options
     max_per_source = int(_get_val("maxPerSource", adv_sec, 500))
@@ -102,6 +115,7 @@ def input_to_config(actor_input: Optional[Dict[str, Any]]) -> JobSearchConfig:
     max_runtime_secs = int(_get_val("maxRuntimeSecs", adv_sec, 300))
     use_browser_fallback = bool(_get_val("useBrowserFallback", adv_sec, False))
     proxy_configuration = _get_val("proxyConfiguration", adv_sec, None)
+    refresh_registries = bool(_get_val("refreshRegistries", adv_sec, False))
 
     # 8. Overseas Expansion (v1) — flag-gated, defaults preserve current behavior
     enable_overseas_sources = bool(_get_val("enableOverseasSources", overseas_sec, False))
@@ -152,8 +166,11 @@ def input_to_config(actor_input: Optional[Dict[str, Any]]) -> JobSearchConfig:
         salary_currency=salary_currency,
         technologies=technologies,
         enable_ai_classification=enable_ai_classification,
+        llm_provider=llm_provider,
+        llm_api_key=llm_api_key,
         minimum_relevance_score=minimum_relevance_score,
         max_ai_calls=max_ai_calls,
+        max_total_ai_charge_usd=max_total_ai_charge_usd,
         classification_prompt=classification_prompt,
         max_results=max_results,
         sort_by=sort_by,
@@ -161,12 +178,16 @@ def input_to_config(actor_input: Optional[Dict[str, Any]]) -> JobSearchConfig:
         include_description=include_description,
         include_raw_metadata=include_raw_metadata,
         deduplicate_within_run=deduplicate_within_run,
+        deduplication_across_runs=deduplication_across_runs,
+        deduplication_ttl_days=deduplication_ttl_days,
+        reset_dedup_state=reset_dedup_state,
         max_per_source=max_per_source,
         concurrency=concurrency,
         timeout_per_source_secs=timeout_per_source_secs,
         max_runtime_secs=max_runtime_secs,
         use_browser_fallback=use_browser_fallback,
         proxy_configuration=proxy_configuration,
+        refresh_registries=refresh_registries,
         enable_overseas_sources=enable_overseas_sources,
         overseas_categories=overseas_categories,
         overseas_destination_countries=overseas_destination_countries,
@@ -180,3 +201,4 @@ def input_to_config(actor_input: Optional[Dict[str, Any]]) -> JobSearchConfig:
         overseas_min_results=overseas_min_results,
         respect_robots_txt=respect_robots_txt,
     )
+

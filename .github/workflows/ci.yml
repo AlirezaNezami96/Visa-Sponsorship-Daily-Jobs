@@ -1,0 +1,51 @@
+name: CI - Actor & Core Validation
+
+on:
+  push:
+    branches: [main, feature/overseas-expansion, feature/apify-actor]
+  pull_request:
+    branches: [main, feature/overseas-expansion, feature/apify-actor]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Lint, Test & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-actor.txt
+          pip install -e .
+          pip install ruff mypy pytest pytest-cov
+
+      - name: Lint and formatting checks
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Static type checking
+        run: |
+          mypy src/job_radar apify_actor --ignore-missing-imports
+
+      - name: Run test suite
+        run: |
+          pytest -q --cov=apify_actor
+
+      - name: Validate Apify Actor Input Schema
+        run: |
+          npx -y apify-cli validate-schema .actor/input_schema.json
+
+      - name: Test Docker Container Build
+        run: |
+          docker build -t visa-sponsorship-jobs-scraper:test -f .actor/Dockerfile .

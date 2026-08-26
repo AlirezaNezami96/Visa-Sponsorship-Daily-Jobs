@@ -138,9 +138,9 @@ def test_spending_limit_stops_everything_including_overseas():
             assert sink.limit_reached is True
             assert sink.emitted_count == 0
             assert sink.overseas_count == 0
-            # Only the single limit-tripping charge happened; nothing after.
+            # Only the single limit-tripping charge happened; nothing pushed to dataset.
             assert mock_charge.call_count == 1
-            assert mock_push.call_count == 1
+            assert mock_push.call_count == 0
 
     asyncio.run(_test())
 

@@ -1,6 +1,6 @@
 {
-  "title": "Visa Sponsorship Jobs Scraper",
-  "description": "Find jobs where visa sponsorship is actually available. Cross-references official government sponsor registries (UK, US) with live ATS job boards.",
+  "title": "Visa Sponsorship Jobs Scraper & Intelligence API",
+  "description": "Find jobs where visa sponsorship is actually available. Cross-references official government sponsor registries (UK Home Office & US DOL LCA) with live ATS job boards with atomic pay-per-event billing.",
   "type": "object",
   "schemaVersion": 1,
   "properties": {
@@ -15,7 +15,7 @@
     "keywords": {
       "title": "Keywords",
       "type": "array",
-      "description": "Job titles or skills to search for (e.g., Machine Learning, Android, Python).",
+      "description": "Job titles or skills to search for (e.g., Software Engineer, Machine Learning, Android, Python).",
       "editor": "stringList",
       "default": [],
       "prefill": [
@@ -161,8 +161,39 @@
     "enableAIClassification": {
       "title": "Enable AI Scoring",
       "type": "boolean",
-      "description": "Use AI to score job relevance (0-100). Adds $3 per 1,000 jobs but improves quality.",
+      "description": "Use AI to score job relevance (0-100). Requires your own LLM API key (Zero-Liability model).",
       "default": false
+    },
+    "llmProvider": {
+      "title": "LLM Provider",
+      "type": "string",
+      "description": "AI provider to evaluate candidate jobs.",
+      "editor": "select",
+      "default": "gemini",
+      "enum": [
+        "gemini",
+        "groq"
+      ],
+      "enumTitles": [
+        "Google Gemini (Recommended)",
+        "Groq (Fast Inference)"
+      ]
+    },
+    "llmApiKey": {
+      "title": "LLM API Key",
+      "type": "string",
+      "description": "Your Google Gemini or Groq API key. If omitted when AI is enabled, AI evaluation is gracefully skipped without errors or extra charges.",
+      "editor": "textfield",
+      "isSecret": true
+    },
+    "maxAICalls": {
+      "title": "Max AI Calls",
+      "type": "integer",
+      "description": "Maximum candidate jobs to score with AI per run.",
+      "default": 50,
+      "minimum": 1,
+      "maximum": 1000,
+      "unit": "calls"
     },
     "sources": {
       "title": "Data Sources",
@@ -211,7 +242,7 @@
         "jobicy"
       ],
       "sectionCaption": "Advanced Settings",
-      "sectionDescription": "Fine-tune sources, visa registries, and execution parameters."
+      "sectionDescription": "Fine-tune sources, visa registries, proxy, deduplication, and execution parameters."
     },
     "visaRegistryCountries": {
       "title": "Visa Registry Countries",
@@ -259,6 +290,42 @@
       "title": "Include Unknown Visa Status",
       "type": "boolean",
       "description": "Include jobs where sponsorship status is unknown (only when Visa Sponsorship Only is enabled).",
+      "default": false
+    },
+    "deduplicationAcrossRuns": {
+      "title": "Deduplicate Across Runs",
+      "type": "boolean",
+      "description": "Remember seen job postings in a persistent Key-Value Store to avoid duplicate charges on scheduled runs.",
+      "default": true
+    },
+    "deduplicationTtlDays": {
+      "title": "Deduplication TTL (Days)",
+      "type": "integer",
+      "description": "Number of days to remember previously seen job postings.",
+      "default": 30,
+      "minimum": 1,
+      "maximum": 365,
+      "unit": "days"
+    },
+    "resetDedupState": {
+      "title": "Reset Deduplication State",
+      "type": "boolean",
+      "description": "Wipe historical job fingerprint memory and start fresh on this run.",
+      "default": false
+    },
+    "proxyConfiguration": {
+      "title": "Proxy Configuration",
+      "type": "object",
+      "description": "Use Apify Standard Proxy to prevent geo-blocking and rate limits.",
+      "editor": "proxy",
+      "default": {
+        "useApifyProxy": true
+      }
+    },
+    "refreshRegistries": {
+      "title": "Refresh Live Registries",
+      "type": "boolean",
+      "description": "Attempt downloading the latest UK Home Office live register on startup (falls back to bundled database on timeout).",
       "default": false
     },
     "employmentTypes": {

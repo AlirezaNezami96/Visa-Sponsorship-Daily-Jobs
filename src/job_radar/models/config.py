@@ -39,8 +39,11 @@ class JobSearchConfig:
 
     # AI Classification (Optional)
     enable_ai_classification: bool = False
+    llm_provider: str = "gemini"  # gemini | groq
+    llm_api_key: Optional[str] = None
     minimum_relevance_score: float = 0.5
     max_ai_calls: int = 200
+    max_total_ai_charge_usd: Optional[float] = None
     classification_prompt: Optional[str] = None
     classifier_version: str = "v1"
 
@@ -51,6 +54,9 @@ class JobSearchConfig:
     include_description: bool = True
     include_raw_metadata: bool = False
     deduplicate_within_run: bool = True
+    deduplication_across_runs: bool = True
+    deduplication_ttl_days: int = 30
+    reset_dedup_state: bool = False
 
     # Advanced Options
     max_per_source: int = 500
@@ -59,6 +65,8 @@ class JobSearchConfig:
     max_runtime_secs: int = 300
     use_browser_fallback: bool = False
     proxy_configuration: Optional[Dict[str, Any]] = None
+    proxy_url: Optional[str] = None
+    refresh_registries: bool = False
 
     # Overseas Expansion (v1) — flag-gated; defaults preserve current behavior
     enable_overseas_sources: bool = False
