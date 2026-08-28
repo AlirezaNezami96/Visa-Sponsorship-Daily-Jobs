@@ -1,0 +1,10 @@
+{
+  "nodeModulesDir": "auto",
+  "imports": {
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@^2.112.4"
+  },
+  "compilerOptions": {
+    "lib": ["deno.window", "dom", "dom.asynciterable"]
+  },
+  "exclude": ["**/node_modules/**"]
+}

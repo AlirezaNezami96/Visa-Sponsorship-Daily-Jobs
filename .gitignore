@@ -19,9 +19,12 @@ storage/
 report_preview/
 results.json
 
-# Node.js / Cloudflare Worker
+# Node.js / Cloudflare Worker / Edge Function tooling
 node_modules/
+package-lock.json
 .wrangler/
+supabase/functions/node_modules/
+supabase/functions/package-lock.json
 
 # Environment & Credentials
 .env

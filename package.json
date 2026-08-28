@@ -1,0 +1,16 @@
+{
+  "name": "visa-sponsorship-daily-jobs",
+  "private": true,
+  "type": "module",
+  "description": "VisaLane unified backend. Python scrape pipeline + TypeScript Supabase Edge Functions sharing one Postgres. This package.json only drives the Edge Function Vitest tooling.",
+  "scripts": {
+    "test:functions": "vitest run",
+    "test:functions:watch": "vitest",
+    "typecheck:functions": "deno check supabase/functions/*/index.ts"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "^2.112.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.1.9"
+  }
+}

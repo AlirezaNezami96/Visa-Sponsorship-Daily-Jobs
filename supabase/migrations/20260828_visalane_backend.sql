@@ -437,10 +437,16 @@ CREATE POLICY "owner_select_feedback" ON feedback
     FOR SELECT TO authenticated USING (user_id = auth.uid());
 
 -- Pipeline/system tables: no anon/authenticated access at all
--- (RLS enabled, zero policies => only service_role can touch them).
+-- (RLS enabled, zero policies => only service_role can touch them),
+-- EXCEPT authenticated users may append their own analytics events.
 ALTER TABLE social_post_queue ENABLE ROW LEVEL SECURITY;
 ALTER TABLE analytics_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE scrape_runs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "authenticated_insert_own_events" ON analytics_events;
+CREATE POLICY "authenticated_insert_own_events" ON analytics_events
+    FOR INSERT TO authenticated
+    WITH CHECK (user_id IS NULL OR user_id = auth.uid());
 
 -- ---------------------------------------------------------------------------
 -- 17. Usage-limit atomic increment (race-free, whitelist-guarded)
