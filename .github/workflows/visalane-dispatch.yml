@@ -1,0 +1,58 @@
+name: VisaLane Dispatch (alerts, social, enrichment)
+
+# Processes newly scraped jobs sitting in the VisaLane tables:
+#   - alert matching + delivery over email/telegram/discord/slack
+#   - social_post_queue staging (posting worker consumes the queue)
+#   - optional contact enrichment (0-credit Apollo) on a slower cadence
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # alert/social pass twice an hour
+    - cron: '0 6 * * *'      # daily enrichment pass
+  workflow_dispatch:
+    inputs:
+      enrichment:
+        description: 'Run contact enrichment'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      APOLLO_API_KEY: ${{ secrets.APOLLO_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Dispatch alerts + social staging
+        run: job-radar-visalane dispatch --alerts --social --limit 300
+
+      - name: Contact enrichment (scheduled/manual only)
+        if: github.event_name == 'workflow_dispatch' && inputs.enrichment == 'true' || github.event.schedule == '0 6 * * *'
+        run: job-radar-visalane dispatch --enrichment --limit 50

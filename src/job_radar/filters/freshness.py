@@ -24,6 +24,10 @@ _RE_HOURS_AGO = re.compile(r"(\d+)\s+hours?\s+ago", re.IGNORECASE)
 _RE_MINS_AGO = re.compile(r"(\d+)\s+minutes?\s+ago", re.IGNORECASE)
 _RE_WEEKS_AGO = re.compile(r"(\d+)\s+weeks?\s+ago", re.IGNORECASE)
 _RE_MONTHS_AGO = re.compile(r"(\d+)\s+months?\s+ago", re.IGNORECASE)
+# Anchor the "30+" stale marker to the word "days". A bare substring match on
+# "30+" false-positives on ISO datetimes whose microseconds end in "30"
+# followed by a "+HH:MM" offset (e.g. "...:13.726930+00:00").
+_RE_STALE_PLUS = re.compile(r"\b30\+\s*days?\b", re.IGNORECASE)
 _STALE_SENTINELS = frozenset({
     "30+ days ago",
     "more than 30 days ago",
@@ -60,7 +64,7 @@ def _parse_date_to_days_old(date_str: str) -> Optional[float]:
         return None
 
     # Explicit stale sentinels
-    if s in _STALE_SENTINELS or "30+" in s:
+    if s in _STALE_SENTINELS or _RE_STALE_PLUS.search(s):
         return 999.0
 
     # Fresh sentinels

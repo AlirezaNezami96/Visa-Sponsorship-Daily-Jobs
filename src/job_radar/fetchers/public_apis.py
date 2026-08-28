@@ -190,8 +190,13 @@ def fetch_himalayas() -> List[dict]:
                 company = item.get("companyName", "").strip()
                 apply_url = item.get("applicationLink") or f"https://himalayas.app/companies/{item.get('companySlug')}/jobs/{item.get('guid')}"
                 
-                loc_restrictions = item.get("locationRestrictions", [])
-                loc = ", ".join(loc_restrictions) if loc_restrictions else "Remote (Worldwide)"
+                loc_restrictions = item.get("locationRestrictions") or []
+                if isinstance(loc_restrictions, list):
+                    loc = ", ".join(str(p) for p in loc_restrictions if p) or "Remote (Worldwide)"
+                elif isinstance(loc_restrictions, str):
+                    loc = loc_restrictions
+                else:
+                    loc = str(loc_restrictions) if loc_restrictions else "Remote (Worldwide)"
 
                 min_sal = item.get("minSalary")
                 max_sal = item.get("maxSalary")
@@ -201,12 +206,20 @@ def fetch_himalayas() -> List[dict]:
                 raw_desc = item.get("description", "") or item.get("excerpt", "")
                 snippet = BeautifulSoup(raw_desc, "html.parser").get_text(separator=" ", strip=True)[:300] if raw_desc else ""
 
+                cats = item.get("categories") or []
+                if isinstance(cats, list):
+                    dept = ", ".join(str(c) for c in cats if c)
+                elif isinstance(cats, str):
+                    dept = cats
+                else:
+                    dept = str(cats) if cats else ""
+
                 jobs.append({
                     "title": title,
                     "company": company,
                     "url": apply_url,
                     "location": loc,
-                    "department": ", ".join(item.get("categories", [])),
+                    "department": dept,
                     "salary": salary,
                     "date_posted": str(item.get("pubDate")),
                     "remote": True,

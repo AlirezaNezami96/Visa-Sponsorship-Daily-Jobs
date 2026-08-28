@@ -1,0 +1,341 @@
+{
+  "actorSpecification": 1,
+  "title": "Visa Sponsorship Jobs Output",
+  "description": "Normalized visa-enriched job records. The Overview view is ordered by opportunity score so the strongest rows appear first.",
+  "fields": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "title": "Job ID",
+        "description": "Unique fingerprint or source-prefixed identifier.",
+        "example": "gh-stripe-4921049"
+      },
+      "title": {
+        "type": "string",
+        "title": "Job Title",
+        "description": "The posting title.",
+        "example": "Senior Machine Learning Infrastructure Engineer"
+      },
+      "company": {
+        "type": "string",
+        "title": "Company",
+        "description": "Employer display name.",
+        "example": "Stripe"
+      },
+      "companyNormalized": {
+        "type": "string",
+        "title": "Company (normalized)",
+        "description": "Lower-cased company name with common corporate suffixes removed, used for registry matching.",
+        "example": "stripe"
+      },
+      "location": {
+        "type": "string",
+        "title": "Location",
+        "description": "Primary location string, or 'Remote'.",
+        "example": "London, United Kingdom"
+      },
+      "locations": {
+        "type": "array",
+        "title": "All Locations",
+        "description": "All listed locations for the role."
+      },
+      "remote": {
+        "type": "boolean",
+        "title": "Remote",
+        "description": "True when the role is remote-friendly.",
+        "example": true
+      },
+      "remoteType": {
+        "type": "string",
+        "title": "Remote Scope",
+        "description": "worldwide | region_restricted | hybrid | onsite | unknown.",
+        "example": "region_restricted"
+      },
+      "allowedRegions": {
+        "type": "array",
+        "title": "Allowed Regions",
+        "description": "Regions the remote role is open to."
+      },
+      "country": {
+        "type": "string",
+        "title": "Country",
+        "description": "Canonical destination country when detected.",
+        "example": "United Kingdom"
+      },
+      "employmentType": {
+        "type": "string",
+        "title": "Employment Type",
+        "description": "full_time | part_time | contract | internship.",
+        "example": "full_time"
+      },
+      "seniority": {
+        "type": "string",
+        "title": "Seniority",
+        "description": "intern | new_grad | junior | mid | senior | lead | executive.",
+        "example": "senior"
+      },
+      "salaryMin": {
+        "type": "number",
+        "title": "Salary Min",
+        "example": 75000
+      },
+      "salaryMax": {
+        "type": "number",
+        "title": "Salary Max",
+        "example": 95000
+      },
+      "salaryCurrency": {
+        "type": "string",
+        "title": "Currency",
+        "example": "GBP"
+      },
+      "salaryPeriod": {
+        "type": "string",
+        "title": "Salary Period",
+        "description": "hourly | daily | monthly | yearly."
+      },
+      "postedAt": {
+        "type": "string",
+        "title": "Posted At",
+        "description": "ISO-8601 posting timestamp.",
+        "example": "2026-08-22T08:30:00Z"
+      },
+      "applyUrl": {
+        "type": "string",
+        "title": "Apply URL",
+        "description": "Direct link to apply for the role.",
+        "example": "https://boards.greenhouse.io/stripe/jobs/4921049"
+      },
+      "jobUrl": {
+        "type": "string",
+        "title": "Job URL",
+        "description": "Canonical job posting URL."
+      },
+      "source": {
+        "type": "string",
+        "title": "Source",
+        "description": "Origin source/system (greenhouse, lever, remoteok, overseas, ...).",
+        "example": "greenhouse"
+      },
+      "sourceCategory": {
+        "type": "string",
+        "title": "Source Category",
+        "description": "Overseas source category (government, manpower_agency, aggregator, remote_board, visa_specialist, unknown_board). Present only for overseas-pack jobs."
+      },
+      "destinationCountry": {
+        "type": "string",
+        "title": "Destination Country",
+        "description": "Destination country for overseas-pack jobs.",
+        "example": "UAE"
+      },
+      "technologies": {
+        "type": "array",
+        "title": "Technologies",
+        "description": "Detected tech stack / skills."
+      },
+      "visaSignal": {
+        "type": "string",
+        "title": "Visa Signal",
+        "description": "Six-tier sponsorship signal: stated_in_jd | on_sponsor_list | employer_sponsored_region | historical_filings | unknown | explicit_no.",
+        "example": "on_sponsor_list",
+        "enum": [
+          "stated_in_jd",
+          "on_sponsor_list",
+          "employer_sponsored_region",
+          "historical_filings",
+          "unknown",
+          "explicit_no"
+        ]
+      },
+      "visaConfidence": {
+        "type": "number",
+        "title": "Visa Confidence",
+        "description": "Numeric sponsorship confidence 0.0-1.0.",
+        "example": 0.85
+      },
+      "visaType": {
+        "type": "string",
+        "title": "Visa Type",
+        "description": "Inferred visa route.",
+        "example": "UK Skilled Worker"
+      },
+      "visaSponsorMeta": {
+        "type": "object",
+        "title": "Sponsor Registry Info",
+        "description": "Evidence backing the visa signal (matched sponsor, registry, rating)."
+      },
+      "authFit": {
+        "type": "string",
+        "title": "Authorization Fit",
+        "description": "Candidate work-authorization compatibility."
+      },
+      "relevanceScore": {
+        "type": "number",
+        "title": "AI Relevance Score",
+        "description": "AI relevance score 0.0-1.0 when AI classification is enabled."
+      },
+      "compositeScore": {
+        "type": "number",
+        "title": "Composite Score",
+        "description": "Weighted composite ranking score 0.0-1.0.",
+        "example": 0.91
+      },
+      "opportunityScore": {
+        "type": "integer",
+        "title": "Opportunity Score",
+        "description": "0-100 opportunity score (compositeScore × 100). Sort by this descending for the strongest opportunities first.",
+        "example": 91
+      },
+      "classificationReason": {
+        "type": "string",
+        "title": "Classification Reason",
+        "description": "Why the job matched / its AI classification rationale."
+      },
+      "isAiRole": {
+        "type": "boolean",
+        "title": "AI Role",
+        "description": "True when the role is AI/ML-focused (AI classification enabled)."
+      },
+      "hiringContacts": {
+        "type": "array",
+        "title": "Hiring Contacts",
+        "description": "Enriched hiring contacts when available."
+      }
+    }
+  },
+  "views": {
+    "overview": {
+      "title": "Overview",
+      "description": "Strongest opportunities first, with visa signal and apply link.",
+      "transformation": {
+        "fields": [
+          "opportunityScore",
+          "title",
+          "company",
+          "location",
+          "country",
+          "remote",
+          "visaSignal",
+          "visaConfidence",
+          "visaType",
+          "salaryMin",
+          "salaryMax",
+          "salaryCurrency",
+          "seniority",
+          "postedAt",
+          "source",
+          "applyUrl"
+        ],
+        "desc": true
+      },
+      "display": {
+        "component": "table",
+        "properties": {
+          "opportunityScore": {
+            "label": "Opportunity Score",
+            "format": "number"
+          },
+          "title": {
+            "label": "Job Title",
+            "format": "text"
+          },
+          "company": {
+            "label": "Company",
+            "format": "text"
+          },
+          "location": {
+            "label": "Location",
+            "format": "text"
+          },
+          "country": {
+            "label": "Country",
+            "format": "text"
+          },
+          "remote": {
+            "label": "Remote",
+            "format": "boolean"
+          },
+          "visaSignal": {
+            "label": "Visa Signal",
+            "format": "text"
+          },
+          "visaConfidence": {
+            "label": "Visa Confidence",
+            "format": "number"
+          },
+          "visaType": {
+            "label": "Visa Type",
+            "format": "text"
+          },
+          "salaryMin": {
+            "label": "Salary Min",
+            "format": "number"
+          },
+          "salaryMax": {
+            "label": "Salary Max",
+            "format": "number"
+          },
+          "salaryCurrency": {
+            "label": "Currency",
+            "format": "text"
+          },
+          "seniority": {
+            "label": "Seniority",
+            "format": "text"
+          },
+          "postedAt": {
+            "label": "Posted At",
+            "format": "date"
+          },
+          "source": {
+            "label": "Source",
+            "format": "text"
+          },
+          "applyUrl": {
+            "label": "Apply",
+            "format": "link"
+          }
+        }
+      }
+    },
+    "visaEvidence": {
+      "title": "Visa Evidence",
+      "description": "Visa signal, confidence, registry evidence, and destination country for sponsorship analysis.",
+      "transformation": {
+        "fields": [
+          "title",
+          "company",
+          "visaSignal",
+          "visaConfidence",
+          "visaType",
+          "visaSponsorMeta",
+          "authFit",
+          "country",
+          "destinationCountry",
+          "sourceCategory",
+          "applyUrl"
+        ],
+        "desc": true
+      },
+      "display": {
+        "component": "table",
+        "properties": {
+          "visaConfidence": {
+            "label": "Visa Confidence",
+            "format": "number"
+          },
+          "visaSponsorMeta": {
+            "label": "Sponsor Registry Info",
+            "format": "object"
+          },
+          "applyUrl": {
+            "label": "Apply",
+            "format": "link"
+          }
+        }
+      }
+    }
+  }
+}

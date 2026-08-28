@@ -6,20 +6,84 @@ for any job posting using official government registers and JD text analysis.
 """
 from __future__ import annotations
 
+import json
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
 
 from job_radar.visa.db import load_all_aliases, load_all_sponsors, DEFAULT_DB_PATH
 from job_radar.visa.models import AuthFit, SponsorRecord, VisaConfidence
-from job_radar.visa.normalizer import match_company_to_sponsor
+from job_radar.visa.normalizer import build_token_index, match_company_to_sponsor, normalize_company_name
 
 logger = logging.getLogger(__name__)
 
 THRESHOLDS_PATH = Path(__file__).parent / "thresholds.yaml"
+
+_known_sponsors_cache: Optional[Dict[str, Any]] = None
+
+
+def load_known_sponsors() -> Dict[str, Any]:
+    """Load known sponsors allowlist (cached)."""
+    global _known_sponsors_cache
+    if _known_sponsors_cache is None:
+        search_paths = [
+            Path(__file__).resolve().parent.parent.parent.parent / "data" / "known_sponsors.json",
+            Path.cwd() / "data" / "known_sponsors.json",
+            Path("/app/data/known_sponsors.json"),
+        ]
+        data = None
+        for p in search_paths:
+            if p.exists():
+                try:
+                    with open(p, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    break
+                except Exception as e:
+                    logger.debug("Failed loading known sponsors from %s: %s", p, e)
+
+        if data and isinstance(data, dict):
+            cache: Dict[str, Any] = {}
+            for sponsor in data.get("sponsors", []):
+                name = sponsor.get("name", "")
+                norm = normalize_company_name(name)
+                if norm:
+                    cache[norm] = sponsor
+                for alias in sponsor.get("aliases", []):
+                    alias_norm = normalize_company_name(alias)
+                    if alias_norm:
+                        cache[alias_norm] = sponsor
+            _known_sponsors_cache = cache
+        else:
+            _known_sponsors_cache = {}
+    return _known_sponsors_cache
+
+
+def check_known_sponsor(company: str) -> Optional[Dict[str, Any]]:
+    """Fast-path check: is this company a known visa sponsor?"""
+    if not company:
+        return None
+    known = load_known_sponsors()
+    norm = normalize_company_name(company)
+    if not norm:
+        return None
+
+    # Exact normalized match
+    if norm in known:
+        return known[norm]
+
+    # Substring / token match
+    norm_words = set(norm.split())
+    for key, sponsor in known.items():
+        if key == norm:
+            return sponsor
+        if len(key) >= 3 and (key in norm_words or re.search(r"\b" + re.escape(key) + r"\b", norm)):
+            return sponsor
+
+    return None
+
 
 EXPLICIT_NO_PATTERNS = [
     r"\bno\s+(visa\s+)?sponsorship\b",
@@ -56,6 +120,8 @@ class VisaEvaluator:
         self.db_path = db_path
         self._sponsors: Optional[Dict[str, SponsorRecord]] = None
         self._aliases: Optional[Dict[str, str]] = None
+        self._token_index: Optional[Dict[str, Any]] = None
+        self._match_cache: Dict[str, Tuple[Any, str]] = {}
         self._thresholds: Dict[str, Any] = {}
         self._load_thresholds()
 
@@ -71,6 +137,11 @@ class VisaEvaluator:
         if self._sponsors is None:
             self._sponsors = load_all_sponsors(db_path=self.db_path)
             self._aliases = load_all_aliases(db_path=self.db_path)
+            # Inverted token index over ~125k sponsor names: turns each fuzzy
+            # registry scan from O(all sponsors) into O(token-sharing
+            # candidates) with identical >= 0.92 results (see normalizer).
+            self._token_index = build_token_index(self._sponsors)
+            self._match_cache = {}
 
     def evaluate_job(
         self,
@@ -113,7 +184,18 @@ class VisaEvaluator:
                 return VisaConfidence.EXPLICIT_NO, AuthFit.REMOTE_OK, {"notes": "JD disclaims local sponsorship, but worldwide remote is permitted"}
             return VisaConfidence.EXPLICIT_NO, AuthFit.INELIGIBLE, {"notes": "Explicit negative sponsorship disclaimer in job description"}
 
-        # 2. Check for POSITIVE sponsorship / relocation mentions in JD
+        # 2. FAST PATH: Check Known Sponsor Allowlist
+        known = check_known_sponsor(company)
+        if known:
+            sponsor_meta["matched_sponsor"] = known.get("name")
+            sponsor_meta["match_type"] = "known_sponsor_allowlist"
+            sponsor_meta["sponsor_name"] = known.get("name")
+            sponsor_meta["countries"] = known.get("countries", [])
+            sponsor_meta["source"] = "known_sponsors_allowlist"
+            sponsor_meta["notes"] = "Confirmed major visa sponsor with established international hiring program"
+            return VisaConfidence.KNOWN_SPONSOR, AuthFit.SPONSOR_REQUIRED_AND_PLAUSIBLE, sponsor_meta
+
+        # 3. Check for POSITIVE sponsorship / relocation mentions in JD
         if _STATED_IN_JD_REGEX.search(desc):
             sponsor_meta["notes"] = "Explicit visa sponsorship or relocation offered in posting"
             return VisaConfidence.STATED_IN_JD, AuthFit.SPONSOR_REQUIRED_AND_PLAUSIBLE, sponsor_meta
@@ -123,6 +205,8 @@ class VisaEvaluator:
             company_name=company,
             sponsors_by_norm=self._sponsors or {},
             alias_map=self._aliases or {},
+            token_index=self._token_index,
+            match_cache=self._match_cache,
         )
 
         if matched_sponsor:
@@ -178,24 +262,31 @@ class VisaEvaluator:
 
         evidence: List[str] = []
 
-        # 1. Registry signal (0.0 or 1.0)
-        matched_sponsor, match_type = match_company_to_sponsor(
-            company_name=company,
-            sponsors_by_norm=self._sponsors or {},
-            alias_map=self._aliases or {},
-        )
-
+        # 1. Registry or Known Sponsor signal (0.0 or 1.0)
+        known = check_known_sponsor(company)
         reg_val = 0.0
-        if matched_sponsor:
+        if known:
             reg_val = 1.0
-            if matched_sponsor.source == "govuk_register":
-                routes_str = f" ({', '.join(matched_sponsor.routes)})" if matched_sponsor.routes else ""
-                evidence.append(f"UK Home Office Licensed Sponsor: {matched_sponsor.legal_name}{routes_str}")
-            elif matched_sponsor.source == "dol_lca":
-                lca_count = matched_sponsor.extra.get("lca_count_12m", 0)
-                evidence.append(f"US DOL LCA Filings: {matched_sponsor.legal_name} ({lca_count} certified)")
-            else:
-                evidence.append(f"Verified Sponsor Registry: {matched_sponsor.legal_name}")
+            evidence.append(f"Confirmed Major Visa Sponsor: {known.get('name')}")
+        else:
+            matched_sponsor, match_type = match_company_to_sponsor(
+                company_name=company,
+                sponsors_by_norm=self._sponsors or {},
+                alias_map=self._aliases or {},
+                token_index=self._token_index,
+                match_cache=self._match_cache,
+            )
+
+            if matched_sponsor:
+                reg_val = 1.0
+                if matched_sponsor.source == "govuk_register":
+                    routes_str = f" ({', '.join(matched_sponsor.routes)})" if matched_sponsor.routes else ""
+                    evidence.append(f"UK Home Office Licensed Sponsor: {matched_sponsor.legal_name}{routes_str}")
+                elif matched_sponsor.source == "dol_lca":
+                    lca_count = matched_sponsor.extra.get("lca_count_12m", 0)
+                    evidence.append(f"US DOL LCA Filings: {matched_sponsor.legal_name} ({lca_count} certified)")
+                else:
+                    evidence.append(f"Verified Sponsor Registry: {matched_sponsor.legal_name}")
 
         # 2. LLM JD Signal
         llm_mention_clean = (llm_visa_mention or "").lower().strip()

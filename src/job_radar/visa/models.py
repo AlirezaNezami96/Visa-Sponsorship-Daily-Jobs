@@ -13,11 +13,13 @@ from pydantic import BaseModel, Field
 class VisaConfidence(str, Enum):
     """
     Authoritative visa confidence levels.
-    Priority: EXPLICIT_NO > STATED_IN_JD > ON_SPONSOR_LIST > HISTORICAL_FILINGS > UNKNOWN
+    Priority: EXPLICIT_NO > KNOWN_SPONSOR > STATED_IN_JD > ON_SPONSOR_LIST > EMPLOYER_SPONSORED_REGION > HISTORICAL_FILINGS > UNKNOWN
     """
     EXPLICIT_NO = "explicit_no"
+    KNOWN_SPONSOR = "known_sponsor"
     STATED_IN_JD = "stated_in_jd"
     ON_SPONSOR_LIST = "on_sponsor_list"
+    EMPLOYER_SPONSORED_REGION = "employer_sponsored_region"
     HISTORICAL_FILINGS = "historical_filings"
     UNKNOWN = "unknown"
 

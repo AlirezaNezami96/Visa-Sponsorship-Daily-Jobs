@@ -1,0 +1,20 @@
+{
+  "keywords": [
+    "Software Engineer",
+    "Python Developer",
+    "Backend Engineer"
+  ],
+  "countries": [
+    "United Kingdom"
+  ],
+  "visaSponsorshipOnly": true,
+  "minVisaConfidence": "on_sponsor_list",
+  "visaRegistryCountries": [
+    "UK"
+  ],
+  "maxResults": 250,
+  "postedWithinDays": 30,
+  "deduplicationAcrossRuns": true,
+  "deduplicationTtlDays": 30,
+  "includeDescription": true
+}

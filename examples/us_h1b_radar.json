@@ -1,0 +1,20 @@
+{
+  "keywords": [
+    "Machine Learning Engineer",
+    "Data Scientist",
+    "AI Engineer"
+  ],
+  "countries": [
+    "United States"
+  ],
+  "visaSponsorshipOnly": true,
+  "minVisaConfidence": "historical_filings",
+  "visaRegistryCountries": [
+    "US"
+  ],
+  "maxResults": 300,
+  "postedWithinDays": 45,
+  "deduplicationAcrossRuns": true,
+  "deduplicationTtlDays": 30,
+  "includeDescription": true
+}

@@ -1,0 +1,82 @@
+name: CI - Actor & Core Validation
+
+on:
+  push:
+    branches: [main, feature/overseas-expansion, feature/apify-actor, backend/unified]
+  pull_request:
+    branches: [main, feature/overseas-expansion, feature/apify-actor, backend/unified]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Lint, Test & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-actor.txt
+          pip install -e .
+          pip install ruff mypy pytest pytest-cov
+
+      - name: Lint and formatting checks
+        run: |
+          # Repo-wide: syntax/fatal rules only (legacy modules predate strict lint
+          # adoption; bulk-reformatting battle-tested scrapers is out of scope).
+          ruff check . --select E9,F63,F7,F82
+          # New backend surface: full lint + format enforcement.
+          ruff check src/job_radar/visalane src/job_radar/analytics.py src/job_radar/notifications/channels.py scripts/seed_companies.py tests/test_visalane.py
+          ruff format --check src/job_radar/visalane src/job_radar/analytics.py src/job_radar/notifications/channels.py scripts/seed_companies.py tests/test_visalane.py
+
+      - name: Static type checking
+        run: |
+          mypy src/job_radar apify_actor --ignore-missing-imports
+
+      - name: Run test suite
+        run: |
+          pytest -q --cov=apify_actor
+
+      - name: Validate Apify Actor Input Schema
+        run: |
+          npx -y apify-cli validate-schema .actor/input_schema.json
+
+      - name: Test Docker Container Build
+        run: |
+          docker build -t visa-sponsorship-jobs-scraper:test -f .actor/Dockerfile .
+
+  functions:
+    name: Edge Functions (deno check + vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Typecheck Edge Functions
+        working-directory: supabase/functions
+        run: deno check */index.ts
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install function test tooling
+        run: npm install --no-audit --no-fund
+
+      - name: Run Edge Function critical-path tests
+        run: npx vitest run

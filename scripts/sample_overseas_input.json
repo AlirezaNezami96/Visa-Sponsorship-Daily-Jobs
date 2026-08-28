@@ -1,0 +1,17 @@
+{
+  "enableOverseasSources": true,
+  "overseasCategories": ["government", "manpower_agency", "aggregator", "remote_board", "visa_specialist", "unknown_board"],
+  "overseasDestinationCountries": [],
+  "overseasMaxSourcesPerRun": 20,
+  "overseasConcurrency": 20,
+  "overseasBudgetSecs": 240,
+  "overseasFetchDetails": false,
+  "overseasMaxDetailFetches": 300,
+  "overseasSimhashDedup": true,
+  "overseasSimhashThreshold": 6,
+  "respectRobotsTxt": true,
+  "visaSponsorshipOnly": true,
+  "includeUnknownVisa": false,
+  "maxResults": 50,
+  "maxRuntimeSecs": 300
+}

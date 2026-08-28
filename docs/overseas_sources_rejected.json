@@ -1,0 +1,1945 @@
+[
+  {
+    "domain": "aaassociates.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "aarongulf.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "admin.ch",
+    "reason": "info_portal_unreachable",
+    "detail": ""
+  },
+  {
+    "domain": "ae.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "al-ahad.com.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-bilalmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-faizmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-farooqmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-ghanimanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-habibmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-hamdmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-hudaoverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-imranmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-islambd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-jawadmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-khairmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-khaleejbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-khalilmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-latifmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-madinaoverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-mahmoodbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-makkahmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-mustafamanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-najammanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-noormanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-qadirmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-qasim.com.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-rashidmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-rehmanoverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-sabirmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-shafi.com.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-siddiqmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-tariqbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-tariqmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-usmanmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-wahidmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-yaseenmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-zahidmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "al-zubairmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "alharamainmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "alhasibmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "aljadidmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "almoizmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "alrazaoverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "alwakeel.in",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "anandooverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "angshumanoverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "anowaraoverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "anpal.gov.it",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "apexmanpower.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "apexoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "apollooverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "araboverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "arafatoverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "armanoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "asiamanpowerbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "asiaoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "assignmentabroadtimes.in",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "assignmentgulfjobs.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "at.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "atlanticoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "atlasoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "au.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "bangladesh.iom.int",
+    "reason": "info_portal_unreachable",
+    "detail": ""
+  },
+  {
+    "domain": "bangladeshmanpower.com.bd",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "bangladeshworkforce.com.bd",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "banglajobseekers.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "bayoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "bd.indeed.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "bdglobalrecruitment.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "bdjobabroad.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "bdjobplacement.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "bdjobrecruitment.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "bdjobs99.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "bdjobscircular.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "bdjobscircular24.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "bdmanpower.net",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "bdmanpowerrecruitment.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "bdmanpowersolution.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "bdrecruitmentbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "beaconmanpower.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "bengaloverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "bgloverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "bismillahmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "bismillahoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "blueskyoverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "brightoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "builtindenver.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "builtintx.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "bukharioverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "ca.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "canada.ca",
+    "reason": "info_portal_unreachable",
+    "detail": "ReadTimeout: "
+  },
+  {
+    "domain": "capitalrecruitingbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "careerbuilder.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "careerpoint.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "catharsis.com.bd",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "centraloverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "centuryoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "ch.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "chakri.prothomalo.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "chakrilagbe.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "championoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "chittagongoverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "choudhrymanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "civisabd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "classicoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "comillaoverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "concordeapex.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "confidenceoverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "continentaloverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "crescentoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "crownmanpower.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "crownoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "cvs.com.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "cz.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "de.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "deltaoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "deshoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "dhakajobs.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "dhakamanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "dhakaoverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "diamondoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "dice.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "dip.gov.bd",
+    "reason": "info_portal_unreachable",
+    "detail": "ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-s"
+  },
+  {
+    "domain": "dk.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "dol.gov",
+    "reason": "info_portal_unreachable",
+    "detail": ""
+  },
+  {
+    "domain": "dynamicrecruitmentbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "eagleoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "easternmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "easternoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "ee.indeed.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "eliteoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "emeraldoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "empireoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "es.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "euroasiacon.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "eurobanglaoverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "eurojobs.org",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "evergreenoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "ewbbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "falconoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "fi.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "fmoverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "foreign.bdjobs.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "foreignjobbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "foreignjobsbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "fortuneoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "fr.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "friendsmanpowerbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "galaxyoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "gheewalaglobal.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "giuntolavoro.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "glassdoor.ca",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "glassdoor.co.in",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "glassdoor.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "globalmanpower.com.bd",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "globalmanpower.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "globalmanpowerbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "globalmanpowersolutionbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "globalplacement.in",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "globalrecruitmentbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "globemanpowerbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "gojobs.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "goldenoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "gondalmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "gouvernement.fr",
+    "reason": "info_portal_unreachable",
+    "detail": ""
+  },
+  {
+    "domain": "gov.hu",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "gov.nu.ca",
+    "reason": "info_portal_unreachable",
+    "detail": ""
+  },
+  {
+    "domain": "gov.se",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "gr.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "greenwoodoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "gulf-jobs.in",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "gulfjobwalkin.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "gulfmanpower.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "gulfmanpowerbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "gulfoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "hellowork.mhlw.go.jp",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "highlandinternational.com.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "horizonoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "hu.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "humanresourcesbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "ie.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "ikhlasmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "immigration.gov.de",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "imperialoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "in.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "internationaljobsbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "internationalmanpower.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "internationalmanpowerbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "internationaloverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "iom.int",
+    "reason": "info_portal_unreachable",
+    "detail": ""
+  },
+  {
+    "domain": "irishimmigration.ie",
+    "reason": "info_portal_unreachable",
+    "detail": ""
+  },
+  {
+    "domain": "is.indeed.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "islamoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "it.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "janataoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jannatoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jetro.go.jp",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jobbole.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jobs.bdnews24.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jobs.gc.ca",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jobs.nhs.uk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jobsabroad.com.bd",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jobsabroadbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jobsbangladesh.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jobsinetwork.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jobsinpakistan.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jobsinpoland.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jobsinromania.eu",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jobsitebd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jobskingbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jobstoday.com.bd",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jobstreet.co.th",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jobstreet.com.bd",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jobx.nz",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "jp.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "kabiroverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "khalidmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "khanoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "kr.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "kuwaitoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "ladders.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "linkedin.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "lt.indeed.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "lv.indeed.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "magnificoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "majidoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "makkahoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "manpowerplacementbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "manpowerrecruitmentbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "mansolmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "maritimeoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "marwamanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "megaoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "mehnat.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "metrooverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "mhlw.go.jp",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "middleeastoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "migration.gov.bd",
+    "reason": "info_portal_unreachable",
+    "detail": "ReadTimeout: "
+  },
+  {
+    "domain": "modernoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "mofa.gov.bd",
+    "reason": "info_portal_unreachable",
+    "detail": "ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable"
+  },
+  {
+    "domain": "mohrd.gov.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "moj.go.jp",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "monster.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "monster.de",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "monster.fr",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "monster.ie",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "monstergulf.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "moonoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "mrcbangladesh.org",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "msmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "mt.indeed.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "nadeemoverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "nationalmanpower.com.bd",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "nationaloverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "navanaoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "newageoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "nirmanoverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "nl.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "no.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "nri.punjab.gov.in",
+    "reason": "info_portal_unreachable",
+    "detail": "ConnectTimeout: "
+  },
+  {
+    "domain": "nsda.gov.bd",
+    "reason": "info_portal_unreachable",
+    "detail": "ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable"
+  },
+  {
+    "domain": "nsjobbank.ca",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "nz.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "oceanoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "old.bmet.gov.bd",
+    "reason": "info_portal_unreachable",
+    "detail": "ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable"
+  },
+  {
+    "domain": "olivermcdowell.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "omcap.ap.gov.in",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "opf.org.pk",
+    "reason": "info_portal_unreachable",
+    "detail": ""
+  },
+  {
+    "domain": "orientaloverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "overseasemploymentbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "overseasjobbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "overseasjobcircular.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "overseasjobsbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "overseasjobsdesk.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "overseasmanpowerbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "overseasplacementbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "overseasrecruitmentbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "owrc.in",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "pacificoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "padmaoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "pakarabmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "paknationalmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "paradiseoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "paramountoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "parho.com.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "phoenixoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "pioneeroverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "pk.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "pkb.gov.bd",
+    "reason": "info_portal_unreachable",
+    "detail": "ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable"
+  },
+  {
+    "domain": "pl.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "platinumoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "popularoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "power-to-fly.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "pranhr.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "premieroverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "primemanpower.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "primeoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "progressiveoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "pt.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "qataroverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "qualityoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "quraishimanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "rainbowoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "rakoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "rashidoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "rehmanmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "relianceoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "renaissanceoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "riconbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "rightjobs.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "risingoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "riverineoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "riyadhoverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "rizwanmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "rmmru.org",
+    "reason": "info_portal_unreachable",
+    "detail": "ReadTimeout: "
+  },
+  {
+    "domain": "ro.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "royalmanpower.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "royaloverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "sadaatrecruitment.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "safariverplusbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "saharaoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "saifoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "salamgroupbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "samratoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "saudioverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "scanoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "se.indeed.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "seaoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "securityoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "seekjobs.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "senabd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "sevenseasoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "shadheenoverseas.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "shahidmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "shahinoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "shamsuloverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "sheltecoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "shilpaoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "silveroverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "simplyhired.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "skyoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "snagajob.com",
+    "reason": "tos_blacklist"
+  },
+  {
+    "domain": "sonalimanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "sonargaonoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "southasianoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "spectrumoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "speedwellbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "standardoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "starmaritime.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "staroverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "summitoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "sunshineoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "superoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "supremeoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "surmainternationalltd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "swapnaoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "tariqmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "techjobs.com.bd",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "technooverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "timeoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "timesjob.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "topoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "tradeoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "transoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "tropicaloverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "ttmhealthcare.co.in",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "unilinkoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "unionmanpower.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "unionoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "unitedmanpower.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "unitedoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "universalmanpower.pk",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "universaloverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "universalrecruitingbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "upoverseas.up.gov.in",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "urgentbdjobs.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "uscis.gov",
+    "reason": "info_portal_unreachable",
+    "detail": ""
+  },
+  {
+    "domain": "uttaraoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "valleyoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "ventureoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "victoryoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "visajobs.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "visasponsorshipjobs.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "visionoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "vistaoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "vogueoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "weeklyjobscircular.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "westernoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "wewb.gov.bd",
+    "reason": "info_portal_unreachable",
+    "detail": "ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable"
+  },
+  {
+    "domain": "whitepearlbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "workabroadbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "worldmanpowerbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "worldwideoverseasbd.com",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "youth.gov.bd",
+    "reason": "dns_fail",
+    "detail": "gaierror"
+  },
+  {
+    "domain": "ziprecruiter.com",
+    "reason": "tos_blacklist"
+  }
+]

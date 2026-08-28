@@ -12,7 +12,7 @@ import random
 import re
 import threading
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from bs4 import BeautifulSoup
 import requests
 from requests.adapters import HTTPAdapter

@@ -1,0 +1,387 @@
+{
+  "title": "Visa Sponsorship Jobs Scraper & Intelligence API",
+  "description": "Find jobs where visa sponsorship is actually available. Cross-references official government sponsor registries (UK Home Office & US DOL LCA) with live ATS job boards with atomic pay-per-event billing.",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "visaSponsorshipOnly": {
+      "title": "Visa Sponsorship Only",
+      "type": "boolean",
+      "description": "Only return jobs with confirmed sponsorship signals (official sponsor lists, historical filings, or explicit JD statements).",
+      "default": true,
+      "sectionCaption": "Quick Start",
+      "sectionDescription": "Configure your job search in 30 seconds. Leave defaults for a visa-focused search."
+    },
+    "keywords": {
+      "title": "Keywords",
+      "type": "array",
+      "description": "Job titles or skills to search for (e.g., Software Engineer, Machine Learning, Android, Python).",
+      "editor": "stringList",
+      "default": [],
+      "prefill": [
+        "Software Engineer",
+        "Machine Learning"
+      ]
+    },
+    "countries": {
+      "title": "Countries",
+      "type": "array",
+      "description": "Filter by target countries (Europe, East Asia, Americas, Arab countries, and more).",
+      "editor": "select",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Argentina",
+          "Australia",
+          "Austria",
+          "Bahrain",
+          "Bangladesh",
+          "Belgium",
+          "Brazil",
+          "Bulgaria",
+          "Canada",
+          "Chile",
+          "China",
+          "Colombia",
+          "Croatia",
+          "Cyprus",
+          "Czech Republic",
+          "Denmark",
+          "Egypt",
+          "Estonia",
+          "Finland",
+          "France",
+          "Germany",
+          "Greece",
+          "Hong Kong",
+          "Hungary",
+          "Iceland",
+          "India",
+          "Indonesia",
+          "Ireland",
+          "Israel",
+          "Italy",
+          "Japan",
+          "Jordan",
+          "Kuwait",
+          "Latvia",
+          "Lebanon",
+          "Lithuania",
+          "Luxembourg",
+          "Malaysia",
+          "Malta",
+          "Mexico",
+          "Morocco",
+          "Netherlands",
+          "New Zealand",
+          "Norway",
+          "Oman",
+          "Pakistan",
+          "Peru",
+          "Philippines",
+          "Poland",
+          "Portugal",
+          "Qatar",
+          "Romania",
+          "Saudi Arabia",
+          "Serbia",
+          "Singapore",
+          "Slovakia",
+          "Slovenia",
+          "South Korea",
+          "Spain",
+          "Sweden",
+          "Switzerland",
+          "Taiwan",
+          "Thailand",
+          "Ukraine",
+          "United Arab Emirates",
+          "United Kingdom",
+          "United States",
+          "Uruguay",
+          "Vietnam"
+        ]
+      },
+      "default": [],
+      "prefill": [
+        "United Kingdom",
+        "Germany",
+        "United States",
+        "United Arab Emirates"
+      ]
+    },
+    "remoteOnly": {
+      "title": "Remote Only",
+      "type": "boolean",
+      "description": "Only return fully remote positions.",
+      "default": false
+    },
+    "seniorityLevels": {
+      "title": "Seniority",
+      "type": "array",
+      "description": "Filter by seniority level (leave empty for all).",
+      "editor": "select",
+      "items": {
+        "type": "string",
+        "enum": [
+          "intern",
+          "junior",
+          "mid",
+          "senior",
+          "lead"
+        ],
+        "enumTitles": [
+          "Internship",
+          "Junior",
+          "Mid-Level",
+          "Senior",
+          "Lead"
+        ]
+      },
+      "default": []
+    },
+    "maxResults": {
+      "title": "Max Results",
+      "type": "integer",
+      "description": "Maximum number of jobs to return.",
+      "default": 500,
+      "minimum": 10,
+      "maximum": 10000,
+      "unit": "jobs"
+    },
+    "postedWithinDays": {
+      "title": "Posted Within",
+      "type": "integer",
+      "description": "Only include jobs posted in the last N days.",
+      "default": 60,
+      "minimum": 1,
+      "maximum": 365,
+      "unit": "days"
+    },
+    "enableAIClassification": {
+      "title": "Enable AI Scoring",
+      "type": "boolean",
+      "description": "Use AI to score job relevance (0-100). Requires your own LLM API key (Zero-Liability model).",
+      "default": false
+    },
+    "llmProvider": {
+      "title": "LLM Provider",
+      "type": "string",
+      "description": "AI provider to evaluate candidate jobs.",
+      "editor": "select",
+      "default": "gemini",
+      "enum": [
+        "gemini",
+        "groq"
+      ],
+      "enumTitles": [
+        "Google Gemini (Recommended)",
+        "Groq (Fast Inference)"
+      ]
+    },
+    "llmApiKey": {
+      "title": "LLM API Key",
+      "type": "string",
+      "description": "Your Google Gemini or Groq API key. If omitted when AI is enabled, AI evaluation is gracefully skipped without errors or extra charges.",
+      "editor": "textfield",
+      "isSecret": true
+    },
+    "maxAICalls": {
+      "title": "Max AI Calls",
+      "type": "integer",
+      "description": "Maximum candidate jobs to score with AI per run.",
+      "default": 50,
+      "minimum": 1,
+      "maximum": 1000,
+      "unit": "calls"
+    },
+    "sources": {
+      "title": "Data Sources",
+      "type": "array",
+      "description": "Select specific ATS platforms and job boards to query (leave empty to search all 12 available sources by default).",
+      "editor": "select",
+      "items": {
+        "type": "string",
+        "enum": [
+          "greenhouse",
+          "lever",
+          "ashby",
+          "workable",
+          "smartrecruiters",
+          "personio",
+          "remoteok",
+          "remotive",
+          "arbeitnow",
+          "himalayas",
+          "hn_whoshiring",
+          "jobicy"
+        ],
+        "enumTitles": [
+          "Greenhouse",
+          "Lever",
+          "Ashby",
+          "Workable",
+          "SmartRecruiters",
+          "Personio",
+          "RemoteOK",
+          "Remotive",
+          "Arbeitnow",
+          "Himalayas",
+          "HN Who's Hiring",
+          "Jobicy"
+        ]
+      },
+      "default": [],
+      "sectionCaption": "Advanced Settings",
+      "sectionDescription": "Fine-tune sources, visa registries, proxy, deduplication, and execution parameters."
+    },
+    "visaRegistryCountries": {
+      "title": "Visa Registry Countries",
+      "type": "array",
+      "description": "Official sponsor registries to check against.",
+      "editor": "select",
+      "items": {
+        "type": "string",
+        "enum": [
+          "UK",
+          "US"
+        ],
+        "enumTitles": [
+          "UK (Skilled Worker Register)",
+          "US (DOL LCA Filings)"
+        ]
+      },
+      "default": [
+        "UK",
+        "US"
+      ]
+    },
+    "minVisaConfidence": {
+      "title": "Minimum Visa Confidence",
+      "type": "string",
+      "description": "Minimum confidence level required.",
+      "editor": "select",
+      "default": "unknown",
+      "enum": [
+        "unknown",
+        "historical_filings",
+        "on_sponsor_list",
+        "known_sponsor",
+        "stated_in_jd"
+      ],
+      "enumTitles": [
+        "Any (include unknown)",
+        "Historical Filings+",
+        "On Sponsor List+",
+        "Known Sponsor+",
+        "Stated in JD only"
+      ]
+    },
+    "includeUnknownVisa": {
+      "title": "Include Unknown Visa Status",
+      "type": "boolean",
+      "description": "Include jobs where sponsorship status is unknown (only when Visa Sponsorship Only is enabled).",
+      "default": false
+    },
+    "deduplicationAcrossRuns": {
+      "title": "Deduplicate Across Runs",
+      "type": "boolean",
+      "description": "Remember seen job postings in a persistent Key-Value Store to avoid duplicate charges on scheduled runs.",
+      "default": true
+    },
+    "deduplicationTtlDays": {
+      "title": "Deduplication TTL (Days)",
+      "type": "integer",
+      "description": "Number of days to remember previously seen job postings.",
+      "default": 30,
+      "minimum": 1,
+      "maximum": 365,
+      "unit": "days"
+    },
+    "resetDedupState": {
+      "title": "Reset Deduplication State",
+      "type": "boolean",
+      "description": "Wipe historical job fingerprint memory and start fresh on this run.",
+      "default": false
+    },
+    "proxyConfiguration": {
+      "title": "Proxy Configuration",
+      "type": "object",
+      "description": "Use Apify Standard Proxy to prevent geo-blocking and rate limits.",
+      "editor": "proxy",
+      "default": {
+        "useApifyProxy": true
+      }
+    },
+    "refreshRegistries": {
+      "title": "Refresh Live Registries",
+      "type": "boolean",
+      "description": "Attempt downloading the latest UK Home Office live register on startup (falls back to bundled database on timeout).",
+      "default": false
+    },
+    "employmentTypes": {
+      "title": "Employment Type",
+      "type": "array",
+      "description": "Filter by contract type.",
+      "editor": "select",
+      "items": {
+        "type": "string",
+        "enum": [
+          "full_time",
+          "part_time",
+          "contract",
+          "internship"
+        ],
+        "enumTitles": [
+          "Full-time",
+          "Part-time",
+          "Contract",
+          "Internship"
+        ]
+      },
+      "default": []
+    },
+    "sortBy": {
+      "title": "Sort By",
+      "type": "string",
+      "description": "How to sort results.",
+      "editor": "select",
+      "default": "composite_score",
+      "enum": [
+        "composite_score",
+        "relevance_score",
+        "posted_at",
+        "visa_confidence"
+      ],
+      "enumTitles": [
+        "Composite Score (recommended)",
+        "AI Relevance",
+        "Date Posted",
+        "Visa Confidence"
+      ]
+    },
+    "includeDescription": {
+      "title": "Include Job Description",
+      "type": "boolean",
+      "description": "Include full job description text in output.",
+      "default": true
+    },
+    "concurrency": {
+      "title": "Concurrency",
+      "type": "integer",
+      "description": "Number of sources to fetch in parallel (advanced).",
+      "default": 10,
+      "minimum": 1,
+      "maximum": 50
+    },
+    "maxRuntimeSecs": {
+      "title": "Max Runtime",
+      "type": "integer",
+      "description": "Maximum run time in seconds before timeout.",
+      "default": 300,
+      "minimum": 60,
+      "maximum": 3600,
+      "unit": "seconds"
+    }
+  }
+}

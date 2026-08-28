@@ -1,0 +1,22 @@
+{
+  "keywords": [
+    "Software Engineer",
+    "Staff Engineer",
+    "Solutions Architect"
+  ],
+  "countries": [
+    "United Kingdom",
+    "Germany",
+    "Netherlands"
+  ],
+  "visaSponsorshipOnly": true,
+  "minVisaConfidence": "on_sponsor_list",
+  "maxResults": 500,
+  "postedWithinDays": 7,
+  "deduplicationAcrossRuns": true,
+  "deduplicationTtlDays": 30,
+  "resetDedupState": false,
+  "proxyConfiguration": {
+    "useApifyProxy": true
+  }
+}

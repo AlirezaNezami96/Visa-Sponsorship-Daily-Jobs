@@ -112,7 +112,7 @@ def load_radar_config(config_path: Optional[str] = None) -> RadarConfig:
     # 6. Resume fetch config
     resume_raw = data.get("resume", {})
     resume = ResumeConfig(
-        doc_id=os.environ.get("RESUME_DOC_ID", resume_raw.get("doc_id", "1a0qvUX6B2hqSdTT2EoKJF1e3L_m5ee4LxIZaMbU5FNA")),
+        doc_id=os.environ.get("RESUME_DOC_ID", resume_raw.get("doc_id", "")),
         access_method=resume_raw.get("access_method", "link_shared"),
     )
 

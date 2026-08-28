@@ -5,7 +5,7 @@ import logging
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from typing import Dict, Iterable, List
+from typing import Any, Dict, Iterable, List
 
 from job_radar.fetchers.ats import ATS_FETCHERS
 from job_radar.fetchers.custom import fetch_custom_many_sync

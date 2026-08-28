@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "visalane/contracts/tailored_resume.schema.json",
+  "title": "Tailored Resume Generation Output",
+  "description": "Contract for POST /functions/v1/generate-tailored-resume. Grounded in resume_matcher.py outputs (ats_score, keywords_to_add, resume_editing_prompt). tailoring_notes explains what changed and feeds the FE 'what changed' summary. Never invent experience not present in the source resume.",
+  "type": "object",
+  "properties": {
+    "tailored_resume_markdown": {
+      "type": "string",
+      "description": "Full tailored resume in markdown, same facts as source resume, re-ordered and re-worded to match the JD."
+    },
+    "keywords_added": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "JD keywords from resume_matcher.keywords_to_add that were woven in."
+    },
+    "tailoring_notes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Human-readable bullets: what was emphasized/reordered, e.g. 'Emphasized React Native experience to match mobile requirement'."
+    },
+    "estimated_ats_score": { "type": ["integer", "null"], "minimum": 0, "maximum": 100 },
+    "prompt_version": { "type": "string" }
+  },
+  "required": ["tailored_resume_markdown", "tailoring_notes", "prompt_version"]
+}

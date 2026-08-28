@@ -1,0 +1,80 @@
+name: DB Backup (Drive + Artifacts fallback)
+
+# Lean, serverless-safe backup (master plan section 4):
+#   primary   -> Google Drive via service account (30-day retention)
+#   secondary -> GitHub Actions Artifact (30-day retention) if Drive fails
+# No local-disk tier: runners are ephemeral by design.
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # 03:00 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DUMP_NAME: visalane-db
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dump Supabase Postgres
+        run: |
+          mkdir -p dump
+          docker run --rm \
+            -v "$PWD/dump:/dump" \
+            postgres:15 \
+            pg_dump "${{ secrets.SUPABASE_DB_CONNECTION_STRING }}" \
+              --no-owner --no-privileges --format=plain \
+              --file="/dump/${DUMP_NAME}-$(date -u +%F).sql"
+          gzip -9 "dump/${DUMP_NAME}-$(date -u +%F).sql"
+          ls -lh dump/
+
+      - name: Configure rclone for Google Drive (service account)
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          GDRIVE_BACKUP_FOLDER_ID: ${{ secrets.GDRIVE_BACKUP_FOLDER_ID }}
+        run: |
+          curl -fsSL https://rclone.org/install.sh | sudo bash
+          mkdir -p ~/.config/rclone /tmp/rclone-sa
+          python3 - <<'PY'
+          import json, os, pathlib
+          sa_path = pathlib.Path("/tmp/rclone-sa/sa.json")
+          sa_path.write_text(os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"])
+          sa_path.chmod(0o600)
+          conf = (
+              "[gdrive]\n"
+              "type = drive\n"
+              "scope = drive.file\n"
+              f"service_account_credentials_file = {sa_path}\n"
+              f"root_folder_id = {os.environ['GDRIVE_BACKUP_FOLDER_ID']}\n"
+          )
+          (pathlib.Path.home() / ".config/rclone/rclone.conf").write_text(conf)
+          json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"])  # fail fast if malformed
+          print("rclone configured")
+          PY
+
+      - name: Upload dump to Google Drive
+        id: drive_upload
+        run: |
+          FILE="dump/${DUMP_NAME}-$(date -u +%F).sql.gz"
+          rclone copyto "$FILE" "gdrive:${FILE}" --progress
+          echo "drive=ok" >> "$GITHUB_OUTPUT"
+
+      - name: Prune Drive backups older than 30 days
+        if: steps.drive_upload.outputs.drive == 'ok'
+        run: rclone delete gdrive:dump --min-age 720h -v || true
+
+      - name: Fallback — upload dump as GitHub Artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visalane-db-backup-${{ github.run_id }}
+          path: dump/*.sql.gz
+          retention-days: 30
+          if-no-files-found: error

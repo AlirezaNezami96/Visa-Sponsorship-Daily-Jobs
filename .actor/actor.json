@@ -1,0 +1,19 @@
+{
+  "actorSpecification": 1,
+  "name": "visa-sponsorship-jobs-scraper",
+  "title": "Visa Sponsorship Jobs Scraper & API",
+  "description": "Find sponsorship-friendly jobs by combining public ATS job APIs with official sponsor registry intelligence.",
+  "version": "1.0",
+  "buildTag": "latest",
+  "dockerfile": "./Dockerfile",
+  "dockerContextDir": "..",
+  "readme": "./README.md",
+  "input": "./input_schema.json",
+  "output": "./output_schema.json",
+  "storages": {
+    "dataset": "./dataset_schema.json"
+  },
+  "minMemoryMbytes": 512,
+  "maxMemoryMbytes": 2048
+}
+

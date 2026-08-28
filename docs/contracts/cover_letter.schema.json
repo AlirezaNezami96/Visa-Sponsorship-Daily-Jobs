@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "visalane/contracts/cover_letter.schema.json",
+  "title": "Cover Letter Generation Output",
+  "description": "Contract for POST /functions/v1/generate-cover-letter and the Python equivalent. Hard rules: no generic openers ('I am writing to apply...'), no hallucinated experience — every claim must trace to facts in the user's parsed resume/profile data. 250-400 words, 3-4 paragraphs.",
+  "type": "object",
+  "properties": {
+    "cover_letter_markdown": {
+      "type": "string",
+      "description": "Full cover letter in markdown. Structure: hook referencing a specific company project/value -> why this company -> why me (evidence + metrics from resume only) -> call to action."
+    },
+    "overlap_skills": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "maxItems": 3,
+      "description": "Top overlapping skills/experiences between resume and JD that the letter is built on."
+    },
+    "company_hook": {
+      "type": "string",
+      "description": "The specific company fact the opening references (must be grounded in provided company context; never invented)."
+    },
+    "word_count": { "type": "integer", "minimum": 200, "maximum": 450 },
+    "prompt_version": { "type": "string" }
+  },
+  "required": ["cover_letter_markdown", "overlap_skills", "prompt_version"]
+}

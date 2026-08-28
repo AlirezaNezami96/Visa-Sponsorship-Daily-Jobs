@@ -218,7 +218,7 @@ def test_visa_engine_weighted_scoring_and_opt_distinction():
     )
     assert status == "sponsors"
     assert score >= 0.85
-    assert any("UK Home Office Licensed Sponsor" in e for e in ev)
+    assert any("Confirmed Major Visa Sponsor" in e or "UK Home Office Licensed Sponsor" in e for e in ev)
 
     # Scenario B: Explicit OPT friendly -> 'opt_friendly' (distinct from sponsor petition)
     status_opt, score_opt, ev_opt = evaluator.score_visa_sponsorship(

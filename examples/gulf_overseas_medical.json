@@ -1,0 +1,18 @@
+{
+  "keywords": [
+    "Nurse",
+    "Physician",
+    "Medical Officer",
+    "Healthcare"
+  ],
+  "countries": [
+    "United Arab Emirates",
+    "Saudi Arabia",
+    "Qatar"
+  ],
+  "visaSponsorshipOnly": false,
+  "maxResults": 200,
+  "postedWithinDays": 60,
+  "deduplicationAcrossRuns": true,
+  "includeDescription": true
+}

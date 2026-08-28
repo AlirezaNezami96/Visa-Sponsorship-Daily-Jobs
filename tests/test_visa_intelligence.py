@@ -102,7 +102,7 @@ def test_visa_evaluator_priorities(tmp_path):
     db_file = tmp_path / "test_sponsors.db"
     init_sponsor_db(db_file)
 
-    # Insert verified sponsor
+    # Insert verified sponsors
     bulk_upsert_sponsors(
         [
             SponsorRecord(
@@ -112,14 +112,22 @@ def test_visa_evaluator_priorities(tmp_path):
                 routes=["Skilled Worker"],
                 rating="A",
                 source="govuk_register",
-            )
+            ),
+            SponsorRecord(
+                normalized_name="deliveroo",
+                country="UK",
+                legal_name="Roofoods Ltd (Deliveroo)",
+                routes=["Skilled Worker"],
+                rating="A",
+                source="govuk_register",
+            ),
         ],
         db_path=db_file,
     )
 
     evaluator = VisaEvaluator(db_path=db_file)
 
-    # Test 1: Explicit NO beats on_sponsor_list
+    # Test 1: Explicit NO beats on_sponsor_list / known_sponsor
     job_explicit_no = {
         "company": "Amazon",
         "title": "Software Engineer",
@@ -133,16 +141,29 @@ def test_visa_evaluator_priorities(tmp_path):
 
     # Test 2: On sponsor list (no explicit disclaimer)
     job_on_list = {
+        "company": "Deliveroo",
+        "title": "Software Engineer",
+        "location": "London, UK",
+        "description": "Join our London team to build scalable delivery services.",
+        "remote_scope": "hybrid",
+    }
+    v_conf, auth_fit, meta = evaluator.evaluate_job(job_on_list)
+    assert v_conf == VisaConfidence.ON_SPONSOR_LIST
+    assert auth_fit == AuthFit.SPONSOR_REQUIRED_AND_PLAUSIBLE
+    assert meta["matched_sponsor"] == "Roofoods Ltd (Deliveroo)"
+
+    # Test 2b: Known sponsor allowlist fast path
+    job_known = {
         "company": "Amazon",
         "title": "Software Engineer",
         "location": "London, UK",
         "description": "Join our London team to build scalable services in AWS.",
         "remote_scope": "hybrid",
     }
-    v_conf, auth_fit, meta = evaluator.evaluate_job(job_on_list)
-    assert v_conf == VisaConfidence.ON_SPONSOR_LIST
-    assert auth_fit == AuthFit.SPONSOR_REQUIRED_AND_PLAUSIBLE
-    assert meta["matched_sponsor"] == "Amazon UK Services Ltd"
+    v_conf_k, auth_fit_k, meta_k = evaluator.evaluate_job(job_known)
+    assert v_conf_k == VisaConfidence.KNOWN_SPONSOR
+    assert auth_fit_k == AuthFit.SPONSOR_REQUIRED_AND_PLAUSIBLE
+    assert meta_k["source"] == "known_sponsors_allowlist"
 
     # Test 3: Stated in JD
     job_stated_in_jd = {

@@ -37,9 +37,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+apify = [
+    "apify>=2.0.0",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.20.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
 ]
@@ -53,6 +57,7 @@ job-radar-social = "job_radar.cli.post_cmd:main"
 job-radar-creator-badge = "job_radar.cli.creator_badge_cmd:main"
 job-radar-import-posts = "job_radar.cli.import_posts_cmd:main"
 job-radar-republish = "job_radar.cli.republish_cmd:main"
+job-radar-visalane = "job_radar.visalane.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -69,7 +74,7 @@ addopts = "-ra -q --import-mode=importlib"
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py312"
 exclude = [
     ".git",
     "__pycache__",
@@ -79,3 +84,11 @@ exclude = [
     "worker",
     ".venv",
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# Fail-open pipeline services: broad exception catching is the deliberate
+# design contract here (never let analytics/notifications/sync break a run),
+# consistent with job_radar/dedup/store.py and job_radar/llm/router.py.
+"src/job_radar/visalane/*" = ["BLE001"]
+"src/job_radar/analytics.py" = ["BLE001"]
+"src/job_radar/notifications/channels.py" = ["BLE001"]
