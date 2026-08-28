@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import os
 from functools import lru_cache
-from typing import List, Union
+from typing import Any, List, Union
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings

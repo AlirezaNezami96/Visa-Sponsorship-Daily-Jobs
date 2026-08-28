@@ -227,6 +227,9 @@ Response 200 `output`:
 }
 ```
 
+Usage: shares the `cover_letter_generations` quota (no separate outreach
+counter in `usage_limits`) → 402 once that daily limit is exhausted.
+
 ### 2.5 POST /functions/v1/complete-application
 
 Request:

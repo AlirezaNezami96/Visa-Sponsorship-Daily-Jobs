@@ -4,7 +4,7 @@ src/job_radar/llm/router.py
 Unified multi-provider LLM router with automatic waterfall fallback:
   1. Gemini (AI Studio / Vertex API keys) -> gemini-2.5-flash / gemini-3.6-flash / gemini-flash-latest
   2. Groq (free tier) -> llama-3.3-70b-versatile
-  3. OpenRouter (free tier) -> OPENROUTER_MODEL (e.g. meta-llama/llama-3.3-70b-instruct:free)
+  3. OpenRouter (free tier) -> OPENROUTER_MODEL (e.g. minimax/minimax-m3:free)
   4. Ollama (local) -> OLLAMA_HOST (e.g. http://localhost:11434)
   5. Heuristic fallback -> returns empty or structured mock without raising
 
@@ -316,7 +316,7 @@ class LLMRouter:
         system_instruction: Optional[str],
         temperature: float,
     ) -> Optional[LLMResult]:
-        model = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free")
+        model = os.getenv("OPENROUTER_MODEL", "minimax/minimax-m3:free")
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",

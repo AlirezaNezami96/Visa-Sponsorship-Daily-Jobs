@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import math
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 from PIL import Image, ImageDraw
 
 from .config import CreatorBadgeConfig, DEFAULT_CONFIG

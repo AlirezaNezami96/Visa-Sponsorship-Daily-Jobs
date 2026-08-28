@@ -10,7 +10,7 @@ import html
 import json
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import requests
 
 from job_radar.crm.db import get_job_by_id, update_job_status, upsert_crm_job

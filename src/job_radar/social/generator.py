@@ -8,7 +8,7 @@ import os
 import random
 import sys
 from datetime import datetime, timezone
-from typing import Tuple
+from typing import Optional, Tuple
 import requests
 
 from job_radar.social.images import create_professional_cover_image

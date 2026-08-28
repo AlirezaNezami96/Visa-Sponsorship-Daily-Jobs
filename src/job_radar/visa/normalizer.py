@@ -10,7 +10,7 @@ import logging
 import re
 import unicodedata
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 try:
     import rapidfuzz.fuzz

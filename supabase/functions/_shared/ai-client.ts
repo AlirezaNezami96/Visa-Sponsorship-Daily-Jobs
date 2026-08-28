@@ -95,7 +95,7 @@ async function tryGroq(prompt: string, wantJson: boolean, f: typeof fetch): Prom
 async function tryOpenRouter(prompt: string, wantJson: boolean, f: typeof fetch): Promise<AIResult | null> {
   const key = getEnv("OPENROUTER_API_KEY");
   if (!key) return null;
-  const model = getEnv("OPENROUTER_MODEL") || "meta-llama/llama-3.3-70b-instruct:free";
+  const model = getEnv("OPENROUTER_MODEL") || "minimax/minimax-m3:free";
   const payload: Record<string, unknown> = {
     model,
     messages: [{ role: "user", content: prompt }],
