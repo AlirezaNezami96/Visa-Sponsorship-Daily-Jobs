@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "visalane/contracts/outreach_messages.schema.json",
+  "title": "Outreach Message Generation Output",
+  "description": "Contract for POST /functions/v1/generate-outreach-messages. Email variant: professional and concise, references a specific JD requirement + one user achievement + company context. LinkedIn variant: conversational, hard 300-character cap enforced SERVER-SIDE before storing (messages over the cap are truncated/rejected, never stored over-limit). Tones: professional | friendly | natural.",
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "object",
+      "properties": {
+        "subject": { "type": "string", "maxLength": 120 },
+        "body": { "type": "string" },
+        "tone": { "type": "string", "enum": ["professional", "friendly", "natural"] }
+      },
+      "required": ["subject", "body"]
+    },
+    "linkedin": {
+      "type": "object",
+      "properties": {
+        "body": { "type": "string", "maxLength": 300 },
+        "tone": { "type": "string", "enum": ["professional", "friendly", "natural"] }
+      },
+      "required": ["body"]
+    },
+    "prompt_version": { "type": "string" }
+  },
+  "required": ["email", "linkedin", "prompt_version"]
+}

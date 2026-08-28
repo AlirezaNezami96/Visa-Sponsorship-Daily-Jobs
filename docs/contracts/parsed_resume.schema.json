@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "visalane/contracts/parsed_resume.schema.json",
+  "title": "Parsed Resume Output",
+  "description": "Contract for POST /functions/v1/parse-resume. Structured extraction from raw resume text. Privacy rule (ported from resume_fetch.py): raw resume text is processed in memory and never logged; only structured data + optional stored raw_text behind user-owned RLS.",
+  "type": "object",
+  "properties": {
+    "full_name": { "type": ["string", "null"] },
+    "email": { "type": ["string", "null"], "format": "email" },
+    "phone": { "type": ["string", "null"] },
+    "job_titles": { "type": "array", "items": { "type": "string" } },
+    "skills": { "type": "array", "items": { "type": "string" } },
+    "summary": { "type": ["string", "null"] },
+    "experience": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "company": { "type": "string" },
+          "title": { "type": "string" },
+          "start": { "type": ["string", "null"] },
+          "end": { "type": ["string", "null"] },
+          "highlights": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["company", "title"]
+      }
+    },
+    "education": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "institution": { "type": "string" },
+          "degree": { "type": "string" },
+          "year": { "type": ["string", "null"] }
+        },
+        "required": ["institution"]
+      }
+    },
+    "prompt_version": { "type": "string" }
+  },
+  "required": ["job_titles", "skills", "prompt_version"]
+}

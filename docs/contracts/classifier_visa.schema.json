@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "visalane/contracts/classifier_visa.schema.json",
+  "title": "VisaLane Classifier Output (visa extension)",
+  "description": "Extends the existing job_radar combined classifier output with VisaLane visa-sponsorship fields. Emitted by Python batch classification (src/job_radar/classifiers/relevance.py) and mirrored by any TS-side classifier. Cached results missing the new fields MUST be backfilled from the deterministic visa evaluator (visa/evaluator.py score_job_visa).",
+  "type": "object",
+  "properties": {
+    "relevance": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "why": { "type": "string" },
+    "visa_mention": { "type": "string", "enum": ["sponsors", "opt_friendly", "no", "unspecified"] },
+    "visa_quote": { "type": ["string", "null"] },
+    "visa_sponsorship_confidence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "0-100 confidence that the employer sponsors work visas for this role."
+    },
+    "visa_sponsorship_verified": {
+      "type": "boolean",
+      "description": "true ONLY when the JD explicitly offers sponsorship/relocation, or the company is on the known-sponsors allowlist. LLM guesses alone never set this true."
+    },
+    "visa_types": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Named programs when stated, e.g. ['H-1B','TN'], ['Skilled Worker Visa']. Empty when unspecified."
+    }
+  },
+  "required": ["visa_sponsorship_confidence", "visa_sponsorship_verified"]
+}

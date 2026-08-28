@@ -2,8 +2,9 @@
 
 Supports:
 1. Resend API (free 3,000 emails/mo)
-2. SendGrid API (free 100 emails/day)
-3. Gmail SMTP with App Passwords
+2. Brevo API (free 300 emails/day) — fallback provider
+3. SendGrid API (free 100 emails/day)
+4. Gmail SMTP with App Passwords
 """
 from __future__ import annotations
 
@@ -274,6 +275,84 @@ def _send_via_resend(subject: str, html: str, to_email: Optional[str] = None):
     r.raise_for_status()
 
 
+def _send_via_brevo(subject: str, html: str, to_email: Optional[str] = None):
+    api_key = os.environ.get("BREVO_API_KEY")
+    if not api_key:
+        raise EnvironmentError("BREVO_API_KEY not set. Get one free at https://brevo.com")
+
+    target_email = to_email or os.environ.get("EMAIL_TO", "")
+    if not target_email:
+        raise EnvironmentError("EMAIL_TO not set.")
+
+    from_email = os.environ.get("EMAIL_FROM", "jobs@yourdomain.com")
+    r = http_requests.post(
+        "https://api.brevo.com/v3/smtp/email",
+        headers={
+            "api-key": api_key,
+            "Content-Type": "application/json",
+        },
+        json={
+            "sender": {"email": from_email},
+            "to": [{"email": target_email}],
+            "subject": subject,
+            "htmlContent": html,
+        },
+        timeout=30,
+    )
+    r.raise_for_status()
+
+
+# Ordered fallback chain for transactional/alert email (master plan section 6.2):
+# Resend -> Brevo -> SendGrid -> Gmail SMTP. Built at the bottom of this module
+# (see EMAIL_FALLBACK_CHAIN) once all provider senders are defined.
+
+
+def send_email_with_fallback(
+    subject: str,
+    html: str,
+    to_email: Optional[str] = None,
+    preferred: Optional[str] = None,
+) -> Optional[str]:
+    """Send an email through the provider fallback chain.
+
+    Tries the preferred provider (or EMAIL_PROVIDER) first, then walks
+    Resend -> Brevo -> SendGrid -> Gmail SMTP. Emits an analytics event when a
+    fallback provider is used. Returns the provider name that succeeded, or
+    None if every provider failed or none is configured.
+    """
+    preferred = (preferred or os.environ.get("EMAIL_PROVIDER", "resend")).lower()
+    ordered = sorted(
+        EMAIL_FALLBACK_CHAIN,
+        key=lambda entry: 0 if entry[0] == preferred else 1,
+    )
+
+    attempted = 0
+    for provider_name, sender, probe in ordered:
+        if not probe():
+            logger.debug("Email provider '%s' not configured — skipping.", provider_name)
+            continue
+        attempted += 1
+        try:
+            sender(subject, html, to_email=to_email)
+            if provider_name != preferred and attempted > 1:
+                try:
+                    from job_radar.analytics import emit_event
+
+                    emit_event(
+                        "pipeline_fallback_triggered",
+                        metadata={"kind": "email", "provider": provider_name, "preferred": preferred},
+                    )
+                except Exception:
+                    pass
+            logger.info("Email sent via %s (fallback chain position %d)", provider_name, attempted)
+            return provider_name
+        except Exception as exc:
+            logger.warning("Email provider '%s' failed: %s — trying next in chain.", provider_name, exc)
+
+    logger.error("All email providers failed or unconfigured; email not sent.")
+    return None
+
+
 def _send_via_sendgrid(subject: str, html: str, to_email: Optional[str] = None):
     api_key = os.environ.get("SENDGRID_API_KEY")
     if not api_key:
@@ -324,3 +403,15 @@ def _send_via_gmail_smtp(subject: str, html: str, to_email: Optional[str] = None
         server.login(gmail_user, gmail_pass)
         server.sendmail(gmail_user, target_email, msg.as_string())
 
+
+# Provider senders are defined above; the chain is built last so all names exist.
+EMAIL_FALLBACK_CHAIN = [
+    ("resend", _send_via_resend, lambda: bool(os.environ.get("RESEND_API_KEY"))),
+    ("brevo", _send_via_brevo, lambda: bool(os.environ.get("BREVO_API_KEY"))),
+    ("sendgrid", _send_via_sendgrid, lambda: bool(os.environ.get("SENDGRID_API_KEY"))),
+    (
+        "gmail",
+        _send_via_gmail_smtp,
+        lambda: bool(os.environ.get("GMAIL_USER") and os.environ.get("GMAIL_APP_PASSWORD")),
+    ),
+]

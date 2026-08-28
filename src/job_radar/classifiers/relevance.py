@@ -33,6 +33,9 @@ Respond with strict JSON adhering to this schema:
   "allowed_regions": ["US", "Canada"],
   "visa_mention": "sponsors",
   "visa_quote": null,
+  "visa_sponsorship_confidence": 80,
+  "visa_sponsorship_verified": false,
+  "visa_types": ["H-1B"],
   "salary_min": null,
   "salary_max": null,
   "salary_currency": null,
@@ -61,11 +64,15 @@ Field definitions & rules:
    - "no": explicit refusal (e.g. 'no visa sponsorship', 'must already have right to work without sponsorship', 'citizens only').
    - "unspecified": no mention in description.
 7. "visa_quote": direct quote from the job description regarding sponsorship/relocation if present, else null.
-8. "resume_match_score": 0 to 100 integer if candidate resume is provided, else null.
-9. Return ONLY valid JSON, no markdown fences, no extra text.
+8. "visa_sponsorship_confidence": 0 to 100 integer — your calibrated confidence the employer sponsors work visas for THIS role. Use explicit statements (90-100), known sponsor reputation (70-89), regional norms/relocation offers (40-69), no signal (0-39).
+9. "visa_sponsorship_verified": true ONLY when the JD explicitly offers sponsorship/relocation. Reputation or guessing alone never sets this true.
+10. "visa_types": named visa programs stated in the JD (e.g. ["H-1B","TN"], ["Skilled Worker Visa"]). Empty array when unspecified.
+11. "resume_match_score": 0 to 100 integer if candidate resume is provided, else null.
+12. Return ONLY valid JSON, no markdown fences, no extra text.
 """
 
 LLM_CLASSIFIER_PROMPT = SYSTEM_PROMPT
+CLASSIFIER_PROMPT_VERSION = "v2-visa-conf"
 
 
 class JobClassification(dict):
@@ -246,6 +253,9 @@ def classify_single_job(
             "allowed_regions": ["Worldwide" if is_remote else location],
             "visa_mention": "unspecified",
             "visa_quote": None,
+            "visa_sponsorship_confidence": None,
+            "visa_sponsorship_verified": False,
+            "visa_types": [],
             "salary_min": job.get("salary_min"),
             "salary_max": job.get("salary_max"),
             "salary_currency": job.get("salary_currency"),
@@ -364,6 +374,18 @@ def classify_and_filter_jobs(
         enriched_job["visa_score"] = visa_score
         enriched_job["visa_evidence"] = visa_evidence
         enriched_job["visa_sponsorship"] = visa_status in (VisaStatus.SPONSORS.value, VisaStatus.LIKELY.value)
+
+        # VisaLane contract fields (docs/contracts/classifier_visa.schema.json):
+        # prefer explicit LLM output; backfill from the deterministic evaluator
+        # so cached pre-v2 entries still carry confidence/verified.
+        llm_confidence = clf.get("visa_sponsorship_confidence")
+        if llm_confidence is None:
+            llm_confidence = int(round((visa_score or 0.0) * 100))
+        enriched_job["visa_sponsorship_confidence"] = max(0, min(100, int(llm_confidence)))
+        enriched_job["visa_sponsorship_verified"] = bool(
+            clf.get("visa_sponsorship_verified", visa_status == VisaStatus.SPONSORS.value)
+        )
+        enriched_job["visa_types"] = [str(v) for v in (clf.get("visa_types") or []) if v]
 
         # Resume match enrichment
         if clf.get("resume_match_score") is not None:
