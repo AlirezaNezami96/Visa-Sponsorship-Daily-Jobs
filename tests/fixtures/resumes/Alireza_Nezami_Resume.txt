@@ -1,0 +1,67 @@
+Alireza Nezami 
+Senior Android & Flutter Developer  
+EU Remote / Istanbul, Türkiye  |  alireza.nezami75@gmail.com  |  alirezanezami96.github.io/AlirezaNezami   |  
+linkedin.com/in/alireza-nezami  |  +90 (543) 743 7966 
+ 
+Senior Mobile Engineer with 9+ years of expertise developing high-performance Android & Flutter applications for 
+millions of users. Proven track record at Devotel and Golden Equator Group architecting modular systems using 
+Flutter, Kotlin, Kotlin Multiplatform, Jetpack Compose,  and MVI/MVVM. Expert in optimizing app performance, 
+evidenced by a 35% reduction in build times and a 60% reduction in crash rates. Strong advocate for Clean 
+Architecture, SOLID principles, TDD, and Agile/Scrum, with extensive experience leading international remote teams.  
+TECHNI CA L S KI LLS  
+Languages: Kotlin, Dart, Java, SQL, XML 
+Mobile Frameworks: Flutter, Jetpack Compose, Android SDK, Kotlin Multiplatform (KMM), Compose Multiplatform  
+Architecture: MVVM, MVI, Clean Architecture, Multi-module Architecture, SOLID Principles, Dependency Injection 
+(Dagger-Hilt) 
+State Management: Bloc, Provider, Riverpod 
+Android Jetpack & Reactive: Coroutines, Flow, LiveData, Room, DataStore, WorkManager, Jetpack Navigation  
+Performance: Baseline Profiles, Macrobenchmark, ProGuard/R8, LeakCanary  
+Networking & APIs: REST APIs, Retrofit, OkHttp, GraphQL, WebSockets 
+Testing: JUnit, Mockk, Espresso, Robolectric 
+Tools & DevOps: Git, Gradle, GitHub Actions, Jenkins, Fastlane, CI/CD, Firebase (Crashlytics, Analytics, Firestore, 
+Authentication, Remote Config), Android Studio  
+WO RK EXPERI ENCE  
+Devotel 
+Senior Android & Flutter Developer  |  April 2024 – Present  |  Remote 
+• Led development of a Flutter fitness & habit -tracking app (Bloc/Provider, Clean Architecture) serving 400K+ MAU, 
+achieving a 4.7 Play Store rating 
+• Architected a scalable, modular MVVM/MVI codebase following SOLID principles, improving long-term 
+maintainability and team velocity 
+• Built native Kotlin Platform Channel modules for real-time audio DSP signal processing, bridging Flutter and native 
+Android layers 
+• Optimized CI/CD pipelines (GitHub Actions, Fastlane) with automated integration and unit tests, raising code 
+coverage to 85% 
+• Reduced build times by 35% through Gradle optimization and modularization  
+• Mentored 5 junior engineers on Flutter/Android best practices, Agile/Scrum workflows, and code reviews  
+Golden Equator Group 
+Senior Android Developer (Contract)  |  September 2023 – April 2024  |  Remote 
+• Developed and maintained 3 enterprise Android applications (Java → Kotlin migration) used by 500K+ users in the 
+data analytics domain 
+• Designed responsive UI/UX with ConstraintLayout, Material Design 3, and Data Binding , improving user retention 
+by 28% 
+• Built an offline-first architecture using Room, DataStore, WorkManager, and Sync Adapters for real-time data 
+synchronization 
+• Optimized network layer with Retrofit, OkHttp, and caching strategies, reducing API latency by 50% 
+Solid-ICT 
+Senior Android Developer (Contract)  |  October 2022 – September 2023  |  Remote 
+• Reduced app startup time by 42% through lazy loading, Baseline Profiles, and ProGuard/R8 optimization 
+• Eliminated memory leaks using LeakCanary, improving crash stability alongside a 60% crash-rate reduction 
+• Integrated Firebase (Firestore, Authentication, Analytics, Crashlytics, Remote Config, A/B Testing) and third -party 
+SDKs (Stripe, Google Maps) 
+• Collaborated with backend (Node.js, Python) and iOS teams via RESTful APIs and GraphQL 
+Raychat 
+Android Developer  |  August 2017 – September 2022  |  Hybrid 
+• Implemented a high-performance real-time SDK in Java with WebSocket optimization for live messaging at scale 
+• Facilitated seamless integration for third-party developers, increasing adoption rate by 40% within the first quarter 
+of launch 
+• Architected a modular framework with XML, streamlining feature integration and ensuring long -term scalability 
+PRO J ECTS  
+papyon_courier — Flutter Delivery & Live Tracking App 
+• Flutter app with MQTT-based real-time location tracking, Firebase (Crashlytics, Firestore, Analytics), and Clean 
+Architecture 
+• Handles ProGuard/R8 release signing and full Play Store deployment pipeline end -to-end 
+• Demonstrates production ownership across architecture, live data, and release management — independently 
+shipped 
+EDUCA TI O N  
+Bachelor of Science in Computer Science 
+Tabriz Technical College • Tabriz, Iran

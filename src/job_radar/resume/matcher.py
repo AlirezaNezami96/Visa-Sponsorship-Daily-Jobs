@@ -1,10 +1,11 @@
-"""Gemini-powered resume ↔ job-description ATS matcher.
+"""Resume ↔ job-description ATS matcher.
 
-Follows the exact same calling pattern as classify_relevance.py:
-- Same _call_gemini() shape
-- Same JSON-mode response
-- Same try/except-and-log-don't-crash resilience
-- Same disk-backed ClassificationCache
+AI calls go through the shared Gemini -> Groq -> OpenRouter waterfall
+(job_radar.llm.router), same as the other resume modules. Follows the same
+resilience contract as classify_relevance.py:
+- JSON-mode response
+- try/except-and-log-don't-crash
+- disk-backed ClassificationCache
 
 One shared prompt used identically across all three tracks (visa, remote, ai_intern).
 The JD content differentiates each call, not the track.
@@ -14,7 +15,6 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import os
 from typing import Any, Optional
 
 from job_radar.classifiers.cache import ClassificationCache
@@ -76,41 +76,23 @@ def _cache_key(company: str, title: str, url: str) -> str:
     return "rm|" + hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 
-def _call_gemini_resume(user_prompt: str, model_name: str, fallback_model: str) -> str:
-    """Call Gemini with the resume match prompt. Falls back to fallback_model on model-not-found."""
-    from google import genai
+def _call_gemini_resume(user_prompt: str, model_name: str = "", fallback_model: str = "") -> str:
+    """Route the resume-match prompt through the unified LLM waterfall.
 
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        raise ValueError("GEMINI_API_KEY is not set")
+    Uses the shared Gemini -> Groq -> OpenRouter router (same pattern as
+    resume/auditor.py and cover/generator.py) instead of a Gemini-only call,
+    so a single exhausted provider no longer disables resume matching.
+    Name kept for existing test mocks. model_name/fallback_model are accepted
+    for signature compatibility; the router selects models per provider env.
+    """
+    from job_radar.llm.router import complete
 
-    client = genai.Client(api_key=api_key)
-    full_input = f"{RESUME_MATCH_SYSTEM_PROMPT}\n\n---\n\n{user_prompt}"
-
-    try:
-        interaction = client.interactions.create(
-            model=model_name,
-            input=full_input,
-            response_mime_type="application/json",
-        )
-        return (interaction.output_text or "").strip()
-    except Exception as primary_exc:
-        err_str = str(primary_exc).lower()
-        if "not found" in err_str or "model" in err_str or "404" in err_str:
-            logger.warning(
-                "Model %s not available (%s), retrying with fallback %s",
-                model_name, primary_exc, fallback_model,
-            )
-            try:
-                interaction = client.interactions.create(
-                    model=fallback_model,
-                    input=full_input,
-                    response_mime_type="application/json",
-                )
-                return (interaction.output_text or "").strip()
-            except Exception as fallback_exc:
-                raise RuntimeError(f"Both {model_name} and {fallback_model} failed: {fallback_exc}") from fallback_exc
-        raise
+    result = complete(
+        prompt=user_prompt,
+        system_instruction=RESUME_MATCH_SYSTEM_PROMPT,
+        json_schema={"type": "object"},
+    )
+    return (result.text or "").strip()
 
 
 def _parse_match_response(raw_text: str) -> Optional[dict]:
