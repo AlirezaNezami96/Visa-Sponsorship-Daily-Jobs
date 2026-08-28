@@ -1,0 +1,96 @@
+name: Storage Backup (user PDFs -> Drive)
+
+# Weekly snapshot of user-generated files (resumes, generated documents) from
+# Supabase Storage, zipped and pushed to Google Drive (master plan section 4).
+
+on:
+  schedule:
+    - cron: '0 4 * * 0'  # Sundays 04:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  storage-backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Supabase Storage objects
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          mkdir -p storage-dump
+          python3 - <<'PY'
+          import json, os, pathlib, urllib.request
+
+          url = os.environ["SUPABASE_URL"].rstrip("/")
+          key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+          out = pathlib.Path("storage-dump")
+
+          def req(path, payload=None, method="POST"):
+              r = urllib.request.Request(
+                  url + path,
+                  data=json.dumps(payload).encode() if payload is not None else None,
+                  headers={
+                      "Authorization": f"Bearer {key}",
+                      "apikey": key,
+                      "Content-Type": "application/json",
+                  },
+                  method=method,
+              )
+              with urllib.request.urlopen(r, timeout=60) as resp:
+                  return resp.read()
+
+          total = 0
+          for bucket in ("resumes", "generated-documents"):
+              items = json.loads(req(f"/storage/v1/object/list/{bucket}", {"limit": 1000, "offset": 0}))
+              for item in items:
+                  name = item.get("name")
+                  if not name or "/" not in name:
+                      continue  # skip bucket root oddities
+                  try:
+                      blob = req(f"/storage/v1/object/{bucket}/{name}", method="GET")
+                  except Exception as exc:
+                      print(f"skip {bucket}/{name}: {exc}")
+                      continue
+                  dest = out / bucket / name
+                  dest.parent.mkdir(parents=True, exist_ok=True)
+                  dest.write_bytes(blob)
+                  total += 1
+          print(f"downloaded {total} objects")
+          PY
+          python3 -c "import shutil,datetime; shutil.make_archive(f'storage-dump/visalane-storage-{datetime.date.today().isoformat()}', 'zip', 'storage-dump')"
+
+      - name: Configure rclone for Google Drive (service account)
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          GDRIVE_BACKUP_FOLDER_ID: ${{ secrets.GDRIVE_BACKUP_FOLDER_ID }}
+        run: |
+          curl -fsSL https://rclone.org/install.sh | sudo bash
+          mkdir -p ~/.config/rclone
+          python3 - <<'PY'
+          import os, pathlib
+          sa_path = pathlib.Path("/tmp/sa-storage.json")
+          sa_path.write_text(os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"])
+          sa_path.chmod(0o600)
+          conf = (
+              "[gdrive]\n"
+              "type = drive\n"
+              "scope = drive.file\n"
+              f"service_account_credentials_file = {sa_path}\n"
+              f"root_folder_id = {os.environ['GDRIVE_BACKUP_FOLDER_ID']}\n"
+          )
+          (pathlib.Path.home() / ".config/rclone/rclone.conf").write_text(conf)
+          print("rclone configured")
+          PY
+
+      - name: Upload archive to Google Drive
+        run: |
+          ZIP=$(ls storage-dump/*.zip)
+          rclone copyto "$ZIP" "gdrive:storage-backups/$(basename "$ZIP")" --progress
+          rclone delete gdrive:storage-backups --min-age 2160h -v || true  # 90-day retention for storage archives

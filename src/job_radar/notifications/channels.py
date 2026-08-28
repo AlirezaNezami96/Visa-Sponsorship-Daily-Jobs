@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import Callable
 
 import requests
 
@@ -74,7 +75,7 @@ def _chunk(text: str, limit: int) -> list[str]:
     return [text[i : i + limit] for i in range(0, len(text), limit)] or [""]
 
 
-CHANNELS: dict[str, callable] = {
+CHANNELS: dict[str, Callable[[str], bool]] = {
     "telegram": lambda text: send_telegram(text),
     "discord": lambda text: send_discord(text),
     "slack": lambda text: send_slack(text),
