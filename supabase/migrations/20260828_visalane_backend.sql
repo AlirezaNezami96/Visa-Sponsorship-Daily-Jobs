@@ -548,8 +548,8 @@ VALUES ('social-images', 'social-images', TRUE)
 ON CONFLICT (id) DO NOTHING;
 
 -- Storage policies: users manage their own folder only; service_role bypasses.
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
-
+-- NOTE: storage.objects already has RLS enabled in every Supabase project
+-- (owned by supabase_storage_admin) — only policies are created here.
 DROP POLICY IF EXISTS "users_read_own_resumes" ON storage.objects;
 CREATE POLICY "users_read_own_resumes" ON storage.objects
     FOR SELECT TO authenticated
