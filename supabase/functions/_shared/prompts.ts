@@ -6,7 +6,7 @@
 
 export const PROMPT_VERSIONS = {
   parseResume: "parse-v1",
-  tailoredResume: "tailor-v1",
+  tailoredResume: "tailor-v2",
   coverLetter: "cl-v1",
   outreach: "out-v1",
 } as const;
@@ -61,7 +61,19 @@ ${FACT_RULES}
 Respond with JSON matching this shape:
 {"tailored_resume_markdown": string, "keywords_added": string[],
  "tailoring_notes": string[], "estimated_ats_score": number|null,
+ "sections": {
+   "summary": string,
+   "skills": string[],
+   "experience": [{"title": string, "company": string, "start": string, "end": string, "bullets": string[]}],
+   "education": [{"institution": string, "degree": string, "year": string}],
+   "links": string[]
+ },
  "prompt_version": "${PROMPT_VERSIONS.tailoredResume}"}
+
+SECTIONS RULES (used for deterministic PDF assembly + hallucination checks):
+- "experience" entries MUST reuse the candidate's real employers, job titles and dates exactly — only the bullets may be reworded for this JD.
+- Never invent an employer, degree, or date. "end" may be "Present".
+- "skills" = the candidate's real skills, ordered for this JD, plus at most the KEYWORDS listed below where truthful.
 
 FORMAT PREFERENCE: ${args.formatPreference ?? "professional"}
 KEYWORDS TO WEAVE IN (only where truthful): ${JSON.stringify(args.keywordsToAdd ?? [])}

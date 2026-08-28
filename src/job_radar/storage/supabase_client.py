@@ -225,6 +225,31 @@ class SupabaseStorageClient:
 
         return None
 
+    def read_storage_bytes(self, bucket_name: str, storage_path: str) -> Optional[bytes]:
+        """Downloads a Storage object into memory (no local disk write)."""
+        if not self.is_configured:
+            return None
+
+        storage_path = storage_path.lstrip("/")
+
+        if self._client:
+            try:
+                return self._client.storage.from_(bucket_name).download(storage_path)
+            except Exception as e:
+                logger.debug("SDK storage read failed: %s; trying REST", e)
+
+        download_url = f"{self.url}/storage/v1/object/{bucket_name}/{storage_path}"
+        headers = {"apikey": self.key, "Authorization": f"Bearer {self.key}"}
+        try:
+            resp = requests.get(download_url, headers=headers, timeout=60)
+            if resp.status_code == 200:
+                return resp.content
+            logger.warning("Storage read failed (%d) for %s/%s", resp.status_code, bucket_name, storage_path)
+        except Exception as exc:
+            logger.error("Exception reading Supabase Storage %s/%s: %s", bucket_name, storage_path, exc)
+
+        return None
+
     def _rest_headers(self) -> Dict[str, str]:
         return {
             "apikey": self.key,

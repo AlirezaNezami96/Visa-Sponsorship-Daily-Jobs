@@ -4,6 +4,10 @@
  * company + contact. LinkedIn is hard-capped at 300 chars SERVER-SIDE before
  * storing (docs/contracts/outreach_messages.schema.json).
  *
+ * GAP 3 hardening: validators.ts (LinkedIn hard cap, email word cap, tone),
+ * repair-then-waterfall, idempotency, post-validation quota. The outreach
+ * message shares the cover_letter_generations quota (no separate counter).
+ *
  * Body: { job_id: string, resume_id?: string,
  *         tone?: "professional"|"friendly"|"natural" (default natural) }
  */
@@ -15,6 +19,7 @@ import { buildOutreachPrompt, enforceLinkedinLimit, PROMPT_VERSIONS } from "../_
 import { runGeneration } from "../_shared/generation.ts";
 import { createGenerationStore } from "../_shared/supabase-store.ts";
 import { loadCompanyIntel, loadJob, loadResume } from "../_shared/jobs.ts";
+import { validateOutreach } from "../_shared/validators.ts";
 import type { ProfileRow } from "../_shared/usage-limits.ts";
 
 const TONES = new Set(["professional", "friendly", "natural"]);
@@ -61,6 +66,9 @@ Deno.serve(async (req) => {
         documentType: "outreach_email",
         jobId,
         promptVersion: PROMPT_VERSIONS.outreach,
+        formatType: tone,
+        profileUpdatedAt: (prof.updated_at as string | null) ?? null,
+        inputProfileSnapshot: { full_name: prof.full_name ?? null, skills: prof.skills ?? null },
         buildPrompt: () =>
           buildOutreachPrompt({
             profile: prof as unknown as ProfileSnapshot,
@@ -74,7 +82,8 @@ Deno.serve(async (req) => {
           const linkedin = p.linkedin as Record<string, unknown> | undefined;
           if (!email || typeof email.body !== "string") return "missing email.body";
           if (!linkedin || typeof linkedin.body !== "string") return "missing linkedin.body";
-          return null;
+          // GAP 3.1 hard caps: LinkedIn <= 300 chars, email <= 220 words, tone kept.
+          return validateOutreach(p, tone);
         },
         postProcess: (p) => {
           // Hard server-side LinkedIn cap BEFORE storing — never over-limit.
@@ -92,6 +101,7 @@ Deno.serve(async (req) => {
             document_type: "outreach_linkedin",
             status: "completed",
             prompt_version: PROMPT_VERSIONS.outreach,
+            format_type: tone,
             output_json: linkedinRows,
           }).catch(() => undefined);
           return { ...p, linkedin: linkedinRows, resume_context: resumeText ? "used" : "absent" };

@@ -78,3 +78,74 @@ jobs:
           path: dump/*.sql.gz
           retention-days: 30
           if-no-files-found: error
+
+      - name: Log run to backup_logs
+        if: always()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, urllib.request
+
+          url = os.environ.get("SUPABASE_URL", "").rstrip("/")
+          key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+          if not url or not key:
+              print("SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY not set — skipping backup_logs insert")
+              raise SystemExit(0)
+
+          dumps = sorted(pathlib.Path("dump").glob("*.sql.gz"))
+          size = dumps[0].stat().st_size if dumps else None
+          artifact = f"gdrive:dump/{dumps[0].name}" if dumps and "${{ steps.drive_upload.outputs.drive }}" == "ok" else None
+          status = "completed" if "${{ job.status }}" == "success" else "failed"
+
+          payload = {
+              "kind": "database",
+              "status": status,
+              "artifact_path": artifact,
+              "size_bytes": size,
+              "error_message": None if status == "completed" else "db backup run failed — see Actions logs",
+          }
+          req = urllib.request.Request(
+              url + "/rest/v1/backup_logs",
+              data=json.dumps(payload).encode(),
+              headers={
+                  "Authorization": f"Bearer {key}",
+                  "apikey": key,
+                  "Content-Type": "application/json",
+              },
+              method="POST",
+          )
+          try:
+              with urllib.request.urlopen(req, timeout=30) as resp:
+                  print(f"backup_logs insert: {resp.status}")
+          except Exception as exc:
+              print(f"backup_logs insert failed (non-fatal): {exc}")
+          PY
+
+      - name: Failure alert email (Resend run-alert)
+        if: failure()
+        continue-on-error: true
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+        run: |
+          python3 -c "import requests" 2>/dev/null \
+            || python3 -m pip install --quiet --break-system-packages requests 2>/dev/null \
+            || python3 -m pip install --quiet requests
+          python3 - <<'PY'
+          import os, subprocess, sys
+          sys.path.insert(0, "src")
+          from job_radar.notifications.email import send_worker_run_alert
+
+          run_url = f"{os.environ.get('GITHUB_SERVER_URL', '')}/{os.environ.get('GITHUB_REPOSITORY', '')}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '')}"
+          sent = send_worker_run_alert(
+              run_id=os.environ.get("GITHUB_RUN_ID", "db-backup"),
+              status="failed",
+              stats={"workflow": "db-backup"},
+              error_message="Daily database backup failed — Drive upload or pg_dump error; artifact fallback may contain the dump.",
+              run_url=run_url,
+          )
+          print("failure alert sent" if sent else "failure alert skipped (no email provider configured)")
+          PY

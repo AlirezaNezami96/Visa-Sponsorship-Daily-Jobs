@@ -1,4 +1,5 @@
 """Cover image utilities and visual asset generators."""
+
 from __future__ import annotations
 
 import base64
@@ -47,10 +48,7 @@ def fetch_gemini_background_image(post_topic: str) -> Image.Image | None:
     headers = {"Content-Type": "application/json"}
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "responseModalities": ["IMAGE"],
-            "imageConfig": {"aspectRatio": "16:9"}
-        }
+        "generationConfig": {"responseModalities": ["IMAGE"], "imageConfig": {"aspectRatio": "16:9"}},
     }
 
     try:
@@ -90,13 +88,7 @@ def fetch_pollinations_background_image(post_topic: str) -> Image.Image | None:
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
 
-    payload = {
-        "prompt": full_prompt,
-        "width": 1200,
-        "height": 675,
-        "nologo": True,
-        "seed": seed
-    }
+    payload = {"prompt": full_prompt, "width": 1200, "height": 675, "nologo": True, "seed": seed}
 
     try:
         r = requests.post(url, headers=headers, json=payload, timeout=45)
@@ -151,7 +143,7 @@ def generate_tech_illustration(title: str, post_topic: str) -> tuple[bytes, str]
         radius=20,
         fill=(10, 15, 30, 215),
         outline=(59, 130, 246, 255),
-        width=3
+        width=3,
     )
 
     font_path = ensure_font_downloaded()
@@ -191,5 +183,7 @@ def generate_tech_illustration(title: str, post_topic: str) -> tuple[bytes, str]
     return cover_bytes, source
 
 
-def create_professional_cover_image(title: str, category: str = "SOFTWARE ENGINEERING", post_topic: str = "") -> tuple[bytes, str]:
+def create_professional_cover_image(
+    title: str, category: str = "SOFTWARE ENGINEERING", post_topic: str = ""
+) -> tuple[bytes, str]:
     return generate_tech_illustration(title, post_topic)

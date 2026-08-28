@@ -125,6 +125,16 @@ Request:
 { "resume_text": "...>= 20 chars...", "resume_id": "optional-uuid" }
 ```
 
+FE upload flow (GAP 4): `PUT` the file to Storage `resumes/{uid}/...` (own-prefix
+RLS), then call this endpoint with **either** `resume_text` (client-extracted) or
+`storage_path: "resumes/{uid}/file.txt"`. With `storage_path` the function
+downloads the object using the caller's JWT (RLS enforced). `.txt`/`.md` are read
+directly; PDFs must be text-extracted client-side and sent as `resume_text`.
+
+```json
+{ "storage_path": "resumes/{uid}/resume.txt", "resume_id": "optional-uuid" }
+```
+
 Response 200:
 
 ```json
@@ -164,6 +174,8 @@ Response 200:
 {
   "document_id": "uuid",
   "ai_provider": "...", "ai_model": "...", "cached": false,
+  "pdf_url": "https://...signed for 1h...", 
+  "pdf_path": "users/{uid}/jobs/{job_id}/resume/{document_id}.pdf",
   "output": {
     "tailored_resume_markdown": "...",
     "keywords_added": ["..."],
@@ -174,6 +186,12 @@ Response 200:
   }
 }
 ```
+
+GAP 2: the PDF is assembled deterministically by the engine (no AI in layout)
+and uploaded to the private `users` bucket; `pdf_url` is a 1-hour signed URL for
+the FE preview `<iframe>` + Download button. GAP 3 idempotency: a completed
+document for the same (user, job, format, profile, prompt) key is returned with
+`idempotent: true`, no quota charge, and its existing `pdf_url` re-signed.
 
 Usage: `resume_generations` quota → 402 beyond plan limit.
 
@@ -189,18 +207,26 @@ Guarantees enforced by prompt contract + validator
 (`docs/contracts/cover_letter.schema.json`): no generic openers, no
 hallucinated experience, 250–400 words, hook grounded in company intel.
 
-Response 200 `output`:
+Response 200 (top-level, plus `output`):
 
 ```json
 {
-  "cover_letter_markdown": "...",
-  "overlap_skills": ["...", "..."],
-  "company_hook": "...",
-  "word_count": 312,
-  "format_type": "professional",
-  "prompt_version": "cl-v1"
+  "document_id": "uuid",
+  "pdf_url": "https://...signed for 1h...",
+  "pdf_path": "users/{uid}/jobs/{job_id}/cover_letter/{document_id}.pdf",
+  "output": {
+    "cover_letter_markdown": "...",
+    "overlap_skills": ["...", "..."],
+    "company_hook": "...",
+    "word_count": 312,
+    "format_type": "professional",
+    "prompt_version": "cl-v1"
+  }
 }
 ```
+
+Same GAP 2 PDF assembly + signed URL and GAP 3 idempotency semantics as the
+tailored-resume endpoint.
 
 Usage: `cover_letter_generations` quota → 402 beyond plan limit.
 

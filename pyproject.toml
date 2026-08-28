@@ -58,6 +58,7 @@ job-radar-creator-badge = "job_radar.cli.creator_badge_cmd:main"
 job-radar-import-posts = "job_radar.cli.import_posts_cmd:main"
 job-radar-republish = "job_radar.cli.republish_cmd:main"
 job-radar-visalane = "job_radar.visalane.cli:main"
+job-radar-run-alert = "job_radar.cli.run_alert_cmd:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -90,5 +91,6 @@ exclude = [
 # design contract here (never let analytics/notifications/sync break a run),
 # consistent with job_radar/dedup/store.py and job_radar/llm/router.py.
 "src/job_radar/visalane/*" = ["BLE001"]
+"src/job_radar/social/*" = ["BLE001"]
 "src/job_radar/analytics.py" = ["BLE001"]
 "src/job_radar/notifications/channels.py" = ["BLE001"]

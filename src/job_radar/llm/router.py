@@ -32,6 +32,9 @@ logger = logging.getLogger(__name__)
 CACHE_FILE_PATH = Path("state/llm_cache.json")
 DAILY_TRACKER_PATH = Path("state/llm_daily_tracker.json")
 
+# Waterfall order — keep in sync with PROVIDER_CHAIN in _shared/ai-client.ts.
+PROVIDER_CHAIN = ("gemini", "groq", "openrouter", "ollama")
+
 
 @dataclass
 class LLMResult:
@@ -41,6 +44,14 @@ class LLMResult:
     cached: bool = False
     latency_ms: int = 0
     raw_response: Optional[Any] = None
+
+
+@dataclass
+class ProviderAttempt:
+    """One provider call result (mirror of TS ProviderAttempt)."""
+
+    result: Optional[LLMResult]
+    reason: str = ""
 
 
 class LLMRouter:
@@ -218,6 +229,96 @@ class LLMRouter:
             latency_ms=int((time.perf_counter() - t0) * 1000),
         )
 
+    def try_provider(
+        self,
+        provider: str,
+        prompt: str,
+        *,
+        json_schema: Optional[Dict[str, Any]] = None,
+        system_instruction: Optional[str] = None,
+        temperature: float = 0.2,
+        use_cache: bool = True,
+    ) -> ProviderAttempt:
+        """Single-provider primitive (mirror of TS `aiTryProvider`).
+
+        Never raises. Returns the result or a human-readable failure reason.
+        Repair retries call this with ``use_cache=False`` so a rejected draft
+        is never served from cache.
+        """
+        if provider not in PROVIDER_CHAIN:
+            return ProviderAttempt(None, f"unknown provider {provider}")
+
+        key = self._compute_cache_key(f"{provider}:{prompt}", json_schema, None)
+        if use_cache and key in self._cache:
+            return ProviderAttempt(
+                LLMResult(text=self._cache[key], model_used="cache", provider=provider, cached=True)
+            )
+
+        if not self._check_and_increment_daily_cap():
+            return ProviderAttempt(None, "daily LLM budget exhausted")
+
+        t0 = time.perf_counter()
+        result: Optional[LLMResult] = None
+        reason = "no api key configured"
+
+        if provider == "gemini":
+            gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
+            if gemini_key and gemini_key != "PLACEHOLDER_KEY":
+                result = self._try_gemini(
+                    api_key=gemini_key,
+                    prompt=prompt,
+                    json_schema=json_schema,
+                    system_instruction=system_instruction,
+                    temperature=temperature,
+                )
+                reason = "provider error or empty response"
+        elif provider == "groq":
+            groq_key = os.getenv("GROQ_API_KEY", "").strip()
+            if groq_key:
+                result = self._try_groq(
+                    api_key=groq_key,
+                    prompt=prompt,
+                    json_schema=json_schema,
+                    system_instruction=system_instruction,
+                    temperature=temperature,
+                )
+                reason = "provider error or empty response"
+        elif provider == "openrouter":
+            openrouter_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+            if openrouter_key:
+                result = self._try_openrouter(
+                    api_key=openrouter_key,
+                    prompt=prompt,
+                    json_schema=json_schema,
+                    system_instruction=system_instruction,
+                    temperature=temperature,
+                )
+                reason = "provider error or empty response"
+        elif provider == "ollama":
+            ollama_host = os.getenv("OLLAMA_HOST", "").strip()
+            if ollama_host:
+                result = self._try_ollama(
+                    host=ollama_host,
+                    prompt=prompt,
+                    json_schema=json_schema,
+                    system_instruction=system_instruction,
+                )
+                reason = "provider error or empty response"
+
+        if result is not None:
+            if use_cache:
+                self._cache[key] = result.text
+                self._save_cache()
+            result.latency_ms = int((time.perf_counter() - t0) * 1000)
+        return ProviderAttempt(result, "" if result else reason)
+
+    def evict_cache(self, provider: str, prompt: str, json_schema: Optional[Dict[str, Any]] = None) -> None:
+        """Drop a cached provider response (used when it failed validation)."""
+        key = self._compute_cache_key(f"{provider}:{prompt}", json_schema, None)
+        if key in self._cache:
+            del self._cache[key]
+            self._save_cache()
+
     def _try_gemini(
         self,
         api_key: str,
@@ -233,7 +334,11 @@ class LLMRouter:
             "gemini-2.5-flash",
         ]
         seen = set()
-        models = [m for m in candidate_models if not (m in seen or seen.add(m))]
+        models = []
+        for m in candidate_models:
+            if m not in seen:
+                seen.add(m)
+                models.append(m)
 
         try:
             from google import genai

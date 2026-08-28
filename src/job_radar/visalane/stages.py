@@ -66,42 +66,35 @@ def build_alert_email_html(alert_name: str, jobs: list[dict[str, Any]]) -> str:
     )
 
 
+def _social_card_factory(client):
+    """Digest-card factory for social staging (None when cards are disabled)."""
+    from job_radar.social.card_pipeline import make_card_factory
+
+    storage = None
+    try:
+        from job_radar.storage.supabase_client import SupabaseStorageClient
+
+        candidate = SupabaseStorageClient()
+        if candidate.is_configured:
+            storage = candidate
+    except Exception as exc:
+        logger.debug("card storage unavailable: %s", exc)
+    return make_card_factory(client, storage=storage)
+
+
 def _dispatch_alert_to_channels(
     client,
     alert: dict[str, Any],
     jobs: list[dict[str, Any]],
 ) -> list[str]:
-    """Deliver one alert's matches over its configured channels. Returns used channels."""
-    channels = alert.get("channels") or {}
-    used: list[str] = []
+    """Deliver one alert's matches over its configured channels.
 
-    if channels.get("email"):
-        profile = None
-        try:
-            res = client.table("profiles").select("email").eq("id", alert.get("user_id")).limit(1).execute()
-            profile = res.data[0] if res.data else None
-        except Exception as exc:
-            logger.warning("profile lookup for alert %s failed: %s", alert.get("id"), exc)
-        to_email = (profile or {}).get("email")
-        if to_email:
-            from job_radar.notifications.email import send_email_with_fallback
+    Delegates to `alert_delivery.deliver_alert` (GAP 5): template rendering,
+    per-channel retry-once, alert_delivery_logs bookkeeping.
+    """
+    from job_radar.visalane.alert_delivery import deliver_alert
 
-            subject = alert.get("subject_template") or f"🛂 {len(jobs)} new visa-sponsoring jobs match your alert"
-            provider = send_email_with_fallback(
-                subject, build_alert_email_html(alert.get("name", "alert"), jobs), to_email=to_email
-            )
-            if provider:
-                used.append("email")
-
-    non_email = [c for c in ("telegram", "discord", "slack") if channels.get(c)]
-    if non_email:
-        from job_radar.notifications.channels import broadcast
-        from job_radar.visalane.social_queue import build_caption
-
-        results = broadcast(build_caption(jobs), channels=non_email)
-        used.extend(ch for ch, ok in results.items() if ok)
-
-    return used
+    return deliver_alert(client, alert, jobs)
 
 
 def dispatch_alerts_stage(client, new_jobs: list[dict[str, Any]]) -> int:
@@ -153,9 +146,9 @@ def dispatch_alerts_stage(client, new_jobs: list[dict[str, Any]]) -> int:
             client.table("alert_sent_jobs").insert(
                 [{"alert_id": alert["id"], "job_id": j["job_db_id"]} for j in fresh]
             ).execute()
-            client.table("alerts").update(
-                {"last_sent_at": datetime.datetime.now(datetime.timezone.utc).isoformat()}
-            ).eq("id", alert["id"]).execute()
+            client.table("alerts").update({"last_sent_at": datetime.datetime.now(datetime.UTC).isoformat()}).eq(
+                "id", alert["id"]
+            ).execute()
         except Exception as exc:
             logger.warning("alert_sent_jobs bookkeeping failed: %s", exc)
 
@@ -217,7 +210,9 @@ def sync_qualified_jobs(
         if do_social and new_jobs:
             from job_radar.visalane.social_queue import enqueue_jobs
 
-            stats["social_queued"] = enqueue_jobs(client, new_jobs, platforms=platforms)
+            stats["social_queued"] = enqueue_jobs(
+                client, new_jobs, platforms=platforms, card_factory=_social_card_factory(client)
+            )
             _mark_processed(client, [j["job_db_id"] for j in new_jobs], ["processed_social"])
 
         if do_enrichment and new_jobs:
@@ -244,7 +239,7 @@ def sync_qualified_jobs(
                         "error_message": error_message,
                         "jobs_found": len(jobs),
                         "jobs_added": stats["inserted"],
-                        "completed_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                        "completed_at": datetime.datetime.now(datetime.UTC).isoformat(),
                     }
                 ).eq("id", run_id).execute()
             except Exception as exc:
@@ -316,7 +311,7 @@ def dispatch_pending(
     if do_social and unprocessed_social:
         from job_radar.visalane.social_queue import enqueue_jobs
 
-        stats["social_queued"] = enqueue_jobs(client, unprocessed_social)
+        stats["social_queued"] = enqueue_jobs(client, unprocessed_social, card_factory=_social_card_factory(client))
         _mark_processed(client, [j["job_db_id"] for j in unprocessed_social], ["processed_social"])
 
     if do_enrichment and unprocessed_enrichment:

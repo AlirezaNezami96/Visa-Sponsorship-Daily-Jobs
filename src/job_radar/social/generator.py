@@ -1,4 +1,5 @@
 """LinkedIn Post Generator powered by Gemini 3.6 Flash and Telegram drafts."""
+
 from __future__ import annotations
 
 import html
@@ -32,11 +33,7 @@ def ensure_telegram_webhook(bot_token: str) -> None:
                 return
 
         set_url = f"https://api.telegram.org/bot{bot_token}/setWebhook"
-        payload = {
-            "url": worker_url,
-            "secret_token": secret_token,
-            "allowed_updates": ["callback_query"]
-        }
+        payload = {"url": worker_url, "secret_token": secret_token, "allowed_updates": ["callback_query"]}
         requests.post(set_url, json=payload, timeout=10)
     except Exception as e:
         logger.warning("Error ensuring Telegram webhook: %s", e)
@@ -44,11 +41,7 @@ def ensure_telegram_webhook(bot_token: str) -> None:
 
 def send_telegram_alert(bot_token: str, chat_id: str, text: str) -> None:
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    payload = {
-        "chat_id": chat_id,
-        "text": text,
-        "parse_mode": "HTML"
-    }
+    payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
     try:
         res = requests.post(url, json=payload, timeout=15)
         res.raise_for_status()
@@ -90,12 +83,11 @@ Return your response in exact JSON format:
     last_error = ""
     try:
         from google import genai
+
         client = genai.Client(api_key=api_key)
         full_input = f"{system_prompt}\n\n---\n\n{user_prompt}"
         interaction = client.interactions.create(
-            model="gemini-3.6-flash",
-            input=full_input,
-            response_mime_type="application/json"
+            model="gemini-3.6-flash", input=full_input, response_mime_type="application/json"
         )
         raw_content = (interaction.output_text or "").strip()
         if raw_content.startswith("```json"):
@@ -119,10 +111,7 @@ Return your response in exact JSON format:
     payload = {
         "systemInstruction": {"parts": [{"text": system_prompt}]},
         "contents": [{"role": "user", "parts": [{"text": user_prompt}]}],
-        "generationConfig": {
-            "responseMimeType": "application/json",
-            "temperature": 1.0
-        }
+        "generationConfig": {"responseMimeType": "application/json", "temperature": 1.0},
     }
 
     for model in models:
@@ -153,7 +142,9 @@ Return your response in exact JSON format:
     raise RuntimeError(f"All Gemini API text call attempts failed. Last error: {last_error}")
 
 
-def send_telegram_draft(bot_token: str, chat_id: str, post_text: str, cover_bytes: bytes, img_source: str = "gemini") -> Tuple[Optional[int], int]:
+def send_telegram_draft(
+    bot_token: str, chat_id: str, post_text: str, cover_bytes: bytes, img_source: str = "gemini"
+) -> Tuple[Optional[int], int]:
     photo_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
     photo_msg_id = None
     caption = "🖼️ <b>AI Generated LinkedIn Cover Illustration</b>"
@@ -161,11 +152,7 @@ def send_telegram_draft(bot_token: str, chat_id: str, post_text: str, cover_byte
     if cover_bytes and img_source != "disabled":
         try:
             files = {"photo": ("cover.jpg", cover_bytes, "image/jpeg")}
-            data = {
-                "chat_id": chat_id,
-                "caption": caption,
-                "parse_mode": "HTML"
-            }
+            data = {"chat_id": chat_id, "caption": caption, "parse_mode": "HTML"}
             p_res = requests.post(photo_url, data=data, files=files, timeout=25)
             if p_res.status_code == 200:
                 photo_msg_id = p_res.json().get("result", {}).get("message_id")
@@ -187,10 +174,10 @@ def send_telegram_draft(bot_token: str, chat_id: str, post_text: str, cover_byte
                 [{"text": "✅ Accept", "callback_data": "approve"}],
                 [
                     {"text": "❌ Reject", "callback_data": "reject"},
-                    {"text": "🔄 Reject & Regenerate", "callback_data": "reject_regen"}
-                ]
+                    {"text": "🔄 Reject & Regenerate", "callback_data": "reject_regen"},
+                ],
             ]
-        }
+        },
     }
     m_res = requests.post(msg_url, json=msg_payload, timeout=20)
     m_res.raise_for_status()
@@ -213,7 +200,7 @@ def generate_and_dispatch_post() -> None:
         missing.append("TELEGRAM_CHAT_ID")
 
     if missing:
-        logger.error("Missing required environment variables: %s", ', '.join(missing))
+        logger.error("Missing required environment variables: %s", ", ".join(missing))
         sys.exit(1)
 
     os.makedirs(STATE_DIR, exist_ok=True)
@@ -228,7 +215,7 @@ def generate_and_dispatch_post() -> None:
         send_telegram_alert(
             bot_token,
             chat_id,
-            "⚠️ <b>LinkedIn Post Generation Skipped</b>\n\nA previous post draft is still awaiting your decision in Telegram!"
+            "⚠️ <b>LinkedIn Post Generation Skipped</b>\n\nA previous post draft is still awaiting your decision in Telegram!",
         )
         sys.exit(0)
 
@@ -254,10 +241,12 @@ def generate_and_dispatch_post() -> None:
             "bg_prompt": bg_prompt,
             "cover_file": COVER_FILE,
             "image_source": img_source,
-            "generated_at": now_iso
+            "generated_at": now_iso,
         }
 
-        photo_msg_id, text_msg_id = send_telegram_draft(bot_token, chat_id, post_text, cover_bytes, img_source=img_source)
+        photo_msg_id, text_msg_id = send_telegram_draft(
+            bot_token, chat_id, post_text, cover_bytes, img_source=img_source
+        )
         pending_data["photo_message_id"] = photo_msg_id
         pending_data["message_id"] = text_msg_id
 

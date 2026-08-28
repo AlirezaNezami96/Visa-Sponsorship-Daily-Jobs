@@ -1,4 +1,5 @@
 """Social subpackage for job_radar."""
+
 from job_radar.social.generator import (
     call_gemini_text_api,
     generate_and_dispatch_post,

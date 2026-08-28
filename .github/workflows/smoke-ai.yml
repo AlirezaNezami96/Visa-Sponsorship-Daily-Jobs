@@ -1,0 +1,88 @@
+name: AI Smoke (nightly, live keys)
+
+# GAP 3.4: end-to-end AI smoke against real provider keys.
+#   parse -> tailored resume -> cover letter -> outreach, with the
+#   hallucination validators and deterministic PDF assembly asserted.
+# On failure: emails the owner (Resend run-alert) and opens a GitHub issue.
+# The mock-provider variant runs on every PR as part of `ci.yml`.
+
+on:
+  schedule:
+    - cron: '30 2 * * *'  # 02:30 UTC nightly
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      EMAIL_TO: ${{ secrets.EMAIL_TO }}
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run AI smoke (live providers)
+        id: smoke
+        run: python scripts/smoke_ai.py
+
+      - name: Failure alert email (Resend run-alert)
+        if: failure()
+        continue-on-error: true
+        run: |
+          python3 - <<'PY'
+          import os, sys
+          sys.path.insert(0, "src")
+          from job_radar.notifications.email import send_worker_run_alert
+
+          run_url = f"{os.environ.get('GITHUB_SERVER_URL', '')}/{os.environ.get('GITHUB_REPOSITORY', '')}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '')}"
+          sent = send_worker_run_alert(
+              run_id=os.environ.get("GITHUB_RUN_ID", "smoke-ai"),
+              status="failed",
+              stats={"workflow": "smoke-ai"},
+              error_message="Nightly AI smoke failed — one of parse/tailored-resume/cover-letter/outreach did not pass validation.",
+              run_url=run_url,
+          )
+          print("failure alert sent" if sent else "failure alert skipped (no email provider configured)")
+          PY
+
+      - name: Open issue on failure
+        if: failure()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          EXISTING=$(gh issue list --repo "${{ github.repository }}" --label "ai-smoke-failure" --state open --json number --jq length)
+          if [ "$EXISTING" = "0" ]; then
+            gh issue create \
+              --repo "${{ github.repository }}" \
+              --title "AI smoke failed — ${{ github.run_id }}" \
+              --label "ai-smoke-failure" \
+              --body "Nightly AI smoke (live providers) failed.
+
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          Check provider key validity/quotas (Gemini, Groq, OpenRouter) and the
+          validators in engine/ai/validators.py."
+          else
+            echo "open ai-smoke-failure issue already exists ($EXISTING) — skipping"
+          fi

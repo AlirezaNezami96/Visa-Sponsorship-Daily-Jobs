@@ -116,6 +116,11 @@ app.add_middleware(
     allow_headers=["Content-Type", "X-Session-ID"],
 )
 
+# ── Internal document rendering (Edge Function callback) ─────────────────────
+from .document_render import router as document_render_router  # noqa: E402
+
+app.include_router(document_render_router)
+
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def _require_session(session_id: str):

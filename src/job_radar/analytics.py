@@ -31,6 +31,8 @@ KNOWN_EVENTS = frozenset(
         "alert_sent",
         "social_post_published",
         "ai_fallback_triggered",
+        "ai_validation_repair",
+        "ai_error",
         "api_error",
         # Pipeline-emitted operational events
         "scrape_completed",

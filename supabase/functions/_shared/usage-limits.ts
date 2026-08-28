@@ -106,3 +106,44 @@ export async function consumeUsage(
 export function serviceRoleConfigured(): boolean {
   return Boolean(getEnv("SUPABASE_URL") && getEnv("SUPABASE_SERVICE_ROLE_KEY"));
 }
+
+/** Minimal read client surface for the read-only limit gate (DI-friendly). */
+export interface UsageReadClient {
+  from(table: string): {
+    select(columns: string): {
+      eq(column: string, value: string): {
+        eq(column: string, value: string): PromiseLike<{
+          data?: Record<string, unknown> | null;
+          error?: { message: string } | null;
+        }>;
+      };
+    };
+  };
+}
+
+/**
+ * Read-only usage-limit check — MUST NOT mutate counters (GAP 3.3).
+ * Runs before any AI provider call so an at-limit user gets 402 and the
+ * providers are never contacted. The atomic increment happens separately,
+ * only after validation passes.
+ */
+export async function checkUsage(
+  client: UsageReadClient,
+  field: UsageField,
+  profile: ProfileRow | null | undefined,
+): Promise<LimitDecision> {
+  if (!USAGE_FIELDS.includes(field)) {
+    throw new Error(`unknown usage field: ${field}`);
+  }
+  const plan = effectivePlan(profile);
+  const limit = DAILY_LIMITS[plan][field];
+  const today = new Date().toISOString().slice(0, 10);
+  const userId = String(profile?.id ?? "");
+  const { data, error } = await client.from("usage_limits").select(field).eq("date", today).eq("user_id", userId);
+  if (error) {
+    throw new Error(`usage check failed: ${error.message}`);
+  }
+  const row = (data ?? null) as Record<string, unknown> | null;
+  const count = row ? Number(row[field] ?? 0) : 0;
+  return { allowed: count < limit, count, limit, plan };
+}

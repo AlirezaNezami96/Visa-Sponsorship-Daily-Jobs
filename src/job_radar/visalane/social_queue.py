@@ -12,6 +12,7 @@ queue and falls back to a text-only post when image generation fails.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -46,8 +47,13 @@ def enqueue_jobs(
     client,
     jobs: list[dict[str, Any]],
     platforms: list[str] | None = None,
+    card_factory: Callable[[list[dict[str, Any]]], str | None] | None = None,
 ) -> int:
     """Create social_post_queue rows for `jobs` across the requested platforms.
+
+    `card_factory` (optional) is called once per batch with the batch's jobs
+    and returns the uploaded card image path (or None on failure). Card
+    rendering never blocks queueing: failures fall back to text-only posts.
 
     Returns the number of queue rows created (0 on any failure).
     """
@@ -67,6 +73,18 @@ def enqueue_jobs(
         seen.add(key)
         unique_jobs.append(job)
 
+    # One digest card per batch (top job), shared by every platform's row for
+    # that batch — rendered before insert so image_path lands atomically.
+    batch_paths: dict[int, str | None] = {}
+    if card_factory is not None:
+        for i in range(0, len(unique_jobs), JOBS_PER_POST):
+            batch = unique_jobs[i : i + JOBS_PER_POST]
+            try:
+                batch_paths[i] = card_factory(batch)
+            except Exception as exc:
+                logger.warning("card_factory failed for batch at %d: %s", i, exc)
+                batch_paths[i] = None
+
     rows = []
     for platform in platforms:
         status = "manual_review" if platform in MANUAL_REVIEW_PLATFORMS else "pending"
@@ -79,6 +97,7 @@ def enqueue_jobs(
                     "platform": platform,
                     "status": status,
                     "caption": build_caption(batch),
+                    "image_path": batch_paths.get(i),
                 }
             )
 

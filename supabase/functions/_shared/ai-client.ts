@@ -44,7 +44,7 @@ function isRetryable(status: number): boolean {
 
 async function tryGemini(prompt: string, wantJson: boolean, f: typeof fetch): Promise<AIResult | null> {
   const key = getEnv("GEMINI_API_KEY");
-  if (!key) return null;
+  if (!key) throw new AIFailure("gemini", 0, "missing_api_key");
   const model = getEnv("GEMINI_PRO_MODEL") || "gemini-2.5-flash";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
   const body: Record<string, unknown> = {
@@ -70,7 +70,7 @@ async function tryGemini(prompt: string, wantJson: boolean, f: typeof fetch): Pr
 
 async function tryGroq(prompt: string, wantJson: boolean, f: typeof fetch): Promise<AIResult | null> {
   const key = getEnv("GROQ_API_KEY");
-  if (!key) return null;
+  if (!key) throw new AIFailure("groq", 0, "missing_api_key");
   const model = getEnv("GROQ_MODEL") || "llama-3.3-70b-versatile";
   const payload: Record<string, unknown> = {
     model,
@@ -94,7 +94,7 @@ async function tryGroq(prompt: string, wantJson: boolean, f: typeof fetch): Prom
 
 async function tryOpenRouter(prompt: string, wantJson: boolean, f: typeof fetch): Promise<AIResult | null> {
   const key = getEnv("OPENROUTER_API_KEY");
-  if (!key) return null;
+  if (!key) throw new AIFailure("openrouter", 0, "missing_api_key");
   const model = getEnv("OPENROUTER_MODEL") || "minimax/minimax-m3:free";
   const payload: Record<string, unknown> = {
     model,
@@ -139,11 +139,49 @@ export class AllProvidersFailedError extends Error {
   }
 }
 
-const CHAIN: Array<{ name: string; fn: typeof tryGemini }> = [
-  { name: "gemini", fn: tryGemini },
-  { name: "groq", fn: tryGroq },
-  { name: "openrouter", fn: tryOpenRouter },
-];
+export const PROVIDER_CHAIN = ["gemini", "groq", "openrouter"] as const;
+export type ProviderName = (typeof PROVIDER_CHAIN)[number];
+
+const PROVIDERS: Record<ProviderName, (prompt: string, wantJson: boolean, f: typeof fetch) => Promise<AIResult | null>> = {
+  gemini: tryGemini,
+  groq: tryGroq,
+  openrouter: tryOpenRouter,
+};
+
+export interface ProviderAttempt {
+  result: AIResult | null;
+  reason: string;
+}
+
+function failureReason(err: unknown): string {
+  if (err instanceof AIFailure) {
+    if (err.status === 0) return "missing_key";
+    return `http_${err.status}${isRetryable(err.status) ? "" : "_fatal"}`;
+  }
+  return "network_error";
+}
+
+/**
+ * Single-provider attempt. Returns the result or a reason string — never
+ * throws. Used by the generation pipeline's repair-then-waterfall loop
+ * (GAP 3.2), which needs provider-level control.
+ */
+export async function aiTryProvider(
+  provider: ProviderName,
+  prompt: string,
+  options: AIClientOptions & { json?: boolean } = {},
+): Promise<ProviderAttempt> {
+  const f = options.fetchImpl ?? fetch;
+  const started = Date.now();
+  try {
+    const result = await PROVIDERS[provider](prompt, options.json ?? false, f);
+    if (!result) return { result: null, reason: "empty_response" };
+    result.latency_ms = Date.now() - started;
+    return { result, reason: "ok" };
+  } catch (err) {
+    return { result: null, reason: failureReason(err) };
+  }
+}
 
 /**
  * Run a completion through the provider waterfall.
@@ -161,29 +199,22 @@ export async function aiComplete(
     return { ...hit, cached: true };
   }
 
-  const f = options.fetchImpl ?? fetch;
   const attempts: Array<{ provider: string; reason: string }> = [];
   const started = Date.now();
-  const last = CHAIN.length - 1;
+  const last = PROVIDER_CHAIN.length - 1;
 
-  for (let i = 0; i < CHAIN.length; i++) {
-    const { name, fn } = CHAIN[i];
-    let reason: string | null = null;
-    try {
-      const result = await fn(prompt, options.json ?? false, f);
-      if (result) {
-        result.latency_ms = Date.now() - started;
-        cache.set(cacheKey, result);
-        return result;
-      }
-      reason = "empty_response";
-    } catch (err) {
-      reason = err instanceof AIFailure ? `http_${err.status}${isRetryable(err.status) ? "" : "_fatal"}` : "network_error";
+  for (let i = 0; i < PROVIDER_CHAIN.length; i++) {
+    const name = PROVIDER_CHAIN[i];
+    const attempt = await aiTryProvider(name, prompt, options);
+    if (attempt.result) {
+      const result = { ...attempt.result, latency_ms: Date.now() - started };
+      cache.set(cacheKey, result);
+      return result;
     }
-    attempts.push({ provider: name, reason });
+    attempts.push({ provider: name, reason: attempt.reason });
     // Advancing to the next provider is a fallback event (observed for analytics).
     if (i < last && options.onFallback) {
-      await options.onFallback(name, reason);
+      await options.onFallback(name, attempt.reason);
     }
   }
 

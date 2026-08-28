@@ -10,9 +10,11 @@ import {
   effectivePlan,
   isTrialActive,
   consumeUsage,
+  checkUsage,
   DAILY_LIMITS,
   type ProfileRow,
   type AdminClientLike,
+  type UsageReadClient,
 } from "./usage-limits.ts";
 
 const day = 24 * 60 * 60 * 1000;
@@ -99,5 +101,53 @@ describe("consumeUsage", () => {
     await expect(
       consumeUsage(client, "bogus_field" as never, profile()),
     ).rejects.toThrow(/unknown usage field/);
+  });
+});
+
+function fakeReadClient(row: Record<string, unknown> | null, error?: string): UsageReadClient {
+  return {
+    from: (_table: string) => ({
+      select: (_cols: string) => ({
+        eq: (_c: string, _v: string) => ({
+          eq: (_c2: string, _v2: string) =>
+            Promise.resolve({ data: row, error: error ? { message: error } : null }) as never,
+        }),
+      }),
+    }),
+  };
+}
+
+describe("checkUsage (read-only gate)", () => {
+  it("allows when below the limit without mutating anything", async () => {
+    const client = fakeReadClient({ cover_letter_generations: 1 });
+    const decision = await checkUsage(client, "cover_letter_generations", profile());
+    expect(decision.allowed).toBe(true);
+    expect(decision.count).toBe(1);
+    expect(decision.limit).toBe(DAILY_LIMITS.free.cover_letter_generations);
+  });
+
+  it("rejects at the limit", async () => {
+    const client = fakeReadClient({ cover_letter_generations: DAILY_LIMITS.free.cover_letter_generations });
+    const decision = await checkUsage(client, "cover_letter_generations", profile());
+    expect(decision.allowed).toBe(false);
+  });
+
+  it("treats a missing row as zero usage", async () => {
+    const decision = await checkUsage(fakeReadClient(null), "resume_generations", profile());
+    expect(decision.allowed).toBe(true);
+    expect(decision.count).toBe(0);
+  });
+
+  it("uses pro limits for pro profiles", async () => {
+    const client = fakeReadClient({ resume_generations: 5 });
+    const decision = await checkUsage(client, "resume_generations", profile({ subscription_plan: "pro" }));
+    expect(decision.allowed).toBe(true);
+    expect(decision.limit).toBe(DAILY_LIMITS.pro.resume_generations);
+    expect(decision.plan).toBe("pro");
+  });
+
+  it("throws on infrastructure failure (no fail-open)", async () => {
+    const client = fakeReadClient(null, "rpc down");
+    await expect(checkUsage(client, "resume_generations", profile())).rejects.toThrow(/usage check failed/);
   });
 });

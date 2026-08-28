@@ -66,6 +66,17 @@ class Settings(BaseSettings):
     # ── Logging ───────────────────────────────────────────────────────────────
     log_level: str = Field("INFO")
 
+    # ── Internal document rendering (Edge Function callback) ─────────────────
+    internal_api_key: str = Field(
+        default_factory=lambda: os.environ.get("INTERNAL_API_KEY", "")
+    )
+    supabase_url: str = Field(
+        default_factory=lambda: os.environ.get("SUPABASE_URL", "").rstrip("/")
+    )
+    supabase_service_role_key: str = Field(
+        default_factory=lambda: os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+    )
+
     @property
     def allowed_origins_list(self) -> List[str]:
         if isinstance(self.allowed_origins, str):

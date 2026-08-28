@@ -20,6 +20,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy engine source
 COPY engine/ ./engine/
 
+# Deterministic PDF assembly module + bundled OFL fonts (no system fonts).
+# Only the self-contained pdf_builder is copied — not the full pipeline.
+COPY src/job_radar/ai/ ./src/job_radar/ai/
+COPY assets/fonts/ ./assets/fonts/
+
 # Create PDF output dir
 RUN mkdir -p /tmp/engine_docs
 

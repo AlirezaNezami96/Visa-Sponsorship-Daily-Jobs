@@ -4,12 +4,17 @@ beautifulsoup4>=4.12.0
 playwright>=1.40.0
 pyyaml>=6.0
 google-genai>=1.0.0
-Pillow>=10.0.0
+# Pinned: the golden brand-card snapshot test depends on Pillow's rendering
+# behavior (bundled OFL fonts, same antialiasing) across CI and local runs.
+Pillow>=11.0.0,<13
 supabase>=2.0.0
 feedparser>=6.0.0
 rapidfuzz>=3.0.0
 pydantic>=2.0.0
 apify>=2.0.0
+# Deterministic PDF assembly (ATS-safe resumes / cover letters) + extraction in tests
+fpdf2>=2.8.0
+pypdf>=4.0.0
 
 # Editable install of package
 -e .
