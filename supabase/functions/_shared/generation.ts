@@ -16,7 +16,7 @@
  * pipeline is fully unit-testable without supabase-js; each handler adapts the
  * real client, tests inject fakes.
  */
-import type { AIResult, ProviderAttempt, ProviderName } from "./ai-client.ts";
+import type { AIResult, ProviderAttempt } from "./ai-client.ts";
 import { aiTryProvider, parseAIJson, PROVIDER_CHAIN, type AIClientOptions } from "./ai-client.ts";
 import {
   effectivePlan,
@@ -162,6 +162,7 @@ export async function runGeneration(req: GenerationRequest, deps: GenerationDeps
           ai_provider: existing.ai_provider ?? null,
           ai_model: existing.ai_model ?? null,
           cached: true,
+          from_cache: true,
           idempotent: true,
           file_path: existing.file_path ?? null,
           output: { ...output, prompt_version: req.promptVersion },

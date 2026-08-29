@@ -196,7 +196,7 @@ export function validateCoverLetter(
 
 export function validateOutreach(
   parsed: Record<string, unknown>,
-  expectedTone: string,
+  expectedTone: string = "natural",
 ): string | null {
   if (!parsed || typeof parsed !== "object") return "output is not an object";
   const violations: string[] = [];
