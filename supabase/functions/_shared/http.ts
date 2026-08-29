@@ -1,6 +1,17 @@
 /**
  * HTTP helpers shared by all Edge Functions.
  * Error codes are stable and documented in docs/api/README.md.
+ *
+ * Error shape (Phase 4 unified format):
+ * {
+ *   error: {
+ *     code: string,       // machine-readable stable code
+ *     message: string,    // developer message
+ *     user_action?: string, // optional human-facing guidance
+ *     request_id: string, // crypto.randomUUID() for tracing
+ *     timestamp: string,  // ISO 8601
+ *   }
+ * }
  */
 
 export const CORS_HEADERS = {
@@ -20,29 +31,53 @@ export function json(body: unknown, init: ResponseInit = { status: 200 }): Respo
   });
 }
 
-export function error(status: number, code: string, message: string): Response {
-  return json({ error: { code, message } }, { status });
+export function structuredError(
+  status: number,
+  code: string,
+  message: string,
+  userAction?: string,
+): Response {
+  const body: Record<string, unknown> = {
+    error: {
+      code,
+      message,
+      request_id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+    },
+  };
+  if (userAction) {
+    (body.error as Record<string, unknown>).user_action = userAction;
+  }
+  return json(body, { status });
+}
+
+export function error(status: number, code: string, message: string, userAction?: string): Response {
+  return structuredError(status, code, message, userAction);
 }
 
 export function unauthorized(message = "Missing or invalid Authorization header"): Response {
-  return error(401, "unauthorized", message);
+  return error(401, "unauthorized", message, "Please sign in and try again.");
 }
 
-export function badRequest(message: string): Response {
-  return error(400, "bad_request", message);
+export function badRequest(message: string, userAction?: string): Response {
+  return error(400, "bad_request", message, userAction);
 }
 
 export function forbidden(message: string): Response {
-  return error(403, "forbidden", message);
+  return error(403, "forbidden", message, "You do not have permission to perform this action.");
 }
 
 /** 402 = usage limit reached (distinct from 429 rate limiting). */
 export function paymentRequired(message: string): Response {
-  return error(402, "usage_limit_reached", message);
+  return error(402, "usage_limit_reached", message, "Upgrade your plan to continue using this feature.");
+}
+
+export function notFound(message: string): Response {
+  return error(404, "not_found", message);
 }
 
 export function serverError(message = "Internal error"): Response {
-  return error(500, "internal_error", message);
+  return error(500, "internal_error", message, "An unexpected error occurred. Please try again in a few moments.");
 }
 
 export function handleOptions(req: Request): Response | null {
@@ -51,3 +86,4 @@ export function handleOptions(req: Request): Response | null {
   }
   return null;
 }
+

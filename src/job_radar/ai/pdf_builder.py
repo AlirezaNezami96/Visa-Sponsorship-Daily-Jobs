@@ -21,7 +21,10 @@ import re
 from pathlib import Path
 from typing import Any
 
-from fpdf import FPDF
+try:
+    from fpdf import FPDF
+except ImportError:
+    FPDF = None  # type: ignore[assignment, misc]
 
 # Bundled OFL fonts (Poppins + Inter statics). Resolved locally — this module
 # deliberately imports nothing else from job_radar so the engine container can
