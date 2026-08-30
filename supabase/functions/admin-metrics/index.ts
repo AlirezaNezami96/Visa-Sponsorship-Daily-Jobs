@@ -117,7 +117,7 @@ if (typeof Deno !== "undefined" && typeof Deno.serve === "function") {
         admin
           .from("processing_quarantine")
           .select("id, job_id, stage, reason, attempts, created_at, resolved_at")
-          .is_("resolved_at", null)
+          .is("resolved_at", null)
           .order("created_at", { ascending: false })
           .limit(50),
       ]);

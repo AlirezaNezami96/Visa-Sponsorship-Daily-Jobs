@@ -87,3 +87,9 @@ export function handleOptions(req: Request): Response | null {
   return null;
 }
 
+export const jsonResponse = json;
+
+export function errorResponse(code: string, message: string, status = 400): Response {
+  return error(status, code.toLowerCase(), message);
+}
+

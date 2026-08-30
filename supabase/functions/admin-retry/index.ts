@@ -86,7 +86,7 @@ if (typeof Deno !== "undefined" && typeof Deno.serve === "function") {
             .from("processing_quarantine")
             .update({ resolved_at: nowIso })
             .eq("job_id", jobId)
-            .is_("resolved_at", null);
+            .is("resolved_at", null);
         }
 
         return json({
@@ -109,7 +109,7 @@ if (typeof Deno !== "undefined" && typeof Deno.serve === "function") {
             .from("processing_quarantine")
             .update({ resolved_at: nowIso })
             .eq("job_id", jobId)
-            .is_("resolved_at", null);
+            .is("resolved_at", null);
         }
 
         return json({
