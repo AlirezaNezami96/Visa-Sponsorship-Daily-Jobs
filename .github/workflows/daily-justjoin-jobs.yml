@@ -9,9 +9,10 @@ concurrency:
   cancel-in-progress: false
 
 on:
-  schedule:
-    # 05:00 UTC = 08:30 AM IRST (Iran Standard Time)
-    - cron: "0 5 * * *"
+  # Automated schedule disabled per project configuration
+  # schedule:
+  #   # 05:00 UTC = 08:30 AM IRST (Iran Standard Time)
+  #   - cron: "0 5 * * *"
   workflow_dispatch:
     inputs:
       dry_run:

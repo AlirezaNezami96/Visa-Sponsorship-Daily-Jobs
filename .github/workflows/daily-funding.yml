@@ -9,8 +9,9 @@ concurrency:
   cancel-in-progress: false
 
 on:
-  schedule:
-    - cron: "30 5 * * *"
+  # Automated schedule disabled per project configuration
+  # schedule:
+  #   - cron: "30 5 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
