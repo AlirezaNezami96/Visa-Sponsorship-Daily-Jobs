@@ -86,17 +86,10 @@ def generate_job_summary(job: Dict[str, Any], client: Any = None) -> str:
     desc = job.get("description_text") or job.get("description") or ""
     skills = job.get("skills") or []
 
+    # Try OpenRouter / Groq / Gemini if keys are available
     openrouter_key = os.getenv("OPENROUTER_API_KEY")
     groq_key = os.getenv("GROQ_API_KEY")
-
-    # Check circuit breakers if client is available
-    cb = None
-    if client:
-        try:
-            from job_radar.pipeline.circuit_breaker import CircuitBreaker
-            cb = CircuitBreaker(client)
-        except Exception:
-            pass
+    gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEYS")
 
     prompt = (
         f"Summarize this job in 2 concise sentences for social media. "
@@ -107,63 +100,68 @@ def generate_job_summary(job: Dict[str, Any], client: Any = None) -> str:
         f"Description: {desc[:2500]}"
     )
 
-    # 1. Try Groq
-    if groq_key and (not cb or not cb.is_open("groq_social")):
-        try:
-            import requests
-            resp = requests.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
-                json={
-                    "model": "llama-3.3-70b-versatile",
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 120,
-                    "temperature": 0.3,
-                },
-                timeout=4,
-            )
-            if resp.status_code == 200:
+    # Circuit breaker (optional, only if client provided)
+    cb = None
+    if client:
+        from job_radar.pipeline.circuit_breaker import CircuitBreaker
+        from job_radar.pipeline.metrics import record_metric
+        cb = CircuitBreaker(client)
+
+    # 1. Try Groq (fastest)
+    if groq_key:
+        cb_name = "groq_social"
+        if cb is None or not cb.is_open(cb_name):
+            try:
+                import requests
+                resp = requests.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
+                    json={
+                        "model": "llama-3.3-70b-versatile",
+                        "messages": [{"role": "user", "content": prompt}],
+                        "max_tokens": 120,
+                        "temperature": 0.3,
+                    },
+                    timeout=8,
+                )
+                if resp.status_code == 200:
+                    text = resp.json()["choices"][0]["message"]["content"].strip()
+                    if len(text) >= 30:
+                        if cb:
+                            cb.record_success(cb_name)
+                        return _trim_summary(text, 280)
+            except Exception as e:
+                logger.debug("Groq social summary failed: %s", e)
                 if cb:
-                    cb.record_success("groq_social")
-                text = resp.json()["choices"][0]["message"]["content"].strip()
-                if len(text) >= 30:
-                    return _trim_summary(text, 280)
-            else:
-                if cb:
-                    cb.record_failure("groq_social")
-        except Exception as e:
-            if cb:
-                cb.record_failure("groq_social")
-            logger.debug("Groq social summary failed: %s", e)
+                    cb.record_failure(cb_name)
 
     # 2. Try OpenRouter
-    if openrouter_key and (not cb or not cb.is_open("openrouter_social")):
-        try:
-            import requests
-            resp = requests.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={"Authorization": f"Bearer {openrouter_key}", "Content-Type": "application/json"},
-                json={
-                    "model": "meta-llama/llama-3.3-70b-instruct:free",
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 120,
-                    "temperature": 0.3,
-                },
-                timeout=4,
-            )
-            if resp.status_code == 200:
+    if openrouter_key:
+        cb_name = "openrouter_social"
+        if cb is None or not cb.is_open(cb_name):
+            try:
+                import requests
+                resp = requests.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {openrouter_key}", "Content-Type": "application/json"},
+                    json={
+                        "model": "meta-llama/llama-3.3-70b-instruct:free",
+                        "messages": [{"role": "user", "content": prompt}],
+                        "max_tokens": 120,
+                        "temperature": 0.3,
+                    },
+                    timeout=8,
+                )
+                if resp.status_code == 200:
+                    text = resp.json()["choices"][0]["message"]["content"].strip()
+                    if len(text) >= 30:
+                        if cb:
+                            cb.record_success(cb_name)
+                        return _trim_summary(text, 280)
+            except Exception as e:
+                logger.debug("OpenRouter social summary failed: %s", e)
                 if cb:
-                    cb.record_success("openrouter_social")
-                text = resp.json()["choices"][0]["message"]["content"].strip()
-                if len(text) >= 30:
-                    return _trim_summary(text, 280)
-            else:
-                if cb:
-                    cb.record_failure("openrouter_social")
-        except Exception as e:
-            if cb:
-                cb.record_failure("openrouter_social")
-            logger.debug("OpenRouter social summary failed: %s", e)
+                    cb.record_failure(cb_name)
 
     # 3. Deterministic fallback
     return _extractive_summary(desc, skills)

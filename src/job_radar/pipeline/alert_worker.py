@@ -123,6 +123,8 @@ def _send_alert_channels(
 ) -> dict[str, bool]:
     """Send notifications on all configured channels for an alert with retry and circuit breakers."""
     from job_radar.notifications.channels import send_telegram, send_discord, send_slack
+    from job_radar.pipeline.circuit_breaker import CircuitBreaker
+    from job_radar.pipeline.metrics import record_metric
 
     channels = alert.get("channels", {})
     results: dict[str, bool] = {}
@@ -143,34 +145,73 @@ def _send_alert_channels(
     if url:
         text += f"\n\nApply → {url}"
 
+    cb = CircuitBreaker(client)
+
     # Telegram
     if channels.get("telegram"):
-        results["telegram"] = _send_channel_with_retry(
-            client, "telegram", lambda: send_telegram(text)
-        )
+        cb_name = "alert:telegram"
+        if not cb.is_open(cb_name):
+            try:
+                results["telegram"] = send_telegram(text)
+                cb.record_success(cb_name)
+            except Exception as e:
+                logger.warning("Alert telegram failed: %s", e)
+                results["telegram"] = False
+                cb.record_failure(cb_name)
+        else:
+            results["telegram"] = False
+            record_metric(client, f"circuit:open:{cb_name}", True, 0)
 
     # Discord
     if channels.get("discord"):
-        results["discord"] = _send_channel_with_retry(
-            client, "discord", lambda: send_discord(text)
-        )
+        cb_name = "alert:discord"
+        if not cb.is_open(cb_name):
+            try:
+                results["discord"] = send_discord(text)
+                cb.record_success(cb_name)
+            except Exception as e:
+                logger.warning("Alert discord failed: %s", e)
+                results["discord"] = False
+                cb.record_failure(cb_name)
+        else:
+            results["discord"] = False
+            record_metric(client, f"circuit:open:{cb_name}", True, 0)
 
     # Slack
     if channels.get("slack"):
-        results["slack"] = _send_channel_with_retry(
-            client, "slack", lambda: send_slack(text)
-        )
+        cb_name = "alert:slack"
+        if not cb.is_open(cb_name):
+            try:
+                results["slack"] = send_slack(text)
+                cb.record_success(cb_name)
+            except Exception as e:
+                logger.warning("Alert slack failed: %s", e)
+                results["slack"] = False
+                cb.record_failure(cb_name)
+        else:
+            results["slack"] = False
+            record_metric(client, f"circuit:open:{cb_name}", True, 0)
 
     # Email
     if channels.get("email"):
-        email = channels.get("email_address") or alert.get("user_email")
-        if email:
-            from job_radar.notifications.email import send_job_alert_email
-            results["email"] = _send_channel_with_retry(
-                client, "email", lambda: send_job_alert_email(email, title, text)
-            )
+        cb_name = "alert:email"
+        if not cb.is_open(cb_name):
+            try:
+                from job_radar.notifications.email import send_job_alert_email
+                email = channels.get("email_address") or alert.get("user_email")
+                if email:
+                    results["email"] = send_job_alert_email(email, title, text)
+                    cb.record_success(cb_name)
+                else:
+                    results["email"] = False
+                    cb.record_failure(cb_name)
+            except Exception as e:
+                logger.warning("Alert email failed: %s", e)
+                results["email"] = False
+                cb.record_failure(cb_name)
         else:
             results["email"] = False
+            record_metric(client, f"circuit:open:{cb_name}", True, 0)
 
     return results
 

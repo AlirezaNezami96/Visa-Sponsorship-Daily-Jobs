@@ -293,13 +293,25 @@ def enrich_job(client: Any, job_id: str) -> dict[str, Any]:
                 .execute()
             )
             if co_resp and co_resp.data:
-                logo_url = _fetch_company_logo(
-                    client,
-                    co_resp.data.get("name", ""),
-                    co_resp.data.get("website"),
-                )
-                if logo_url:
-                    update["company_logo_url"] = logo_url
+                # Circuit breaker for logo fetch
+                from job_radar.pipeline.circuit_breaker import CircuitBreaker
+                cb = CircuitBreaker(client)
+                cb_name = "s2_favicons"
+
+                if not cb.is_open(cb_name):
+                    logo_url = _fetch_company_logo(
+                        client,
+                        co_resp.data.get("name", ""),
+                        co_resp.data.get("website"),
+                    )
+                    if logo_url:
+                        update["company_logo_url"] = logo_url
+                        cb.record_success(cb_name)
+                    else:
+                        cb.record_failure(cb_name)
+                else:
+                    record_metric(client, f"circuit:open:{cb_name}", True, 0)
+                    logger.debug("Circuit open for %s, skipping logo fetch", cb_name)
     except Exception as e:
         errors.append(f"logo: {e}")
 

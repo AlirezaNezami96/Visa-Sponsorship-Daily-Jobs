@@ -36,10 +36,9 @@ VALID_TRANSITIONS = {
     "pending": {"processing", "manual_review"},
     "processing": {"done", "failed", "manual_review"},
     "failed": {"pending", "quarantined"},
-    "manual_review": {"done", "failed"},
-    # Terminal states — no transitions out
     "done": set(),
     "quarantined": set(),
+    "manual_review": {"done", "failed"},
 }
 
 
