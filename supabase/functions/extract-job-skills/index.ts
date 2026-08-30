@@ -19,9 +19,13 @@ const MAX_BATCH = 200;
 
 // Inline rule-based skill extraction (mirrors Python skill_extractor.py).
 // Used here so the function can operate without the Python engine.
+// Normalization parity (spec §3.2): NodeJS/Node/Node.js -> Node.js,
+// ML -> Machine Learning, AI -> Artificial Intelligence, NLP -> Natural
+// Language Processing, Python 3.9 -> Python, compounds kept compound.
 const SKILL_PATTERNS: [RegExp, string][] = [
   // Languages
-  [/\bPython\b/i, "Python"],
+  [/\bPython\s?3(?:\.\d+)?\b|\bPython\b/i, "Python"],
+  [/\bPython3?\b/i, "Python"],
   [/\bJavaScript\b/i, "JavaScript"],
   [/\bTypeScript\b/i, "TypeScript"],
   [/\bJava\b(?! ?Script)/i, "Java"],
@@ -36,6 +40,7 @@ const SKILL_PATTERNS: [RegExp, string][] = [
   [/\bScala\b/i, "Scala"],
   [/\bSQL\b/i, "SQL"],
   [/\bBash\b/i, "Bash"],
+  [/\bNode(?:\.js|JS)?\b/i, "Node.js"],
   // Frameworks / Libraries
   [/\bReact(?:\.js)?\b/i, "React"],
   [/\bVue(?:\.js)?\b/i, "Vue.js"],
@@ -69,22 +74,40 @@ const SKILL_PATTERNS: [RegExp, string][] = [
   [/\bBigQuery\b/i, "BigQuery"],
   // DevOps
   [/\bDocker\b/i, "Docker"],
-  [/\bKubernetes\b/i, "Kubernetes"],
+  [/\bKubernetes\b|\bK8s\b/i, "Kubernetes"],
   [/\bGitHub Actions\b/i, "GitHub Actions"],
   [/\bCI\/CD\b/i, "CI/CD"],
-  // AI/ML
+  // AI/ML (acronyms expand to full names)
   [/\bLLM\b/i, "LLM"],
   [/\bRAG\b/i, "RAG"],
   [/\bOpenAI\b/i, "OpenAI"],
   [/\bGemini\b/i, "Gemini"],
+  [/\bML\b|\bMachine Learning\b/i, "Machine Learning"],
+  [/\bAI\b|\bArtificial Intelligence\b/i, "Artificial Intelligence"],
+  [/\bNLP\b|\bNatural Language Processing\b/i, "Natural Language Processing"],
+  [/\bDeep Learning\b/i, "Deep Learning"],
+  [/\bComputer Vision\b/i, "Computer Vision"],
   // Tools
   [/\bGraphQL\b/i, "GraphQL"],
   [/\bREST(?:\s+API)?\b/i, "REST API"],
   [/\bgRPC\b/i, "gRPC"],
   [/\bApache\s+Kafka\b/i, "Apache Kafka"],
+  // Soft skills
   [/\bAgile\b/i, "Agile"],
   [/\bScrum\b/i, "Scrum"],
+  [/\bLeadership\b/i, "Leadership"],
+  [/\bMentoring\b/i, "Mentoring"],
+  [/\bCommunication\b/i, "Communication"],
+  [/\bCollaboration\b/i, "Collaboration"],
+  [/\bProblem\s+solving\b/i, "Problem solving"],
 ];
+
+// Compound absorption (mirrors Python): when "react native" is found,
+// "react" is absorbed; "ruby on rails" absorbs "ruby".
+const COMPOUND_COMPONENTS: Record<string, string[]> = {
+  "react native": ["react"],
+  "ruby on rails": ["ruby", "rails"],
+};
 
 function extractSkillsInline(title: string, description: string): string[] {
   const text = [title, description].join(" ");
@@ -92,6 +115,13 @@ function extractSkillsInline(title: string, description: string): string[] {
   for (const [pattern, canonical] of SKILL_PATTERNS) {
     if (pattern.test(text)) {
       found.set(canonical.toLowerCase(), canonical);
+    }
+  }
+  // Compound absorption: remove components whose compound is present
+  const present = new Set(found.keys());
+  for (const [compound, components] of Object.entries(COMPOUND_COMPONENTS)) {
+    if (present.has(compound)) {
+      for (const c of components) found.delete(c);
     }
   }
   return [...found.values()];

@@ -3,12 +3,17 @@
 Extraction strategy (in order):
   1. pdfminer.six — handles text-based PDFs with best layout fidelity.
   2. pypdf fallback — lighter, handles more encryption variants.
-  3. Scanned-PDF detection: if extracted text < 50 chars, mark as needing OCR.
+  3. OCR fallback — if both text extractors yield < 50 chars and an OCR
+     engine is installed (pytesseract + pdf2image + tesseract binary),
+     rasterize and OCR the first pages. When OCR is unavailable the
+     result is flagged is_scanned with a clear warning (never crashes).
 
 Hard limits enforced here:
   - Max file size: 10 MB
   - Min text after extraction: 50 chars (else suspected scanned PDF)
   - Password-protected PDFs are detected and rejected immediately.
+  - OCR is capped (first 10 pages, 60s budget) so a hostile file can't
+    burn unbounded CPU.
 """
 from __future__ import annotations
 
@@ -20,6 +25,8 @@ logger = logging.getLogger(__name__)
 
 MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
 MIN_TEXT_CHARS = 50
+MAX_OCR_PAGES = 10
+MAX_OCR_SECONDS = 60.0
 
 
 @dataclass
@@ -91,9 +98,21 @@ def extract_text_from_pdf(data: bytes) -> ExtractionResult:
             warnings.append(f"Fallback extractor failed: {exc!s:.100}")
 
     is_scanned = len(text.strip()) < MIN_TEXT_CHARS
+
+    # --- Strategy 3: OCR fallback for scanned PDFs ---
+    if is_scanned:
+        ocr_text = _try_ocr(data, warnings)
+        if ocr_text.strip():
+            text = ocr_text
+            is_scanned = False
+            warnings.append(
+                "This PDF appears to be scanned; text was recovered via OCR. "
+                "For best results, upload a text-based PDF or DOCX."
+            )
+
     if is_scanned:
         warnings.append(
-            "PDF appears to be scanned (image-only). Text extraction yielded very little content. "
+            "PDF appears to be scanned (image-only) and no OCR engine is available. "
             "Please upload a text-based PDF or a DOCX version of your resume for best results."
         )
 
@@ -103,6 +122,42 @@ def extract_text_from_pdf(data: bytes) -> ExtractionResult:
         is_scanned=is_scanned,
         warnings=warnings,
     )
+
+
+def _try_ocr(data: bytes, warnings: list[str]) -> str:
+    """Attempt OCR on a scanned PDF. Returns extracted text ('' on any failure).
+
+    Requires optional deps: pdf2image (poppler) + pytesseract (tesseract).
+    Any missing dependency, missing binary, or timeout degrades gracefully
+    to the clear-error path.
+    """
+    import time as _time
+
+    started = _time.monotonic()
+    try:
+        from pdf2image import convert_from_bytes  # type: ignore[import]
+        import pytesseract  # type: ignore[import]
+    except ImportError as exc:
+        logger.debug("OCR unavailable: %s", exc)
+        return ""
+
+    try:
+        images = convert_from_bytes(data, first_page=1, last_page=MAX_OCR_PAGES, dpi=200)
+    except Exception as exc:
+        warnings.append(f"OCR rasterization failed: {exc!s:.80}")
+        return ""
+
+    parts: list[str] = []
+    for i, img in enumerate(images):
+        if _time.monotonic() - started > MAX_OCR_SECONDS:
+            warnings.append(f"OCR stopped after {MAX_OCR_SECONDS:.0f}s (page {i + 1}).")
+            break
+        try:
+            parts.append(pytesseract.image_to_string(img))
+        except Exception as exc:
+            warnings.append(f"OCR page {i + 1} failed: {exc!s:.80}")
+
+    return "\n".join(parts)
 
 
 def _extract_with_pdfminer(data: bytes, warnings: list[str]) -> tuple[str, int]:

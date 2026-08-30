@@ -10,6 +10,7 @@
  *
  * Query params:
  *   cursor        string    — opaque cursor from previous response.next_cursor
+ *   offset        number    — offset-based pagination (alternative to cursor)
  *   limit         number    — page size, 1–50, default 20
  *   country       string    — ISO code or country name filter
  *   work_mode     string    — remote|hybrid|onsite
@@ -22,6 +23,7 @@
  * {
  *   jobs: Job[],
  *   next_cursor: string|null,  // null = end of results
+ *   next_offset: number|null,  // offset mode: index of the next page
  *   has_more: boolean,
  *   total_in_filter: number,   // approximate count (for UI indicator)
  *   scored: boolean,           // true if match scores are meaningful
@@ -33,6 +35,19 @@ import { handleOptions, json, badRequest, serverError } from "../_shared/http.ts
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
+const FIRST_PAGE_CACHE_TTL_MS = 5 * 60 * 1000; // spec §8.2: 5 minutes
+
+// In-instance first-page cache: key = filter signature, value = first-page
+// rows + timestamp. New jobs appear within the TTL refresh. Per-isolate,
+// so it only accelerates hot filter combinations on warm instances.
+const firstPageCache = new Map<string, { at: number; rows: unknown[] }>();
+
+function cacheKey(params: URLSearchParams, sort: string): string {
+  return ["country", "work_mode", "visa_verified", "keyword", "min_salary", "sort"]
+    .map((k) => `${k}=${params.get(k) ?? ""}`)
+    .join("&") + `|${sort}`;
+}
+
 const JOB_COLUMNS = [
   "id", "title", "company", "company_id", "country", "country_code",
   "work_mode", "location", "posted_at", "apply_url", "url",
@@ -46,7 +61,7 @@ interface Cursor {
   id: string;
 }
 
-function parseCursor(raw: string | null): Cursor | null {
+export function parseCursor(raw: string | null): Cursor | null {
   if (!raw) return null;
   try {
     const decoded = atob(raw);
@@ -58,14 +73,21 @@ function parseCursor(raw: string | null): Cursor | null {
   return null;
 }
 
-function encodeCursor(postedAt: string, id: string): string {
+export function encodeCursor(postedAt: string, id: string): string {
   return btoa(JSON.stringify({ posted_at: postedAt, id }));
 }
 
-function parseLimit(raw: string | null): number {
+export function parseLimit(raw: string | null): number {
   const n = parseInt(raw ?? "", 10);
   if (Number.isNaN(n) || n < 1) return DEFAULT_LIMIT;
   return Math.min(n, MAX_LIMIT);
+}
+
+export function parseOffset(raw: string | null): number | null {
+  if (raw === null) return null;
+  const n = parseInt(raw, 10);
+  if (Number.isNaN(n) || n < 0) return 0;
+  return n;
 }
 
 function applyFilters(
@@ -78,9 +100,13 @@ function applyFilters(
   // Active jobs only
   query = query.eq("status", "active");
 
-  // Cursor pagination (posted_at DESC, id DESC for stability)
+  // Cursor pagination with full (posted_at, id) tie-break: rows sharing the
+  // same posted_at are excluded via OR so no page skips or repeats them.
   if (cursor) {
-    query = query.lt("posted_at", cursor.posted_at);
+    query = query.or(
+      `posted_at.lt.${cursor.posted_at},` +
+        `and(posted_at.eq.${cursor.posted_at},id.lt.${cursor.id})`,
+    );
   }
 
   // Country filter
@@ -136,7 +162,9 @@ Deno.serve(async (req) => {
   const params = url.searchParams;
   const limit = parseLimit(params.get("limit"));
   const cursor = parseCursor(params.get("cursor"));
+  const offset = parseOffset(params.get("offset"));
   const sortParam = params.get("sort");
+  const useOffsetMode = offset !== null && !cursor;
 
   try {
     // ── Load profile (optional auth) ───────────────────────────────────────
@@ -162,31 +190,101 @@ Deno.serve(async (req) => {
 
     // ── Fetch jobs ─────────────────────────────────────────────────────────
     const admin = createAdminClient();
-    // deno-lint-ignore no-explicit-any
-    let query: any = admin.from("jobs").select(JOB_COLUMNS);
-    query = applyFilters(query, params, cursor);
 
-    // Fetch limit+1 to know if there's a next page
-    const fetchLimit = limit + 1;
-    query = query
-      .order("posted_at", { ascending: false })
-      .order("id", { ascending: false })
-      .limit(fetchLimit);
+    const wantsDefaultSort = sortParam === "match_score" ||
+      (!sortParam && scored);
+    const effectiveSort = sortParam ?? (scored ? "match_score" : "posted_at");
+    const cacheK = cacheKey(params, effectiveSort);
+    const isCacheablePage = !cursor && !useOffsetMode && limit === DEFAULT_LIMIT;
 
-    const { data: rows, error: fetchError } = await query;
-    if (fetchError) {
-      console.error("search-jobs fetch error:", fetchError.message);
-      return serverError("Failed to fetch jobs");
+    // First-page cache (spec §8.2): only the default-size, unfiltered-by-page
+    // first page of each filter combination is cached for 5 minutes.
+    let cachedRows: unknown[] | null = null;
+    if (isCacheablePage) {
+      const hit = firstPageCache.get(cacheK);
+      if (hit && Date.now() - hit.at < FIRST_PAGE_CACHE_TTL_MS) {
+        cachedRows = hit.rows;
+      }
     }
 
-    const allRows = ((rows ?? []) as unknown) as Array<Record<string, unknown>>;
+    let allRows: Array<Record<string, unknown>>;
+    if (cachedRows) {
+      allRows = cachedRows as Array<Record<string, unknown>>;
+    } else {
+      // deno-lint-ignore no-explicit-any
+      let query: any = admin.from("jobs").select(JOB_COLUMNS);
+      query = applyFilters(query, params, cursor);
+
+      if (useOffsetMode) {
+        query = query.range(offset!, offset! + limit);
+      } else {
+        // Fetch limit+1 to know if there's a next page
+        query = query.limit(limit + 1);
+      }
+
+      // Always order deterministically by posted_at DESC, id DESC for tie-breaking
+      query = query
+        .order("posted_at", { ascending: false })
+        .order("id", { ascending: false });
+
+      const { data: rows, error: fetchError } = await query;
+      if (fetchError) {
+        console.error("search-jobs fetch error:", fetchError.message);
+        return serverError("Failed to fetch jobs");
+      }
+      allRows = ((rows ?? []) as unknown) as Array<Record<string, unknown>>;
+
+      if (isCacheablePage) {
+        firstPageCache.set(cacheK, { at: Date.now(), rows: allRows });
+        // Bound the cache so a hostile variety of filters can't grow it
+        if (firstPageCache.size > 200) {
+          const oldest = firstPageCache.keys().next().value;
+          if (oldest !== undefined) firstPageCache.delete(oldest);
+        }
+      }
+    }
+
     const hasMore = allRows.length > limit;
     const jobs = allRows.slice(0, limit);
 
-    // ── Match scoring ──────────────────────────────────────────────────────
+    // ── Match scoring & user_job_scores cache read ───────────────────────────
     let scoredJobs = jobs;
     if (scored && profile) {
+      // Check pre-calculated scores in user_job_scores table
+      const jobIds = jobs.map((j) => String(j.id));
+      const scoreMap = new Map<string, { score: number; match_label: string }>();
+
+      if (userId && jobIds.length > 0) {
+        try {
+          const { data: cachedScores } = await admin
+            .from("user_job_scores")
+            .select("job_id, score, match_label")
+            .eq("user_id", userId)
+            .in("job_id", jobIds);
+
+          if (cachedScores) {
+            for (const cs of cachedScores) {
+              scoreMap.set(String(cs.job_id), {
+                score: Number(cs.score),
+                match_label: String(cs.match_label),
+              });
+            }
+          }
+        } catch {
+          // DB score cache read failure is non-fatal; fall back to on-the-fly calculation
+        }
+      }
+
       scoredJobs = jobs.map((job) => {
+        const jid = String(job.id);
+        const fromDb = scoreMap.get(jid);
+        if (fromDb) {
+          return {
+            ...job,
+            resume_match_score: fromDb.score,
+            match_label: fromDb.match_label,
+          };
+        }
         const matchScore = computeMatchScoreEdge(profile, job);
         return {
           ...job,
@@ -196,7 +294,7 @@ Deno.serve(async (req) => {
       });
 
       // Sort by match score if requested or if no cursor (first page with match sort)
-      const wantsMatchSort = sortParam === "match_score" || (!sortParam && !cursor && scored);
+      const wantsMatchSort = wantsDefaultSort;
       if (wantsMatchSort) {
         scoredJobs = [...scoredJobs].sort(
           (a, b) => ((b.resume_match_score as number) ?? 0) - ((a.resume_match_score as number) ?? 0),
@@ -204,9 +302,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Next cursor ────────────────────────────────────────────────────────
+    // ── Next cursor / offset ────────────────────────────────────────────────
     let nextCursor: string | null = null;
-    if (hasMore && jobs.length > 0) {
+    if (!useOffsetMode && hasMore && jobs.length > 0) {
       const last = jobs[jobs.length - 1];
       const lastPostedAt = String(last.posted_at ?? "");
       const lastId = String(last.id ?? "");
@@ -214,6 +312,7 @@ Deno.serve(async (req) => {
         nextCursor = encodeCursor(lastPostedAt, lastId);
       }
     }
+    const nextOffset = useOffsetMode && hasMore ? offset! + limit : null;
 
     // ── Approximate count (for UI "Showing N of ~M jobs") ─────────────────
     let totalInFilter = 0;
@@ -227,14 +326,19 @@ Deno.serve(async (req) => {
       // Count failure is non-fatal
     }
 
+    const headers = !userId
+      ? { "Cache-Control": "public, max-age=300, stale-while-revalidate=60" }
+      : undefined;
+
     return json({
       jobs: scoredJobs,
       next_cursor: nextCursor,
+      next_offset: nextOffset,
       has_more: hasMore,
       total_in_filter: totalInFilter,
       scored,
       user_id: userId,
-    });
+    }, { headers });
   } catch (err) {
     console.error("search-jobs error:", err);
     return serverError();
@@ -242,64 +346,140 @@ Deno.serve(async (req) => {
 });
 
 // ── Inline match scoring (no Python engine call for performance) ───────────
+// Weights mirror src/job_radar/jobs/scorer.py exactly (spec §3.2):
+// title 40 + skills 50 + experience 10 (base 100), location +10 bonus,
+// visa +5 bonus, capped at 100. Rare-skill matches weigh 1.5x inside the
+// skills component (both runtimes use the same COMMON_SKILLS set).
 
-function computeMatchScoreEdge(profile: Record<string, unknown>, job: Record<string, unknown>): number {
+const COMMON_SKILLS = new Set([
+  "git", "agile", "sql", "rest api", "communication", "docker",
+  "javascript", "python", "aws", "leadership", "mentoring",
+  "teamwork", "collaboration", "problem solving", "time management",
+  "scrum", "project management",
+]);
+
+const SKILL_SYNONYMS: Record<string, string> = {
+  js: "javascript",
+  ts: "typescript",
+  node: "nodejs",
+  "node js": "nodejs",
+  nodejs: "nodejs",
+  reactjs: "react",
+  "react js": "react",
+  vuejs: "vue",
+  "vue js": "vue",
+  angularjs: "angular",
+  "angular js": "angular",
+  nextjs: "nextjs",
+  "next js": "nextjs",
+  nuxtjs: "nuxtjs",
+  "nuxt js": "nuxtjs",
+  k8s: "kubernetes",
+  kube: "kubernetes",
+  postgres: "postgresql",
+  psql: "postgresql",
+  aws: "aws",
+  "amazon web services": "aws",
+  gcp: "gcp",
+  "google cloud": "gcp",
+  "google cloud platform": "gcp",
+  golang: "go",
+  cpp: "cpp",
+  csharp: "csharp",
+  dotnet: "dotnet",
+  ml: "machine learning",
+  ai: "artificial intelligence",
+  nlp: "natural language processing",
+  cicd: "cicd",
+  "ci cd": "cicd",
+};
+
+function normToken(s: string): string {
+  const cleaned = s.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+  const base = cleaned.replace(/\s*v?\d+(\.\d+)*\b/, "").trim();
+  const target = base || cleaned;
+  return SKILL_SYNONYMS[target] ?? SKILL_SYNONYMS[cleaned] ?? target;
+}
+
+function normSet(items: string[]): Set<string> {
+  return new Set(items.map(normToken).filter(Boolean));
+}
+
+export function computeMatchScoreEdge(profile: Record<string, unknown>, job: Record<string, unknown>): number {
   const userSkills = normSet((profile.skills_cache ?? []) as string[]);
   const jobSkills = normSet((job.skills ?? []) as string[]);
   const userTitles = ((profile.job_titles ?? []) as string[]).map((t) => t.toLowerCase());
   const jobTitle = String(job.title ?? "").toLowerCase();
+  const userYears = (profile.experience_years as number | null) ?? null;
 
   let score = 0;
 
-  // Skills (50 pts)
+  // Skills (50 pts, rarity-weighted)
   if (jobSkills.size > 0 && userSkills.size > 0) {
-    const intersection = new Set([...userSkills].filter((s) => jobSkills.has(s)));
-    const coverage = intersection.size / jobSkills.size;
-    score += Math.round(coverage * 50);
+    let matchedWeight = 0;
+    let totalWeight = 0;
+    for (const s of jobSkills) {
+      const w = COMMON_SKILLS.has(s) ? 1.0 : 1.5;
+      totalWeight += w;
+      if (userSkills.has(s)) matchedWeight += w;
+    }
+    score += Math.round((matchedWeight / totalWeight) * 50);
   } else if (jobSkills.size === 0) {
     score += 25; // neutral when job has no skills listed
   }
 
-  // Title (20 pts)
+  // Title (40 pts)
   if (userTitles.length > 0 && jobTitle) {
     const titleWords = new Set(jobTitle.split(/\s+/));
     let titleScore = 0;
     for (const t of userTitles) {
-      if (t === jobTitle) { titleScore = 20; break; }
-      if (t.includes(jobTitle) || jobTitle.includes(t)) { titleScore = Math.max(titleScore, 17); }
+      if (t === jobTitle) { titleScore = 40; break; }
+      if (t.includes(jobTitle) || jobTitle.includes(t)) { titleScore = Math.max(titleScore, 36); }
       const tWords = new Set(t.split(/\s+/));
       const tOverlap = [...tWords].filter((w) => titleWords.has(w)).length;
-      if (tOverlap > 0) titleScore = Math.max(titleScore, Math.round((tOverlap / Math.max(tWords.size, titleWords.size)) * 18));
+      if (tOverlap > 0) titleScore = Math.max(titleScore, Math.round((tOverlap / Math.max(tWords.size, titleWords.size)) * 32));
     }
     score += titleScore;
   } else {
     score += 10; // neutral
   }
 
-  // Visa (10 pts)
-  if (job.visa_sponsorship_verified === true) score += 10;
-  else if ((job.visa_sponsorship_confidence as number ?? 0) >= 70) score += 8;
-  else if ((job.visa_sponsorship_confidence as number ?? 0) >= 50) score += 5;
+  // Experience (10 pts) — mirrors Python score_experience_level
+  const minYears = (job.min_experience_years as number | null) ?? null;
+  if (userYears === null || (minYears === null)) {
+    score += 5; // neutral when unknown
+  } else {
+    const maxYears = (job.max_experience_years as number | null) ?? 20;
+    if (minYears <= userYears && userYears <= maxYears) score += 10;
+    else if (userYears < minYears) {
+      const gap = minYears - userYears;
+      score += gap <= 1 ? 8 : gap <= 2 ? 5 : 0;
+    } else {
+      const gap = userYears - maxYears;
+      score += gap <= 2 ? 9 : Math.max(10 - gap, 0);
+    }
+  }
 
-  // Work mode (10 pts)
+  // Work mode (5 of the +10 location bonus)
   const preferredModes = ((profile.preferred_work_modes ?? []) as string[]).map((m) => m.toLowerCase());
   const jobMode = String(job.work_mode ?? "").toLowerCase();
-  if (preferredModes.length === 0 || preferredModes.includes(jobMode)) score += 10;
-  else if (preferredModes.includes("remote") && jobMode === "hybrid") score += 5;
+  if (preferredModes.length === 0 || preferredModes.includes(jobMode)) score += 5;
+  else if (preferredModes.includes("remote") && jobMode === "hybrid") score += 3;
 
-  // Location (10 pts)
+  // Country (other 5 of the +10 location bonus)
   const preferredCountries = ((profile.preferred_countries ?? []) as string[]).map((c) => c.toUpperCase());
   const jobCountry = String(job.country_code ?? job.country ?? "").toUpperCase();
-  if (preferredCountries.length === 0 || preferredCountries.includes(jobCountry)) score += 10;
+  if (preferredCountries.length === 0 || preferredCountries.includes(jobCountry)) score += 5;
+
+  // Visa (+5 bonus)
+  if (job.visa_sponsorship_verified === true) score += 5;
+  else if ((job.visa_sponsorship_confidence as number ?? 0) >= 70) score += 4;
+  else if ((job.visa_sponsorship_confidence as number ?? 0) >= 50) score += 2;
 
   return Math.min(100, score);
 }
 
-function normSet(items: string[]): Set<string> {
-  return new Set(items.map((s) => s.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim()));
-}
-
-function matchLabel(score: number): string {
+export function matchLabel(score: number): string {
   if (score >= 80) return "great_match";
   if (score >= 60) return "good_match";
   if (score >= 40) return "fair_match";

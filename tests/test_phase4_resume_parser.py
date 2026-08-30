@@ -380,3 +380,300 @@ class TestParserOrchestrator:
         assert profile.is_fresher is True
         assert profile.resume_onboarding_complete is False
         assert isinstance(profile.parsed_data.get("skills"), list)
+
+
+# ── Phase-4 completion: language, timeout, rate limit, contacts, sections ─────
+
+class TestLanguageDetection:
+    def test_detects_english(self):
+        from job_radar.resume.validators import detect_language
+        assert detect_language("Software Engineer with experience and skills") == "en"
+
+    def test_detects_german(self):
+        from job_radar.resume.validators import detect_language
+        text = "Berufserfahrung als Entwickler mit Kenntnisse in Python. Studium der Informatik."
+        assert detect_language(text) == "de"
+
+    def test_detects_turkish(self):
+        from job_radar.resume.validators import detect_language
+        text = " Yazılım mühendisi olarak deneyim ve eğitim bilgileri üniversite."
+        assert detect_language(text) == "tr"
+
+    def test_detects_cyrillic_script(self):
+        from job_radar.resume.validators import detect_language
+        assert detect_language("Инженер-программист") == "cyrillic"
+
+    def test_detects_cjk_script(self):
+        from job_radar.resume.validators import detect_language
+        assert detect_language("ソフトウェアエンジニア") == "cjk"
+
+    def test_empty_text_defaults_english(self):
+        from job_radar.resume.validators import detect_language
+        assert detect_language("") == "en"
+
+    def test_non_english_resume_passes_plausibility(self):
+        from job_radar.resume.validators import validate_content_plausibility
+        text = (
+            "Lebenslauf. Berufserfahrung als Software Entwickler. Studium der "
+            "Informatik an der Universität. Kenntnisse in Python und SQL."
+        )
+        ok, err = validate_content_plausibility(text)
+        assert ok, f"German resume wrongly rejected: {err}"
+
+
+class TestMimeValidation:
+    def test_declared_mime_mismatch_rejected(self):
+        from job_radar.resume.validators import validate_file_type
+        data = b"PK\x03\x04" + b"docx content" * 100
+        ok, err = validate_file_type(data, "resume.docx", declared_mime="application/pdf")
+        assert not ok
+        assert "content type" in err.lower()
+
+    def test_declared_mime_matching_passes(self):
+        from job_radar.resume.validators import validate_file_type
+        data = b"PK\x03\x04" + b"docx content" * 100
+        ok, err = validate_file_type(data, "resume.docx", declared_mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        assert ok, err is None
+
+    def test_unknown_mime_passes_through(self):
+        from job_radar.resume.validators import validate_file_type
+        data = b"text resume content" * 60
+        ok, err = validate_file_type(data, "resume.txt", declared_mime="application/octet-stream")
+        assert ok, err is None
+
+    def test_mime_charset_param_ignored(self):
+        from job_radar.resume.validators import validate_file_type
+        data = b"text resume content" * 60
+        ok, err = validate_file_type(data, "resume.txt", declared_mime="text/plain; charset=utf-8")
+        assert ok, err is None
+
+
+class TestParseRateLimit:
+    def test_second_rapid_attempt_blocked(self):
+        from job_radar.resume import parser
+        # Reset module state
+        parser._parse_attempts.clear()
+        data = ("Software Engineer resume with experience skills education Python\n" * 20).encode()
+        first = parser.parse_resume(data, "resume.txt", ai_parse=False, user_key="user-rl")
+        assert first.status != "failed" or not any("too quickly" in e for e in first.errors)
+        second = parser.parse_resume(data, "resume.txt", ai_parse=False, user_key="user-rl")
+        assert any("too quickly" in e.lower() for e in second.errors)
+        assert second.status == "failed"
+
+    def test_different_users_not_blocked(self):
+        from job_radar.resume import parser
+        parser._parse_attempts.clear()
+        data = ("Software Engineer resume with experience skills education Python\n" * 20).encode()
+        parser.parse_resume(data, "resume.txt", ai_parse=False, user_key="user-a")
+        result_b = parser.parse_resume(data, "resume.txt", ai_parse=False, user_key="user-b")
+        assert not any("too quickly" in e.lower() for e in result_b.errors)
+
+    def test_cooldown_expires(self):
+        from job_radar.resume import parser
+        parser._parse_attempts.clear()
+        # Simulate an attempt older than the cooldown
+        parser._parse_attempts["user-old"] = parser.time.monotonic() - (parser.PARSE_COOLDOWN_S + 1)
+        assert parser.parse_rate_limited("user-old") is False
+
+
+class TestMissingContactWarnings:
+    def test_all_contacts_missing_warned(self):
+        from job_radar.resume.parser import _missing_contact_warnings
+        warnings = _missing_contact_warnings({"skills": ["Python"]})
+        assert any("email" in w.lower() for w in warnings)
+        assert any("phone" in w.lower() for w in warnings)
+        assert any("name" in w.lower() for w in warnings)
+
+    def test_present_contacts_not_warned(self):
+        from job_radar.resume.parser import _missing_contact_warnings
+        data = {"full_name": "Jane", "email": "j@example.com", "phone": "+15551234567"}
+        assert _missing_contact_warnings(data) == []
+
+
+class TestExtendedSections:
+    def test_all_sections_detected(self):
+        from job_radar.resume.parser import _detect_sections
+        data = {
+            "summary": "Engineer",
+            "experience": [{"company": "A"}],
+            "education": [{"institution": "MIT"}],
+            "skills": ["Python"],
+            "certifications": [{"name": "AWS"}],
+            "projects": [{"name": "App"}],
+            "languages": [{"language": "English"}],
+            "volunteer_work": [{"organization": "Red Cross"}],
+            "publications": [{"title": "Paper"}],
+            "awards": [{"title": "Best"}],
+            "interests": ["Chess"],
+            "references": [{"name": "Ref"}],
+        }
+        sections = _detect_sections(data)
+        for key in data:
+            assert key in sections
+
+    def test_volunteer_publications_awards_in_prompt(self):
+        from job_radar.resume.parser import _build_parse_prompt
+        prompt = _build_parse_prompt("resume text")
+        assert "volunteer_work" in prompt
+        assert "publications" in prompt
+        assert "awards" in prompt
+        assert "interests" in prompt
+        assert "references" in prompt
+
+
+class TestLanguageFlagOnResult:
+    def test_non_english_parse_flagged(self, monkeypatch):
+        from job_radar.resume import parser
+
+        fake_router = MagicMock()
+        fake_router.complete_json.return_value = {
+            "full_name": "Max Mustermann",
+            "email": "max@example.de",
+            "skills": ["Python"],
+            "experience": [{"company": "Acme", "title": "Entwickler", "start": "2020", "end": "Present", "highlights": []}],
+            "education": [{"institution": "TU Berlin", "degree": "MSc", "year": "2019"}],
+            "job_titles": ["Entwickler"],
+        }
+        german_resume = (
+            "Max Mustermann Entwickler\nBerufserfahrung als Software Entwickler\n"
+            "Studium der Informatik\nKenntnisse in Python\n"
+        ) * 20
+        result = parser.parse_resume(german_resume.encode(), "resume.txt", llm_router=fake_router)
+        assert result.language == "de"
+        assert any("language" in w.lower() for w in result.warnings)
+
+
+class TestParseTimeout:
+    def test_deadline_breach_returns_partial(self, monkeypatch):
+        from job_radar.resume import parser
+
+        # Simulate extraction having consumed the whole budget.
+        class _SlowExtraction:
+            text = "Software Engineer resume with experience education skills Python\n" * 20
+            page_count = 1
+            is_scanned = False
+            warnings = []
+
+            def __getattr__(self, name):  # MagicMock-free attribute passthrough
+                raise AttributeError(name)
+
+        monkeypatch.setattr(parser, "_extract_text", lambda data, filename: _SlowExtraction())
+        monkeypatch.setattr(parser, "PARSER_TIMEOUT_S", -1.0)  # deadline always hit
+
+        # Valid upload (>= 1 KB) so validation passes and the deadline check runs.
+        data = ("Software Engineer resume with experience education skills Python\n" * 40).encode()
+        assert len(data) >= 1024
+        result = parser.parse_resume(data, "resume.txt", ai_parse=False)
+        assert result.timed_out is True
+        assert result.status == "partial"
+        assert any("too long" in w.lower() for w in result.warnings)
+
+
+class TestPersistenceHelpers:
+    def _result(self, **kwargs):
+        from job_radar.resume.parser import ResumeParseResult
+        defaults = dict(
+            raw_text="text",
+            parsed_data={"skills": ["Python"]},
+            status="completed",
+            confidence=0.9,
+            is_scanned=False,
+            is_fresher=False,
+            page_count=1,
+            sections_detected=["skills"],
+            warnings=[],
+            errors=[],
+            parse_duration_ms=120,
+            file_type="pdf",
+        )
+        defaults.update(kwargs)
+        return ResumeParseResult(**defaults)
+
+    def test_resumes_row_metadata(self):
+        from job_radar.resume.parser import resumes_row
+        row = resumes_row(self._result(), resume_id="uuid-1")
+        assert row["parse_status"] == "completed"
+        assert row["parse_confidence"] == 0.9
+        assert row["sections_detected"] == ["skills"]
+        assert row["parse_duration_ms"] == 120
+        assert row["file_type"] == "pdf"
+        assert row["id"] == "uuid-1"
+        assert "parse_error" not in row
+
+    def test_resumes_row_with_errors(self):
+        from job_radar.resume.parser import resumes_row
+        row = resumes_row(self._result(status="failed", errors=["boom"]))
+        assert row["parse_error"] == "boom"
+
+    def test_resumes_row_empty_warnings_null(self):
+        from job_radar.resume.parser import resumes_row
+        row = resumes_row(self._result())
+        assert row["parse_warnings"] is None
+
+    def test_profile_updates_complete(self):
+        from job_radar.resume.parser import profile_updates
+        updates = profile_updates(self._result())
+        assert updates["profile_complete"] is True
+        assert updates["resume_onboarding_complete"] is True
+        assert updates["is_fresher"] is False
+        assert updates["parsed_resume"] == {"skills": ["Python"]}
+        assert "last_resume_parse" in updates
+
+    def test_profile_updates_low_confidence_no_complete(self):
+        from job_radar.resume.parser import profile_updates
+        updates = profile_updates(self._result(status="partial", confidence=0.4))
+        assert "profile_complete" not in updates
+        assert updates["resume_parse_warnings"] is None
+
+    def test_fresher_conversion_update(self):
+        from job_radar.resume.parser import fresher_conversion_update
+        updates = fresher_conversion_update(self._result())
+        assert updates["is_fresher"] is False
+        assert updates["resume_onboarding_complete"] is True
+        assert updates["parsed_resume"] == {"skills": ["Python"]}
+
+
+class TestOcrFallback:
+    def test_ocr_unavailable_degrades_to_scanned_warning(self, monkeypatch):
+        from job_radar.resume.extractors import pdf_extractor
+
+        monkeypatch.setattr(pdf_extractor, "_extract_with_pdfminer", lambda d, w: ("", 1))
+        monkeypatch.setattr(pdf_extractor, "_extract_with_pypdf", lambda d, w: ("", 1))
+
+        def _no_ocr(data, warnings):
+            return ""  # simulate ImportError path
+
+        monkeypatch.setattr(pdf_extractor, "_try_ocr", _no_ocr)
+        data = b"%PDF-1.4" + b"image bytes" * 100
+        result = pdf_extractor.extract_text_from_pdf(data)
+        assert result.is_scanned is True
+        assert any("scanned" in w.lower() for w in result.warnings)
+
+    def test_ocr_success_recovers_text(self, monkeypatch):
+        from job_radar.resume.extractors import pdf_extractor
+
+        monkeypatch.setattr(pdf_extractor, "_extract_with_pdfminer", lambda d, w: ("", 1))
+        monkeypatch.setattr(pdf_extractor, "_extract_with_pypdf", lambda d, w: ("", 1))
+        monkeypatch.setattr(
+            pdf_extractor, "_try_ocr",
+            lambda d, w: "Software Engineer with Python skills and experience",
+        )
+        data = b"%PDF-1.4" + b"image bytes" * 100
+        result = pdf_extractor.extract_text_from_pdf(data)
+        assert result.is_scanned is False
+        assert "Software Engineer" in result.text
+        assert any("ocr" in w.lower() for w in result.warnings)
+
+    def test_scanned_pdf_via_ocr_timeout_budget(self):
+        # MAX_OCR_SECONDS / MAX_OCR_PAGES limits exist and are sane
+        from job_radar.resume.extractors import pdf_extractor
+        assert pdf_extractor.MAX_OCR_PAGES == 10
+        assert 30.0 <= pdf_extractor.MAX_OCR_SECONDS <= 120.0
+
+
+class TestUnicodeSurvival:
+    def test_unicode_names_survive_parse(self):
+        from job_radar.resume.normalizers import normalize_name
+        # Turkish + German characters through the full pipeline
+        assert normalize_name("ışıl üstün") in ("Işıl Üstün", "Isil Üstün")
+        assert normalize_name("José MüLLER") == "José Müller"

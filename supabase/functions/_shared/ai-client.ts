@@ -42,30 +42,57 @@ function isRetryable(status: number): boolean {
   return status === 429 || status >= 500;
 }
 
+export function getGeminiKeys(): string[] {
+  const raw = getEnv("GEMINI_API_KEYS") || getEnv("GEMINI_API_KEY") || "";
+  const extra = [getEnv("GEMINI_API_KEY_2"), getEnv("GEMINI_API_KEY_3")].filter(Boolean) as string[];
+  const splitKeys = raw.split(/[,;\s]+/).map((k) => k.trim()).filter((k) => k.length > 0 && k !== "PLACEHOLDER_KEY");
+  return [...new Set([...splitKeys, ...extra])];
+}
+
 async function tryGemini(prompt: string, wantJson: boolean, f: typeof fetch): Promise<AIResult | null> {
-  const key = getEnv("GEMINI_API_KEY");
-  if (!key) throw new AIFailure("gemini", 0, "missing_api_key");
+  const keys = getGeminiKeys();
+  if (keys.length === 0) throw new AIFailure("gemini", 0, "missing_api_key");
   const model = getEnv("GEMINI_PRO_MODEL") || "gemini-2.5-flash";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
-  const body: Record<string, unknown> = {
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.2 },
-  };
-  if (wantJson) {
-    (body.generationConfig as Record<string, unknown>).responseMimeType = "application/json";
+
+  let lastStatus = 0;
+  let lastError = "";
+
+  for (const key of keys) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+    const body: Record<string, unknown> = {
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.2 },
+    };
+    if (wantJson) {
+      (body.generationConfig as Record<string, unknown>).responseMimeType = "application/json";
+    }
+    try {
+      const resp = await f(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!resp.ok) {
+        lastStatus = resp.status;
+        lastError = await resp.text().catch(() => "");
+        // If quota exceeded (429) or transient server error, rotate to next Gemini key
+        if (resp.status === 429 || resp.status >= 500) {
+          continue;
+        }
+        throw new AIFailure("gemini", resp.status, lastError);
+      }
+      const data = await resp.json();
+      const text = data?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
+      if (!text.trim()) return null;
+      return { text, provider: "gemini", model, cached: false, latency_ms: 0 };
+    } catch (err) {
+      if (err instanceof AIFailure) throw err;
+      lastError = String((err as Error).message ?? err);
+      continue;
+    }
   }
-  const resp = await f(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!resp.ok) {
-    throw new AIFailure("gemini", resp.status, await resp.text().catch(() => ""));
-  }
-  const data = await resp.json();
-  const text = data?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
-  if (!text.trim()) return null;
-  return { text, provider: "gemini", model, cached: false, latency_ms: 0 };
+
+  throw new AIFailure("gemini", lastStatus || 429, lastError || "All Gemini API keys exhausted or rate-limited");
 }
 
 async function tryGroq(prompt: string, wantJson: boolean, f: typeof fetch): Promise<AIResult | null> {

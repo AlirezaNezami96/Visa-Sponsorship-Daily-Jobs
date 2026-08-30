@@ -1,26 +1,32 @@
 """Errors module public API."""
+from .auth import InvalidCredentialsError, RateLimitExceededError, TokenExpiredError
 from .base import (
-    VisaLaneError,
     AuthenticationError,
     AuthorizationError,
-    ValidationError,
-    FileSizeError,
-    FileTypeError,
     ContentError,
-    NotFoundError,
-    JobNotFoundError,
-    ResumeNotFoundError,
-    UsageLimitError,
-    GenerationError,
-    HallucinationError,
-    ResumeParseError,
-    ScannedPdfError,
+    DatabaseError,
+    EmailDeliveryError,
     EncryptedFileError,
     ExternalServiceError,
-    EmailDeliveryError,
-    DatabaseError,
+    FileSizeError,
+    FileTypeError,
+    GenerationError,
+    HallucinationError,
+    JobNotFoundError,
+    NotFoundError,
+    ResumeNotFoundError,
+    ResumeParseError,
+    ScannedPdfError,
+    UsageLimitError,
+    ValidationError,
+    VisaLaneError,
     from_exception,
 )
+from .database import DuplicateKeyError, RecordNotFoundError, StorageUploadError
+from .external import LLMQuotaExhaustedError, ScraperBlockedError
+from .handlers import setup_exception_handlers
+from .logging import log_structured_error, sanitize_value
+from .validation import CorruptedFileError, SchemaValidationError
 
 __all__ = [
     "VisaLaneError",
@@ -43,4 +49,17 @@ __all__ = [
     "EmailDeliveryError",
     "DatabaseError",
     "from_exception",
+    "TokenExpiredError",
+    "InvalidCredentialsError",
+    "RateLimitExceededError",
+    "SchemaValidationError",
+    "CorruptedFileError",
+    "LLMQuotaExhaustedError",
+    "ScraperBlockedError",
+    "RecordNotFoundError",
+    "DuplicateKeyError",
+    "StorageUploadError",
+    "setup_exception_handlers",
+    "log_structured_error",
+    "sanitize_value",
 ]

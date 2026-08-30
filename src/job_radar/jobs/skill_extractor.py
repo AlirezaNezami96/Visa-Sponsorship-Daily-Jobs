@@ -8,6 +8,14 @@ a two-layer approach:
   2. AI augmentation (optional): the LLM fills in soft skills and ambiguous
      domain terms that the regex misses. Falls back gracefully if AI is down.
 
+Normalization rules (spec §3.2):
+  - Synonyms collapse: "JS" -> JavaScript, "NodeJS"/"Node.js"/"Node" -> Node.js
+  - Acronyms expand to canonical display names: ML -> Machine Learning,
+    AI -> Artificial Intelligence, NLP -> Natural Language Processing
+  - Version-specific mentions normalize to the base skill:
+    "Python 3.9"/"Python3" -> Python
+  - Compound skills stay compound: "React Native", "Ruby on Rails"
+
 The outputs are stored in jobs.skills (TEXT[]) and indexed with GIN.
 """
 from __future__ import annotations
@@ -24,11 +32,13 @@ logger = logging.getLogger(__name__)
 
 _SKILL_PATTERNS: dict[str, list[str]] = {
     "languages": [
-        r"\bPython\b", r"\bJavaScript\b", r"\bTypeScript\b", r"\bJava\b(?! Script)",
-        r"\bC\+\+\b", r"\bC#\b", r"\bGo\b(?!ogle)", r"\bRust\b", r"\bSwift\b",
-        r"\bKotlin\b", r"\bPHP\b", r"\bRuby\b", r"\bScala\b", r"\bR\b(?= programming|\s+for|\s+package|\s+library)",
+        r"\bPython\b", r"\bPython\s?3(?:\.\d+)?\b", r"\bJavaScript\b", r"\bTypeScript\b",
+        r"\bJava\b(?! Script)", r"\bC\+\+\b", r"\bC#\b", r"\bGo\b(?!ogle)", r"\bRust\b",
+        r"\bSwift\b", r"\bKotlin\b", r"\bPHP\b", r"\bRuby\b", r"\bScala\b",
+        r"\bR\b(?= programming|\s+for|\s+package|\s+library)",
         r"\bMATLAB\b", r"\bDart\b", r"\bElixir\b", r"\bHaskell\b",
         r"\bSQL\b", r"\bPL/SQL\b", r"\bBash\b", r"\bShell\b",
+        r"\bNode(?:\.js|JS)?\b", r"\bNodeJS\b",
     ],
     "frameworks": [
         r"\bReact(?:\.js)?\b", r"\bVue(?:\.js)?\b", r"\bAngular\b",
@@ -64,11 +74,21 @@ _SKILL_PATTERNS: dict[str, list[str]] = {
         r"\bVector\s+(?:search|database|store|embedding)\b",
         r"\bEmbedding\b", r"\bSemantic\s+search\b",
         r"\bMLflow\b", r"\bWandb\b", r"\bDVC\b",
+        r"\bML\b", r"\bAI\b", r"\bNLP\b", r"\bMachine Learning\b",
+        r"\bArtificial Intelligence\b", r"\bNatural Language Processing\b",
+        r"\bComputer Vision\b", r"\bDeep Learning\b",
     ],
     "soft_skills": [
         r"\bLeadership\b", r"\bMentoring\b", r"\bCommunication\b",
         r"\bTeam\s+player\b", r"\bCollaboration\b", r"\bAgile\b", r"\bScrum\b",
         r"\bProject\s+management\b", r"\bStakeholder\s+management\b",
+        r"\bProblem\s+solving\b", r"\bTime\s+management\b", r"\bAdaptability\b",
+        r"\bAttention\s+to\s+detail\b", r"\bCritical\s+thinking\b",
+    ],
+    "domain": [
+        r"\bFinance\b", r"\bFintech\b", r"\bHealthcare\b", r"\bE-?commerce\b",
+        r"\bSaaS\b", r"\bLogistics\b", r"\bInsurance\b", r"\bCybersecurity\b",
+        r"\bData\s+Engineering\b", r"\bRobotics\b", r"\bAutomotive\b",
     ],
     "tools": [
         r"\bGit\b", r"\bJira\b", r"\bConfluence\b", r"\bNotion\b",
@@ -79,8 +99,8 @@ _SKILL_PATTERNS: dict[str, list[str]] = {
     ],
 }
 
-# Flatten and compile all patterns once
-_COMPILED_PATTERNS: list[tuple[re.Pattern, str]] = []
+# Post-extraction normalization: canonical name overrides + synonym collapse.
+# Keys are the raw derived (or overridden) name; values the final canonical.
 _CANONICAL_NAMES: dict[str, str] = {
     r"\bReact(?:\.js)?\b": "React",
     r"\bVue(?:\.js)?\b": "Vue.js",
@@ -94,7 +114,62 @@ _CANONICAL_NAMES: dict[str, str] = {
     r"\bReact Native\b": "React Native",
     r"\bGitHub Actions\b": "GitHub Actions",
     r"\bGitLab CI\b": "GitLab CI",
+    r"\bPython\s?3(?:\.\d+)?\b": "Python",       # version-specific -> base
+    r"\bNode(?:\.js|JS)?\b": "Node.js",          # NodeJS / Node / Node.js
+    r"\bNodeJS\b": "Node.js",
+    r"\bMachine Learning\b": "Machine Learning",
+    r"\bArtificial Intelligence\b": "Artificial Intelligence",
+    r"\bNatural Language Processing\b": "Natural Language Processing",
+    r"\bDeep Learning\b": "Deep Learning",
+    r"\bComputer Vision\b": "Computer Vision",
+    r"\bE-?commerce\b": "E-commerce",
 }
+
+# Synonym / acronym expansion applied AFTER extraction (spec §3.2):
+#   "js" -> JavaScript, "ml" -> Machine Learning, "ai" -> Artificial
+#   Intelligence, "nlp" -> Natural Language Processing.
+_SYNONYM_MAP: dict[str, str] = {
+    "js": "JavaScript",
+    "ml": "Machine Learning",
+    "ai": "Artificial Intelligence",
+    "nlp": "Natural Language Processing",
+    "nodejs": "Node.js",
+    "node": "Node.js",
+    "node.js": "Node.js",
+    "reactjs": "React",
+    "react.js": "React",
+    "vuejs": "Vue.js",
+    "vue.js": "Vue.js",
+    "k8s": "Kubernetes",
+    "postgres": "PostgreSQL",
+    "postgresql": "PostgreSQL",
+    "tf": "TensorFlow",
+    "pytorch": "PyTorch",
+}
+
+
+def _derive_canonical_from_pattern_raw(pattern_str: str) -> str:
+    """Pre-build canonical names from patterns.
+    Strips regex syntax to get the core display name.
+    """
+    clean = re.sub(r"\\b|\\s|\?P<\w+>|[+?*\[\]()|{}^$]|\\", " ", pattern_str)
+    clean = " ".join(clean.split()).strip()
+    return clean if clean else pattern_str
+
+
+def _derive_canonical_from_pattern(pattern_str: str) -> str:
+    """Derive a canonical display name from a regex pattern string.
+
+    Strips regex metacharacters to get the human-readable skill name.
+    E.g.: r'\\bDjango\\b' -> 'Django', r'\\bscikit-learn\\b' -> 'scikit-learn'
+    """
+    # Remove anchors and common regex syntax to get the core name
+    clean = re.sub(r"\\b|\\s|[+?*\[\]()|{}]|\\", " ", pattern_str)
+    # Collapse whitespace and strip
+    clean = " ".join(clean.split()).strip()
+    # Remove remaining regex quantifiers and groups
+    clean = re.sub(r"\s*\.\s*\w+", lambda m: m.group(0).replace(" ", ""), clean)
+    return clean if clean else pattern_str
 
 
 def _build_compiled_patterns() -> list[tuple[re.Pattern, str]]:
@@ -108,32 +183,14 @@ def _build_compiled_patterns() -> list[tuple[re.Pattern, str]]:
     return patterns
 
 
-def _derive_canonical_from_pattern_raw(pattern_str: str) -> str:
-    """Pre-build canonical names from patterns before the function is defined.
-    Used only in _build_compiled_patterns at import time.
-    Strips regex syntax to get the core display name.
-    """
-    clean = re.sub(r"\\b|\\s|\?P<\w+>|[+?*\[\]()|{}^$]|\\", " ", pattern_str)
-    clean = " ".join(clean.split()).strip()
-    return clean if clean else pattern_str
-
-
 _COMPILED_PATTERNS = _build_compiled_patterns()
 
 
-def _derive_canonical_from_pattern(pattern_str: str) -> str:
-    """Derive a canonical display name from a regex pattern string.
-
-    Strips regex metacharacters to get the human-readable skill name.
-    E.g.: r'\bDjango\b' -> 'Django', r'\bscikit-learn\b' -> 'scikit-learn'
-    """
-    # Remove anchors and common regex syntax to get the core name
-    clean = re.sub(r"\\b|\\s|[+?*\[\]()|{}]|\\", " ", pattern_str)
-    # Collapse whitespace and strip
-    clean = " ".join(clean.split()).strip()
-    # Remove remaining regex quantifiers and groups
-    clean = re.sub(r"\s*\.\s*\w+", lambda m: m.group(0).replace(" ", ""), clean)
-    return clean if clean else pattern_str
+def _canonicalize(skill: str) -> str:
+    """Apply synonym/acronym normalization to a single extracted skill."""
+    key = skill.lower().strip().rstrip(".")
+    mapped = _SYNONYM_MAP.get(key)
+    return mapped if mapped else skill
 
 
 def extract_skills_rule_based(text: str) -> list[str]:
@@ -144,16 +201,44 @@ def extract_skills_rule_based(text: str) -> list[str]:
     if not text:
         return []
 
-    found: dict[str, str] = {}  # lower -> display form
+    found: list[str] = []
     for pattern, canonical in _COMPILED_PATTERNS:
-        match = pattern.search(text)
-        if match:
-            display = canonical or match.group(0)
-            key = display.lower()
-            if key not in found:
-                found[key] = display
+        if pattern.search(text):
+            found.append(canonical)
 
-    return list(found.values())
+    return _deduplicate(found)
+
+
+def extraction_confidence(
+    title: str,
+    description: str,
+    extracted_skills: list[str],
+) -> float:
+    """Confidence that the extraction captured the job's real requirements.
+
+    Heuristic per spec §3.2 (confidence scoring for extracted skills):
+      - Starts at 0.5 (rule-based only is decent but not exhaustive)
+      - Short descriptions (< 200 chars) lower confidence
+      - Longer, denser descriptions raise it
+      - Finding at least one skill is a positive signal
+    Returns a float 0.0–1.0.
+    """
+    text_len = len((description or "").strip())
+    conf = 0.5
+    if text_len == 0:
+        # Title-only matching: lowest confidence band
+        return 0.3 if extracted_skills else 0.2
+    if text_len < 200:
+        conf -= 0.15
+    elif text_len >= 800:
+        conf += 0.15
+    elif text_len >= 400:
+        conf += 0.1
+    if extracted_skills:
+        conf += 0.2
+    else:
+        conf -= 0.1
+    return max(0.0, min(1.0, conf))
 
 
 def extract_skills_from_job(
@@ -217,12 +302,39 @@ Return format: ["skill1", "skill2", ...]"""
 
 
 def _deduplicate(skills: list[str]) -> list[str]:
-    """Deduplicate skill list case-insensitively, preserving order."""
-    seen: set[str] = set()
-    out: list[str] = []
+    """Deduplicate skill list case-insensitively, preserving order.
+
+    Synonyms (e.g. "JavaScript" and "JS") collapse to one entry, and
+    the canonical form of the first occurrence wins. When a compound
+    skill and its component both appear (e.g. "React Native" and
+    "React"), the compound absorbs the component.
+    """
+    seen: dict[str, str] = {}  # lower key -> canonical display
+    order: list[str] = []
     for s in skills:
-        key = s.lower().strip()
+        if not s:
+            continue
+        canonical = _canonicalize(s)
+        key = canonical.lower().strip()
         if key and key not in seen:
-            seen.add(key)
-            out.append(s)
-    return out
+            seen[key] = canonical
+            order.append(key)
+
+    # Compound absorption: when a compound skill is present, its components
+    # ("react" under "react native", "ruby"/"rails" under "ruby on rails")
+    # are absorbed into the compound.
+    _COMPOUND_COMPONENTS: dict[str, tuple[str, ...]] = {
+        "react native": ("react",),
+        "ruby on rails": ("ruby", "rails"),
+    }
+    present = set(order)
+    result_keys = []
+    for key in order:
+        if key in _COMPOUND_COMPONENTS:
+            result_keys.append(key)
+        elif not any(
+            key in components and compound in present
+            for compound, components in _COMPOUND_COMPONENTS.items()
+        ):
+            result_keys.append(key)
+    return [seen[k] for k in result_keys]

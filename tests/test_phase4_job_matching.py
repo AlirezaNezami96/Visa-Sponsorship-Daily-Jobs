@@ -74,22 +74,22 @@ class TestSkillExtractorRuleBased:
 class TestTitleScorer:
     def test_exact_match_max_score(self):
         from job_radar.jobs.scorer import score_title_relevance
-        assert score_title_relevance(["Software Engineer"], "software engineer", 20) == 20
+        assert score_title_relevance(["Software Engineer"], "software engineer", 40) == 40
 
     def test_partial_match_partial_score(self):
         from job_radar.jobs.scorer import score_title_relevance
-        score = score_title_relevance(["Backend Engineer"], "Senior Backend Developer", 20)
-        assert 0 < score < 20
+        score = score_title_relevance(["Backend Engineer"], "Senior Backend Developer", 40)
+        assert 0 < score < 40
 
     def test_no_match(self):
         from job_radar.jobs.scorer import score_title_relevance
-        score = score_title_relevance(["Chef"], "Software Engineer", 20)
+        score = score_title_relevance(["Chef"], "Software Engineer", 40)
         assert score == 0
 
     def test_empty_titles_returns_neutral(self):
         from job_radar.jobs.scorer import score_title_relevance
-        score = score_title_relevance([], "Software Engineer", 20)
-        assert score == 10  # neutral (half of max)
+        score = score_title_relevance([], "Software Engineer", 40)
+        assert score == 10  # neutral (quarter of max — title is a strong signal)
 
 
 class TestSkillsScorer:
@@ -146,7 +146,7 @@ class TestVisaScorer:
 
     def test_high_confidence_near_full(self):
         from job_radar.jobs.scorer import score_visa_sponsorship
-        assert score_visa_sponsorship(False, 75, 10) == 8
+        assert score_visa_sponsorship(False, 75, 10) == 9
 
     def test_low_confidence_partial(self):
         from job_radar.jobs.scorer import score_visa_sponsorship
@@ -155,6 +155,11 @@ class TestVisaScorer:
     def test_unverified_no_confidence_zero(self):
         from job_radar.jobs.scorer import score_visa_sponsorship
         assert score_visa_sponsorship(False, 0, 10) == 0
+
+    def test_spec_bonus_weights(self):
+        from job_radar.jobs.scorer import score_visa_sponsorship
+        # Spec §3.2: visa sponsorship is a +5 bonus
+        assert score_visa_sponsorship(True, None) == 5
 
 
 class TestLocationScorer:
@@ -204,16 +209,23 @@ class TestComputeMatchScore:
     def test_zero_skills_overlap_low_score(self):
         from job_radar.jobs.scorer import compute_match_score
         score = compute_match_score(self._profile(), self._job(skills=["Haskell", "Erlang"]))
-        assert score < 60
+        # Zero skills: only title/experience/location/visa remain (<= 65).
+        # Not a great_match, and strictly worse than with matching skills.
+        assert score < 70
+        matching = compute_match_score(self._profile(), self._job())
+        assert matching > score
 
     def test_no_visa_sponsorship_reduces_score(self):
         from job_radar.jobs.scorer import compute_match_score
-        with_visa = compute_match_score(self._profile(), self._job())
+        # Sub-cap scenario so the visa delta is observable
+        profile = self._profile(job_titles=["Backend Engineer"])
+        job = self._job(title="Senior Backend Developer", skills=["Python"])
+        with_visa = compute_match_score(profile, job)
         without_visa = compute_match_score(
-            self._profile(),
-            self._job(visa_sponsorship_verified=False, visa_sponsorship_confidence=0)
+            profile,
+            {**job, "visa_sponsorship_verified": False, "visa_sponsorship_confidence": 0},
         )
-        assert with_visa > without_visa
+        assert with_visa == without_visa + 5
 
     def test_score_bounded_0_100(self):
         from job_radar.jobs.scorer import compute_match_score

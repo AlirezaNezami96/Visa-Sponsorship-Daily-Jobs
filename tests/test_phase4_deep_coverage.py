@@ -130,7 +130,6 @@ from job_radar.errors.base import (
 class TestMatcherDeep:
     def test_write_match_scores_success(self):
         client = MagicMock()
-        upsert_mock = MagicMock()
         client.table.return_value.upsert.return_value.execute.return_value = None
 
         scored_jobs = [
@@ -141,6 +140,10 @@ class TestMatcherDeep:
         count = write_match_scores(client, scored_jobs, "user-123")
         assert count == 2
         client.table.assert_called_with("user_job_scores")
+        # Column payload uses the schema column name `score` (not match_score)
+        upsert_arg = client.table.return_value.upsert.call_args[0][0]
+        assert all("score" in row for row in upsert_arg)
+        assert all("calculated_at" in row for row in upsert_arg)
 
     def test_write_match_scores_no_client_or_empty(self):
         assert write_match_scores(None, [{"id": "1"}], "user-1") == 0
@@ -153,6 +156,37 @@ class TestMatcherDeep:
         count = write_match_scores(client, [{"id": "1"}], "user-1")
         assert count == 0
 
+    def test_read_cached_scores_fresh_rows(self):
+        from datetime import datetime, timezone
+        from job_radar.jobs.matcher import read_cached_scores
+
+        client = MagicMock()
+        client.table.return_value.select.return_value.eq.return_value.in_.return_value \
+            .gte.return_value.execute.return_value = MagicMock(
+                data=[{"job_id": "job-1", "score": 85}, {"job_id": "job-2", "score": 40}]
+            )
+        result = read_cached_scores(client, "user-1", ["job-1", "job-2"])
+        assert result == {"job-1": 85, "job-2": 40}
+        # The query filters by freshness (calculated_at >= TTL cutoff)
+        chain = client.table.return_value.select.return_value.eq.return_value.in_.return_value
+        assert chain.gte.call_args.args[0] == "calculated_at"
+
+    def test_read_cached_scores_empty_and_errors(self):
+        from job_radar.jobs.matcher import read_cached_scores, purge_stale_scores
+
+        assert read_cached_scores(None, "u", ["j"]) == {}
+        assert read_cached_scores(MagicMock(), "u", []) == {}
+
+        client = MagicMock()
+        client.table.side_effect = Exception("DB down")
+        assert read_cached_scores(client, "u", ["j"]) == {}
+
+        purge = MagicMock()
+        purge.table.return_value.delete.return_value.lt.return_value.execute \
+            .return_value = MagicMock(data=[{"job_id": "x"}])
+        assert purge_stale_scores(purge) == 1
+        assert purge_stale_scores(None) == 0
+
     def test_match_labels_all_brackets(self):
         assert _match_label(95) == "great_match"
         assert _match_label(80) == "great_match"
@@ -163,6 +197,11 @@ class TestMatcherDeep:
         assert _match_label(30) == "low_match"
         assert _match_label(0) == "low_match"
 
+    def test_match_cache_ttl_is_24h(self):
+        from datetime import timedelta
+        from job_radar.jobs.matcher import MATCH_CACHE_TTL
+        assert MATCH_CACHE_TTL == timedelta(hours=24)
+
 
 # ── 2. Scorer tests ──────────────────────────────────────────────────────────
 
@@ -170,8 +209,27 @@ class TestScorerDeep:
     def test_score_title_relevance_variations(self):
         assert score_title_relevance(["Frontend Engineer"], "Frontend", 20) > 10
         assert score_title_relevance(["Senior Dev"], "Dev Lead", 20) > 0
-        assert score_title_relevance([], "Engineer", 20) == 10
-        assert score_title_relevance(["Engineer"], "", 20) == 10
+        assert score_title_relevance([], "Engineer", 20) == 5
+        assert score_title_relevance(["Engineer"], "", 20) == 5
+
+    def test_spec_weights_title_40_skills_50_exp_10(self):
+        # Spec §3.2: title 40%, skills 50%, experience 10% + bonuses
+        assert score_title_relevance(["A"], "A") == 40
+        assert score_skills_overlap(["a"], ["a"]) == 50
+        assert score_experience_level(3, 2, 5) == 10
+        from job_radar.jobs.scorer import score_visa_sponsorship
+        assert score_visa_sponsorship(True, None) == 5  # +5 bonus
+
+    def test_rare_skills_weighted_higher_than_common(self):
+        # Matching a rare skill should contribute more than matching a common one
+        common = score_skills_overlap(
+            ["javascript", "kafka"], ["javascript", "kafka", "terraform", "graphql", "spark"], 50
+        )
+        rare = score_skills_overlap(
+            ["spark", "kafka"], ["javascript", "kafka", "terraform", "graphql", "spark"], 50
+        )
+        # Both cover 2/5 skills, but rare matches weigh more per-skill
+        assert rare >= common
 
     def test_score_experience_level_variations(self):
         assert score_experience_level(4, 2, 5, 10) == 10
@@ -236,6 +294,51 @@ class TestSkillExtractorDeep:
 
     def test_deduplicate(self):
         assert _deduplicate(["Python", "python", "  ", "Docker"]) == ["Python", "Docker"]
+
+    def test_nodejs_normalized(self):
+        # Spec §3.2: NodeJS → node.js
+        assert extract_skills_rule_based("NodeJS and Node.js and Node") == ["Node.js"]
+
+    def test_js_javascript_synonyms(self):
+        # Spec §3.4: JS vs JavaScript treated as same skill
+        assert _deduplicate(["JS", "JavaScript"]) == ["JavaScript"]
+
+    def test_acronyms_expanded(self):
+        # Spec §3.4: ML, AI, NLP expanded to full names
+        skills = extract_skills_rule_based("Experience with ML, AI, and NLP required")
+        assert "Machine Learning" in skills
+        assert "Artificial Intelligence" in skills
+        assert "Natural Language Processing" in skills
+
+    def test_version_specific_skill_normalized(self):
+        # Spec §3.4: Python 3.9 → Python
+        assert extract_skills_rule_based("Requires Python 3.9 or Python3") == ["Python"]
+
+    def test_compound_skills_kept(self):
+        # Spec §3.4: compound skills kept as compound
+        skills = extract_skills_rule_based("React Native and Ruby on Rails shop")
+        assert "React Native" in skills
+        assert "Ruby on Rails" in skills
+        assert "React" not in skills  # absorbed into compound
+        assert "Rails" not in skills   # absorbed into compound
+        assert "Ruby" not in skills    # absorbed into compound
+
+    def test_extraction_confidence(self):
+        from job_radar.jobs.skill_extractor import extraction_confidence
+        # Long description + skills found → high confidence
+        assert extraction_confidence("Dev", "x" * 900, ["Python"]) >= 0.8
+        # Short description → lower confidence
+        assert extraction_confidence("Dev", "short", ["Python"]) < 0.7
+        # No description (title-only) → lowest band
+        assert extraction_confidence("Dev", "", []) <= 0.3
+
+    def test_soft_and_domain_skills(self):
+        skills = extract_skills_rule_based(
+            "Leadership and communication in a fintech SaaS environment with problem solving"
+        )
+        assert "Leadership" in skills
+        assert "Communication" in skills
+        assert "Fintech" in skills or "SaaS" in skills
 
 
 # ── 4. PDF Extractor tests ───────────────────────────────────────────────────

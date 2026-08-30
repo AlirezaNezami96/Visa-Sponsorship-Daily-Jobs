@@ -115,6 +115,8 @@ def job_to_row(job: dict[str, Any], company_id: str | None) -> dict[str, Any] | 
         "visa_sponsorship_verified": bool(job.get("visa_sponsorship_verified", False)),
         "visa_types": [str(v) for v in visa_types][:20] or None,
         "apply_url": job.get("apply_url") or url,
+        "skills": [str(s) for s in (job.get("skills") or []) if s] or None,
+        "skills_extracted_at": job.get("skills_extracted_at"),
         "raw_payload": {
             k: job.get(k)
             for k in (

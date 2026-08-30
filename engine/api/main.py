@@ -833,6 +833,34 @@ async def find_hiring_contacts_endpoint(request: Request, body: dict):
     return res
 
 
+@app.post("/internal/contacts/enrich", tags=["Internal"])
+async def internal_contacts_enrich_endpoint(request: Request, body: dict):
+    """
+    Internal endpoint for Supabase Edge Functions contact enrichment.
+    """
+    from job_radar.enrichment.contact_finder import ContactFinder
+
+    job_id = str(body.get("job_id", "") or body.get("id", ""))
+    company_name = body.get("company_name", "") or body.get("company", "")
+    company_domain = body.get("company_domain", "") or body.get("domain", "")
+    job_title = body.get("job_title", "") or body.get("title", "")
+    page_url = body.get("page_url", "") or body.get("apply_url", "") or body.get("url", "")
+    jd_text = body.get("jd_text", "") or body.get("job_description", "") or body.get("description", "")
+    company_id = body.get("company_id")
+
+    finder = ContactFinder()
+    res = finder.find_contacts_for_job(
+        job_id=job_id,
+        company_name=company_name,
+        company_domain=company_domain,
+        job_title=job_title,
+        job_description=jd_text,
+        job_url=page_url,
+        company_id=company_id,
+    )
+    return res
+
+
 @app.get("/api/v1/autofill/config", tags=["Autofill"])
 async def get_autofill_config_endpoint():
     """

@@ -36,7 +36,25 @@ async function resumeTextFromStorage(client: ReturnType<typeof createUserClient>
   return text;
 }
 
-Deno.serve(async (req) => {
+const SECTION_KEYS = [
+  "summary", "experience", "education", "skills", "certifications",
+  "projects", "languages", "volunteer_work", "publications", "awards",
+  "interests", "references",
+];
+
+function detectSections(parsed: Record<string, unknown>): string[] {
+  const detected: string[] = [];
+  for (const k of SECTION_KEYS) {
+    const val = parsed[k];
+    if (Array.isArray(val) && val.length > 0) detected.push(k);
+    else if (typeof val === "string" && val.trim().length > 0) detected.push(k);
+    else if (val && typeof val === "object" && Object.keys(val).length > 0) detected.push(k);
+  }
+  return detected;
+}
+
+if (typeof Deno !== "undefined" && typeof Deno.serve === "function") {
+  Deno.serve(async (req) => {
   const preflight = handleOptions(req);
   if (preflight) return preflight;
   if (req.method !== "POST") return json({ error: { code: "method_not_allowed", message: "POST only" } }, { status: 405 });
@@ -87,22 +105,58 @@ Deno.serve(async (req) => {
       return json({ error: { code: outcome.code, message: outcome.message } }, { status: outcome.status });
     }
 
-    // Persist structured parsed data back onto the resume row when provided.
+    const parsedOutput = outcome.body.output as Record<string, unknown>;
+    const sectionsDetected = detectSections(parsedOutput);
+    const exp = Array.isArray(parsedOutput.experience) ? parsedOutput.experience : [];
+    const isFresher = exp.length === 0;
+    const nowIso = new Date().toISOString();
+
+    // Persist structured parsed data & metadata back onto the resume row when provided
     if (typeof body.resume_id === "string") {
       try {
         await client
           .from("resumes")
-          .update({ parsed_data: outcome.body.output })
+          .update({
+            parsed_data: parsedOutput,
+            sections_detected: sectionsDetected,
+            parse_status: "completed",
+            parse_confidence: 0.9,
+          })
           .eq("id", body.resume_id)
           .eq("user_id", user.id);
-      } catch {
-        /* non-fatal: response already carries the parsed data */
+      } catch (err) {
+        console.warn("Failed to update resumes row:", err);
       }
     }
 
-    return json(outcome.body);
+    // Persist to user profile
+    try {
+      await client
+        .from("profiles")
+        .update({
+          parsed_resume: parsedOutput,
+          skills_cache: Array.isArray(parsedOutput.skills) ? parsedOutput.skills : [],
+          is_fresher: isFresher,
+          last_resume_parse: nowIso,
+          resume_onboarding_complete: true,
+          full_name: typeof parsedOutput.full_name === "string" ? parsedOutput.full_name : undefined,
+        })
+        .eq("id", user.id);
+    } catch (err) {
+      console.warn("Failed to update profile row:", err);
+    }
+
+    const responsePayload = {
+      ...outcome.body,
+      sections_detected: sectionsDetected,
+      is_fresher: isFresher,
+      confidence: 0.9,
+    };
+
+    return json(responsePayload);
   } catch (err) {
     console.error("parse-resume error:", err);
     return serverError();
   }
-});
+  });
+}

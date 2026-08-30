@@ -38,14 +38,32 @@ export function buildParseResumePrompt(resumeText: string): string {
 ${FACT_RULES}
 
 Respond with JSON matching this shape:
-{"full_name": string|null, "email": string|null, "phone": string|null,
- "job_titles": string[], "skills": string[], "summary": string|null,
- "experience": [{"company","title","start","end","highlights":[string]}],
- "education": [{"institution","degree","year"}],
- "prompt_version": "${PROMPT_VERSIONS.parseResume}"}
+{
+  "full_name": string|null,
+  "email": string|null,
+  "phone": string|null,
+  "location": string|null,
+  "linkedin_url": string|null,
+  "github_url": string|null,
+  "website_url": string|null,
+  "job_titles": string[],
+  "skills": string[],
+  "summary": string|null,
+  "experience": [{"company": string, "title": string, "start": string|null, "end": string|null, "highlights": string[]}],
+  "education": [{"institution": string, "degree": string|null, "field": string|null, "year": string|null, "gpa": string|null}],
+  "projects": [{"name": string, "description": string|null, "technologies": string[]}],
+  "certifications": [{"name": string, "issuer": string|null, "year": string|null}],
+  "languages": [{"language": string, "proficiency": string|null}],
+  "volunteer_work": [{"organization": string, "role": string|null, "description": string|null}],
+  "publications": [{"title": string, "venue": string|null, "year": string|null}],
+  "awards": [{"title": string, "issuer": string|null, "year": string|null}],
+  "interests": string[],
+  "references": [{"name": string, "relationship": string|null, "contact": string|null}],
+  "prompt_version": "${PROMPT_VERSIONS.parseResume}"
+}
 
 RESUME TEXT:
-${resumeText.slice(0, 12000)}`;
+${resumeText.slice(0, 14000)}`;
 }
 
 export function buildTailoredResumePrompt(args: {

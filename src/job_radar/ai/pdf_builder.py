@@ -23,8 +23,10 @@ from typing import Any
 
 try:
     from fpdf import FPDF
+    _BaseDoc = FPDF
 except ImportError:
     FPDF = None  # type: ignore[assignment, misc]
+    _BaseDoc = object  # type: ignore[misc, assignment]
 
 # Bundled OFL fonts (Poppins + Inter statics). Resolved locally — this module
 # deliberately imports nothing else from job_radar so the engine container can
@@ -69,8 +71,10 @@ SECTION_TITLES = {
 }
 
 
-class _Doc(FPDF):
+class _Doc(_BaseDoc):
     def __init__(self):
+        if FPDF is None:
+            raise RuntimeError("fpdf2 is not installed. Install with `pip install fpdf2` to build PDFs.")
         super().__init__(format="A4")
         self.set_auto_page_break(True, margin=MARGIN_IN * 25.4)
         self.set_margins(MARGIN_IN * 25.4, MARGIN_IN * 25.4, MARGIN_IN * 25.4)
@@ -406,5 +410,36 @@ def build_cover_letter_pdf(
                 retry.cell(CONTENT_W_MM, 5.2, name, new_x="LMARGIN", new_y="NEXT")
             if retry.page <= COVER_LETTER_MAX_PAGES:
                 return bytes(retry.output())
+
+    return bytes(doc.output())
+
+
+def build_outreach_email_pdf(
+    profile: dict[str, Any],
+    outreach: dict[str, Any],
+    job: dict[str, Any],
+) -> bytes:
+    """Assemble an outreach email PDF (<= 1 page)."""
+    doc = _Doc()
+    doc.add_page()
+    doc.name_line(_clean(profile.get("full_name")) or "Candidate")
+    contact = _contact_bits(profile)
+    if contact:
+        doc.contact_line(contact)
+
+    today = FIXED_CREATION_DATE.strftime("%B %d, %Y")
+    doc.body(today)
+    doc.ln(3)
+
+    subject = outreach.get("cold_email", {}).get("subject") or outreach.get("subject", "Outreach")
+    doc.set_font("Inter", "B", 11)
+    doc.cell(CONTENT_W_MM, 6.0, f"Subject: {subject}", new_x="LMARGIN", new_y="NEXT")
+    doc.ln(2)
+
+    body_text = outreach.get("cold_email", {}).get("body") or outreach.get("body", "")
+    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body_text) if p.strip()]
+    for p in paragraphs:
+        doc.body(p, size=10.5)
+        doc.ln(2.5)
 
     return bytes(doc.output())

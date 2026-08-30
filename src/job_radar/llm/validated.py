@@ -90,6 +90,8 @@ def parse_ai_json(text: str) -> dict[str, Any] | None:
     except (json.JSONDecodeError, ValueError):
         pass
     start = candidate.find("{")
+    if start == -1:
+        return None
     for end in range(len(candidate), start, -1):
         if candidate[end - 1] != "}":
             continue

@@ -29,7 +29,63 @@ import { getEnv } from "../_shared/env.ts";
 
 const CACHE_STALENESS_HOURS = 24;
 
-Deno.serve(async (req) => {
+function buildSearchLinks(company: string, title: string) {
+  const encComp = encodeURIComponent(company.trim());
+  const encTitle = encodeURIComponent(`${company.trim()} ${title.trim()} manager`);
+  return {
+    recruiter_search: `https://www.linkedin.com/search/results/people/?keywords=${encComp}%20recruiter`,
+    talent_acquisition_search: `https://www.linkedin.com/search/results/people/?keywords=${encComp}%20talent%20acquisition`,
+    hiring_manager_search: `https://www.linkedin.com/search/results/people/?keywords=${encTitle}`,
+    department_lead_search: `https://www.linkedin.com/search/results/people/?keywords=${encComp}%20engineering%20manager`,
+  };
+}
+
+function buildFallbackInstructions(
+  companyName: string,
+  companyDomain: string,
+  jobTitle: string,
+  jobUrl: string,
+) {
+  const links = buildSearchLinks(companyName, jobTitle);
+  const domain = companyDomain.replace(/^https?:\/\//, "").split("/")[0].trim();
+  const genericEmails = domain
+    ? [`careers@${domain}`, `talent@${domain}`, `recruiting@${domain}`, `jobs@${domain}`]
+    : [];
+
+  return [
+    {
+      step: 1,
+      title: "Search LinkedIn for Recruiters",
+      instruction: `Search for talent acquisition specialists and recruiters at ${companyName}.`,
+      action_url: links.recruiter_search,
+      action_label: `Find Recruiters at ${companyName}`,
+    },
+    {
+      step: 2,
+      title: "Search for Hiring Manager",
+      instruction: `Search for the hiring manager or department lead for ${jobTitle} at ${companyName}.`,
+      action_url: links.hiring_manager_search,
+      action_label: `Find ${jobTitle} Managers`,
+    },
+    {
+      step: 3,
+      title: "Check Original Job Posting",
+      instruction: "Review the full job listing on the company careers site for direct contact emails or application instructions.",
+      action_url: jobUrl,
+      action_label: "View Original Job Posting",
+    },
+    {
+      step: 4,
+      title: "Try General Department Mailboxes",
+      instruction: "If no personal contact is available, reach out directly to the company's hiring inbox.",
+      suggested_emails: genericEmails,
+      action_label: "Copy Email Addresses",
+    },
+  ];
+}
+
+if (typeof Deno !== "undefined" && typeof Deno.serve === "function") {
+  Deno.serve(async (req) => {
   const preflight = handleOptions(req);
   if (preflight) return preflight;
   if (req.method !== "POST") {
@@ -55,6 +111,19 @@ Deno.serve(async (req) => {
 
     if (jobErr || !job) return notFound("Job not found");
 
+    const companyName = String(job.company ?? "Unknown Company");
+    const companyDomain = String(job.company_domain ?? "");
+    const jobTitle = String(job.title ?? "Open Position");
+    const jobUrl = String(job.apply_url ?? job.url ?? "");
+
+    const searchLinks = buildSearchLinks(companyName, jobTitle);
+    const fallbackInstructions = buildFallbackInstructions(
+      companyName,
+      companyDomain,
+      jobTitle,
+      jobUrl,
+    );
+
     const admin = createAdminClient();
 
     // ── Check cache: return existing contacts if fresh ─────────────────────
@@ -72,6 +141,8 @@ Deno.serve(async (req) => {
         contacts: cached,
         count: (cached as unknown[]).length,
         from_cache: true,
+        search_links: searchLinks,
+        fallback_instructions: fallbackInstructions,
       });
     }
 
@@ -89,10 +160,10 @@ Deno.serve(async (req) => {
           },
           body: JSON.stringify({
             job_id: jobId,
-            company: (job as Record<string, unknown>).company,
+            company: companyName,
             company_id: (job as Record<string, unknown>).company_id,
-            company_domain: (job as Record<string, unknown>).company_domain,
-            title: (job as Record<string, unknown>).title,
+            company_domain: companyDomain,
+            title: jobTitle,
             description: (job as Record<string, unknown>).description,
             url: (job as Record<string, unknown>).url,
             apply_url: (job as Record<string, unknown>).apply_url,
@@ -101,11 +172,18 @@ Deno.serve(async (req) => {
         });
 
         if (engineResp.ok) {
-          const enriched = (await engineResp.json()) as { contacts?: unknown[]; count?: number };
+          const enriched = (await engineResp.json()) as {
+            contacts?: unknown[];
+            count?: number;
+            search_links?: Record<string, string>;
+            fallback_instructions?: unknown[];
+          };
           return json({
             contacts: enriched.contacts ?? [],
             count: enriched.count ?? (enriched.contacts ?? []).length,
             from_cache: false,
+            search_links: enriched.search_links ?? searchLinks,
+            fallback_instructions: enriched.fallback_instructions ?? fallbackInstructions,
           });
         }
       } catch (engineErr) {
@@ -114,7 +192,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Inline fallback: return cached (possibly stale) or empty ──────────
+    // ── Inline fallback: return cached (possibly stale) or fallback guide ─
     const { data: fallbackCached } = await admin
       .from("job_people")
       .select("id, name, title, email, email_status, email_confidence, linkedin_search_url, source_type, confidence_score, found_at")
@@ -127,18 +205,23 @@ Deno.serve(async (req) => {
         contacts: fallbackCached,
         count: (fallbackCached as unknown[]).length,
         from_cache: true,
+        search_links: searchLinks,
+        fallback_instructions: fallbackInstructions,
       });
     }
 
-    // No contacts found at all
+    // No direct contacts found: return empty contacts list with 4 actionable fallback steps
     return json({
       contacts: [],
       count: 0,
       from_cache: false,
-      message: "No contacts found for this company. Try using the LinkedIn search link on the job page.",
+      search_links: searchLinks,
+      fallback_instructions: fallbackInstructions,
+      message: "No direct contacts found for this company. Use the 4 fallback steps to connect directly with recruiters and hiring managers.",
     });
   } catch (err) {
     console.error("find-contacts error:", err);
     return serverError();
   }
-});
+  });
+}

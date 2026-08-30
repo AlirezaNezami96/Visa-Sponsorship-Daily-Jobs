@@ -20,6 +20,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -67,6 +68,15 @@ class LLMRouter:
         self._cache: Dict[str, str] = {}
         self._load_cache()
 
+    def _get_gemini_keys(self) -> List[str]:
+        raw = os.getenv("GEMINI_API_KEYS") or os.getenv("GEMINI_API_KEY") or ""
+        extra = [os.getenv("GEMINI_API_KEY_2", ""), os.getenv("GEMINI_API_KEY_3", "")]
+        keys = [k.strip() for k in re.split(r"[,;\s]+", raw) if k.strip() and k.strip() != "PLACEHOLDER_KEY"]
+        for k in extra:
+            if k.strip() and k.strip() not in keys and k.strip() != "PLACEHOLDER_KEY":
+                keys.append(k.strip())
+        return keys
+
     def _load_cache(self) -> None:
         if self.cache_path.exists():
             try:
@@ -104,17 +114,18 @@ class LLMRouter:
         try:
             self.tracker_path.parent.mkdir(parents=True, exist_ok=True)
             with open(self.tracker_path, "w", encoding="utf-8") as f:
-                json.dump(tracker, f)
-        except Exception:
-            pass
+                json.dump(tracker, f, indent=2)
+        except Exception as e:
+            logger.warning("Failed to save daily tracker: %s", e)
 
         return True
 
     def _compute_cache_key(self, prompt: str, schema: Optional[Dict[str, Any]], custom_key: Optional[str]) -> str:
         if custom_key:
             return custom_key
-        content = prompt + (json.dumps(schema, sort_keys=True) if schema else "")
-        return hashlib.sha256(content.encode("utf-8")).hexdigest()
+        schema_str = json.dumps(schema, sort_keys=True) if schema else ""
+        raw = f"{prompt}::{schema_str}".encode("utf-8")
+        return hashlib.sha256(raw).hexdigest()
 
     def complete(
         self,
@@ -156,9 +167,8 @@ class LLMRouter:
         t0 = time.perf_counter()
 
         # 3. Provider Waterfall
-        # Provider 1: Gemini
-        gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
-        if gemini_key and gemini_key != "PLACEHOLDER_KEY":
+        # Provider 1: Gemini (with multi-key rotation)
+        for gemini_key in self._get_gemini_keys():
             res = self._try_gemini(
                 api_key=gemini_key,
                 prompt=prompt,
@@ -223,7 +233,7 @@ class LLMRouter:
         logger.warning("All LLM providers failed or no API keys configured. Returning empty fallback.")
         return LLMResult(
             text="{}" if json_schema else "",
-            model_used="heuristic_fallback",
+            model_used="fallback",
             provider="fallback",
             cached=False,
             latency_ms=int((time.perf_counter() - t0) * 1000),
@@ -262,8 +272,8 @@ class LLMRouter:
         reason = "no api key configured"
 
         if provider == "gemini":
-            gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
-            if gemini_key and gemini_key != "PLACEHOLDER_KEY":
+            keys = self._get_gemini_keys()
+            for gemini_key in keys:
                 result = self._try_gemini(
                     api_key=gemini_key,
                     prompt=prompt,
@@ -271,7 +281,9 @@ class LLMRouter:
                     system_instruction=system_instruction,
                     temperature=temperature,
                 )
-                reason = "provider error or empty response"
+                if result:
+                    break
+            reason = "provider error or empty response" if keys else "no api key configured"
         elif provider == "groq":
             groq_key = os.getenv("GROQ_API_KEY", "").strip()
             if groq_key:
