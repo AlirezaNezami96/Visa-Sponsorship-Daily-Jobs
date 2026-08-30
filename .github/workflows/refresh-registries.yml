@@ -28,6 +28,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -e .
+          pip install pytest
 
       - name: Bake fresh official sponsor registry
         run: |
@@ -35,11 +36,4 @@ jobs:
 
       - name: Run verification tests
         run: |
-          pytest tests/test_visa_evaluator.py tests/test_sponsors_db_enforcement.py -q
-
-      - name: Deploy Actor to Apify (if APIFY_TOKEN configured)
-        if: env.APIFY_TOKEN != ''
-        env:
-          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
-        run: |
-          npx -y apify-cli push --force
+          python -m pytest tests/test_visa_evaluator.py tests/test_sponsors_db_enforcement.py -q
