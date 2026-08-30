@@ -1,18 +1,19 @@
 /**
  * POST /functions/v1/admin-retry
- * Admin-only endpoint to retry or dismiss quarantined jobs.
+ * Hardened Admin Endpoint to Retry or Dismiss Quarantined Jobs.
  *
- * Body:
- * {
- *   quarantine_id?: string,
- *   job_id?: string,
- *   stage?: string,
- *   action: "retry" | "dismiss"
- * }
+ * Enforces:
+ * 1. Google OAuth session
+ * 2. Authenticator Assurance Level 2 (aal2 - TOTP MFA)
+ * 3. Active entry in admin_users allowlist
+ * 4. Fresh Step-Up MFA Challenge token (within last 5 minutes) for destructive operation
+ * 5. Security headers (HSTS, CSP, X-Frame-Options DENY, nosniff, strict-origin)
+ * 6. Rate limiting (10 req/min/IP)
+ * 7. Audit logging to admin_audit_log
  */
 import { createAdminClient } from "../_shared/supabase-clients.ts";
-import { handleOptions, json, badRequest, unauthorized, forbidden, serverError } from "../_shared/http.ts";
-import { verifyAdmin } from "../admin-metrics/index.ts";
+import { handleOptions, adminJson, adminError, badRequest, serverError } from "../_shared/http.ts";
+import { verifyAdminSession } from "../_shared/admin-auth.ts";
 
 if (typeof Deno !== "undefined" && typeof Deno.serve === "function") {
   Deno.serve(async (req) => {
@@ -20,20 +21,26 @@ if (typeof Deno !== "undefined" && typeof Deno.serve === "function") {
     if (preflight) return preflight;
 
     if (req.method !== "POST") {
-      return json({ error: { code: "method_not_allowed", message: "POST only" } }, { status: 405 });
+      return adminError(405, "method_not_allowed", "POST method only");
     }
 
     try {
-      const auth = await verifyAdmin(req);
-      if (!auth.isAdmin) {
-        return forbidden("Admin authorization required to retry or dismiss quarantine items");
-      }
-
       const body = await req.json().catch(() => ({}));
       const action = String(body.action || "retry").toLowerCase();
       const quarantineId = body.quarantine_id ? String(body.quarantine_id) : null;
       let jobId = body.job_id ? String(body.job_id) : null;
       let stage = body.stage ? String(body.stage) : null;
+
+      const authResult = await verifyAdminSession(req, {
+        action: `quarantine_${action}`,
+        resource: "processing_quarantine",
+        requireStepUp: true,
+        meta: { action, quarantine_id: quarantineId, job_id: jobId, stage },
+      });
+
+      if (!authResult.ok || !authResult.context) {
+        return authResult.response || adminError(403, "forbidden", "Admin authorization required");
+      }
 
       if (!quarantineId && (!jobId || !stage)) {
         return badRequest("Either 'quarantine_id' or both 'job_id' and 'stage' are required");
@@ -89,7 +96,7 @@ if (typeof Deno !== "undefined" && typeof Deno.serve === "function") {
             .is("resolved_at", null);
         }
 
-        return json({
+        return adminJson({
           ok: true,
           action: "retried",
           job_id: jobId,
@@ -112,7 +119,7 @@ if (typeof Deno !== "undefined" && typeof Deno.serve === "function") {
             .is("resolved_at", null);
         }
 
-        return json({
+        return adminJson({
           ok: true,
           action: "dismissed",
           quarantine_id: quarantineId,

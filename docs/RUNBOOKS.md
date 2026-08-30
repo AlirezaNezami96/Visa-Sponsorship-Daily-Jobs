@@ -99,3 +99,56 @@ curl -X POST \
 - `applicants_count`: Intentionally `NULL` by default unless explicitly provided by upstream ATS scrapers (e.g. LinkedIn/Adzuna metadata).
 - `skill_extraction_error`: Populated when AI/rule skill extraction finds no valid skills for a job description.
 
+---
+
+## 7. Max-Security Admin & CRM Operations
+
+### Layer 8: Network Gate Setup (Cloudflare Access / Tailscale Zero Trust)
+For maximum defense-in-depth protection, the `/admin` web routes and admin Edge Functions can be placed behind **Cloudflare Access Zero Trust**:
+1. In Cloudflare Zero Trust dashboard, create an Application for `app.visalane.com/admin/*`.
+2. Add Access Policy: Allow rule requiring Identity Provider (Google) and matching the exact owner/admin email allowlist.
+3. Configure Service Token or JWT verification header (`Cf-Access-Jwt-Assertion`) forwarded to origin.
+4. Result: Non-allowlisted traffic is terminated at Cloudflare's edge before ever reaching Supabase or the frontend server.
+
+### Break-Glass Procedure (Emergency Admin Access)
+If Google OAuth or TOTP MFA provider undergoes an outage and emergency database or pipeline access is required:
+1. **Access Method**: Direct access via Supabase Dashboard SQL Editor using the Project Owner credentials (protected by hardware security key / backup MFA).
+2. **Emergency Query**:
+   ```sql
+   -- View and inspect system status directly
+   SELECT * FROM pipeline_health ORDER BY stage;
+   SELECT * FROM processing_quarantine WHERE resolved_at IS NULL ORDER BY created_at DESC;
+
+   -- Temporary emergency allowlist addition (if required)
+   INSERT INTO public.admin_users (email, role, active)
+   VALUES ('emergency-admin@visalane.com', 'admin', TRUE)
+   ON CONFLICT (email) DO UPDATE SET active = TRUE;
+   ```
+3. **Post-Incident Remediation**:
+   - Deactivate temporary credentials immediately after incident resolution:
+     ```sql
+     UPDATE public.admin_users SET active = FALSE WHERE email = 'emergency-admin@visalane.com';
+     ```
+   - Audit all actions taken in `public.admin_audit_log` during the window.
+
+### Quarterly Admin Allowlist & MFA Review
+Every 90 days, the workspace owner must execute the quarterly security audit:
+1. Query active admins:
+   ```sql
+   SELECT id, email, role, active, created_at FROM public.admin_users ORDER BY created_at;
+   ```
+2. Deactivate any former contributors or unnecessary administrator privileges:
+   ```sql
+   UPDATE public.admin_users SET active = FALSE WHERE email = 'former-admin@visalane.com';
+   ```
+3. Review audit log anomalies:
+   ```sql
+   SELECT admin_email, action, resource, ip, count(*)
+   FROM public.admin_audit_log
+   WHERE created_at >= NOW() - INTERVAL '90 days'
+   GROUP BY admin_email, action, resource, ip
+   ORDER BY count(*) DESC;
+   ```
+4. Confirm all active admins have verified TOTP MFA factors in `auth.mfa_factors`.
+
+

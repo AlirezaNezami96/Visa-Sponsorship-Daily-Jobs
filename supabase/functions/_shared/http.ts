@@ -87,6 +87,50 @@ export function handleOptions(req: Request): Response | null {
   return null;
 }
 
+export const ADMIN_SECURITY_HEADERS = {
+  "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+  "Content-Security-Policy": "default-src 'self'; frame-ancestors 'none'",
+  "X-Frame-Options": "DENY",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+};
+
+export function adminJson(body: unknown, init: ResponseInit = { status: 200 }): Response {
+  return new Response(JSON.stringify(body), {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...CORS_HEADERS,
+      ...ADMIN_SECURITY_HEADERS,
+      ...(init.headers as Record<string, string> | undefined),
+    },
+  });
+}
+
+export function adminStructuredError(
+  status: number,
+  code: string,
+  message: string,
+  userAction?: string,
+): Response {
+  const body: Record<string, unknown> = {
+    error: {
+      code,
+      message,
+      request_id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+    },
+  };
+  if (userAction) {
+    (body.error as Record<string, unknown>).user_action = userAction;
+  }
+  return adminJson(body, { status });
+}
+
+export function adminError(status: number, code: string, message: string, userAction?: string): Response {
+  return adminStructuredError(status, code, message, userAction);
+}
+
 export const jsonResponse = json;
 
 export function errorResponse(code: string, message: string, status = 400): Response {

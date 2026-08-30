@@ -433,9 +433,9 @@ Base URL: `https://<YOUR_PROJECT_REF>.supabase.co/functions/v1`
 
 ---
 
-### 9. Admin Metrics & Pipeline Status
+### 9. Hardened Admin Metrics & Pipeline Status
 * **Endpoint**: `GET /admin-metrics?from=YYYY-MM-DD&to=YYYY-MM-DD`
-* **Headers**: `Authorization: Bearer <ADMIN_JWT>` or `x-admin-key: <ADMIN_API_KEY>`
+* **Headers**: `Authorization: Bearer <ADMIN_GOOGLE_AAL2_JWT>`
 * **Response (200 OK)**:
 ```json
 {
@@ -457,4 +457,59 @@ Base URL: `https://<YOUR_PROJECT_REF>.supabase.co/functions/v1`
   "quarantine": [ ... ]
 }
 ```
+
+---
+
+## Max-Security Admin & CRM Frontend Specifications
+
+The VisaLane admin panel and CRM enforce **8-Layer Defense in Depth**. Client-side route gating is UX only; all permissions and cryptographic checks are strictly enforced server-side.
+
+### 1. Identity & Login Flow (Google OAuth Only)
+* **Single Sign-In Method**: `supabase.auth.signInWithOAuth({ provider: 'google', options: { scopes: 'openid email profile' } })`
+* **Forbidden**: Password login and Magic Link OTP forms are prohibited for `/admin`.
+* **Provider Enforcement**: Sessions originating from non-Google providers return `403 forbidden`.
+
+### 2. Mandatory MFA Enrollment (aal2)
+* On first admin login, check `supabase.auth.mfa.getAuthenticatorAssuranceLevel()`.
+* If current level is `aal1`, query `supabase.auth.mfa.listFactors()`:
+  - If no TOTP factor enrolled: render mandatory **MFA Enrollment Screen** (`supabase.auth.mfa.enroll({ factorType: 'totp' })` → display QR Code → prompt 6-digit TOTP verification).
+  - If factor exists: prompt **MFA Challenge Screen** (`supabase.auth.mfa.challenge({ factorId })` → `verify({ factorId, challengeId, code })`).
+* All admin endpoints reject `aal1` sessions with `403 mfa_required`.
+
+### 3. Step-Up Authentication for Destructive Actions
+For high-risk operations (purging quarantine, retrying jobs, revoking all sessions, modifying allowlist):
+* **Endpoint**: `POST /admin-stepup`
+* **Request**: `{ "code": "123456", "action": "quarantine_retry" }`
+* **Response (200 OK)**:
+```json
+{
+  "ok": true,
+  "stepup_token": "a1b2c3d4e5f6...",
+  "action": "quarantine_retry",
+  "expires_at": "2026-08-30T10:05:00.000Z",
+  "valid_seconds": 300
+}
+```
+* Pass header `x-stepup-token: <STEPUP_TOKEN>` to the destructive endpoint within 5 minutes (300 seconds).
+
+### 4. Admin Session Management & Revocation
+* **List Active Sessions**: `GET /admin-sessions` (returns current session metadata and enrolled factors).
+* **Revoke All Sessions**: `POST /admin-sessions` with `{ "action": "revoke_all" }` and `x-stepup-token` header.
+
+### 5. Audit Log Viewer
+* **Endpoint**: `GET /admin-audit?limit=50&email=owner@visalane.com&action=quarantine_retry`
+* Displays immutable security log entries: admin email, action, resource, metadata, IP, user-agent, and timestamp.
+
+### 6. Admin Allowlist Management (Owner Only)
+* **Endpoint**: `GET /admin-users` (lists admins)
+* **Modify Allowlist**: `POST /admin-users` with `{ "email": "newadmin@visalane.com", "role": "admin", "active": true, "action": "upsert" }` and `x-stepup-token`.
+
+### 7. Unified Error Handling
+| HTTP Status | Error Code | Meaning & Frontend Action |
+|-------------|------------|---------------------------|
+| `401` | `unauthorized` | No active session; redirect to `/admin/login`. |
+| `403` | `mfa_required` | Session is `aal1`; redirect to `/admin/mfa-challenge`. |
+| `403` | `stepup_required` | Fresh MFA challenge required; open Step-Up modal. |
+| `403` | `forbidden` | Non-Google provider or account not in active allowlist. |
+| `429` | `rate_limit_exceeded` | Rate limit hit (10 req/min/IP); display retry cooldown. |
 
