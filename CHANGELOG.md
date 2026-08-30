@@ -1,6 +1,44 @@
 # Changelog
 
-All notable changes to the **Visa Sponsorship Jobs Scraper & Intelligence Feed** Actor are documented here.
+All notable changes to the **VisaLane Platform & Visa Sponsorship Jobs Scraper** are documented here.
+
+## [2.2.0] - 2026-08-30
+
+### 🔐 Phase 4: Full OAuth 2.0 Subsystem
+- **Providers**: Production-ready `GoogleOAuthProvider` and `GitHubOAuthProvider` with PKCE / CSRF HMAC-signed state tokens.
+- **Edge Functions**: Implemented `oauth-initiate` and `oauth-callback` in Supabase Deno with automated profile creation and metadata synchronization.
+- **Unified Error Handling**: Added `OAuthError` hierarchy (`InvalidStateError`, `TokenExchangeError`, `ProviderUnavailableError`, `ProfileFetchError`).
+
+### 📄 Universal Resume Parser & Section Detection
+- **Multi-Format Extraction**: Robust extractors for PDF (PDFMiner / `pypdf`), DOCX (`python-docx`), and plain text.
+- **12-Section Contract**: Multilingual section detector supporting English, German, French, Spanish, Italian, and Portuguese across 12 standard resume categories.
+- **AI Extraction Fallback**: Multi-model parser with anti-hallucination validation, confidence scoring, and fresher detection.
+- **Database Persistence**: Automatic synchronization with `resumes` and `profiles` tables.
+
+### 🎯 Job Match Scoring & Database Cache
+- **Rarity-Weighted Algorithm**: 40pt Title, 50pt Skills (1.5x for rare technical skills, 1.0x for common/soft skills), 10pt Experience, +10 Location bonus, +5 Visa bonus.
+- **Synonym & Version Normalizer**: Collapses synonyms (`JS` $\to$ `JavaScript`, `TS` $\to$ `TypeScript`, `NodeJS` $\to$ `Node`, `K8s` $\to$ `Kubernetes`, `AWS`, `GCP`, `CI/CD`) and strips version noise (`Python 3.9` $\to$ `Python`).
+- **Two-Tier Cache**: In-memory LRU with TTL + persistent `user_job_scores` table with deterministic cursor tie-breaking (`posted_at DESC, id DESC`).
+
+### ✍️ AI Document Generation & ATS Scoring
+- **Tailored Resumes**: Generates tailored resumes supporting **Professional Format** (ATS layout) and **Own Format** (mirroring candidate structure).
+- **Before / After ATS Comparison**: Real-time ATS scoring comparison showing match score improvements.
+- **Anti-Hallucination Guard**: Grounding validator enforcing 100% factual accuracy against candidate resume facts.
+- **Cover Letters & Outreach**: Generates 250–400 word personalized cover letters and 4-persona outreach messages (LinkedIn Note, InMail, Cold Email, Follow-up).
+
+### 🔍 Contact Discovery & Company Website Enrichment
+- **JSON-LD & Socials**: Ported `company-from-website` architecture to extract `schema.org/Organization` metadata, social profiles (LinkedIn company page, GitHub, Twitter/X), and phone numbers.
+- **Team & Leadership Parsing**: Scrapes public team and leadership pages (`/about`, `/team`, `/leadership`, `/contact`) for hiring contacts.
+- **4 Actionable Fallback Steps**: Returns LinkedIn recruiter search, hiring manager search, original job listing, and department mailboxes when direct contacts are unavailable.
+
+### ⚡ Multi-Key AI Waterfall Router
+- **Multi-Account Quota Rotation**: Automatically rotates across 2–3 Gemini API keys upon rate limits (`429 Too Many Requests`) before cascading to Groq (Llama 3.3 70B), OpenRouter, and safe heuristic fallbacks.
+
+### 📚 Documentation & Developer Guides
+- **Frontend Integration Guide**: [docs/FRONTEND_INTEGRATION_GUIDE.md](docs/FRONTEND_INTEGRATION_GUIDE.md) detailing all 7 core API endpoints, client-side PDF text extraction, and TypeScript examples.
+- **Manual Setup Walkthrough**: [docs/MANUAL_SETUP_WALKTHROUGH.md](docs/MANUAL_SETUP_WALKTHROUGH.md) with step-by-step instructions for OAuth credentials, AI keys, and Supabase secrets.
+
+---
 
 ## [2.1.0] - 2026-08-26
 
