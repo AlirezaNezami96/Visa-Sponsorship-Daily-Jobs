@@ -100,8 +100,11 @@ def generate_job_summary(job: Dict[str, Any], client: Any = None) -> str:
         f"Description: {desc[:2500]}"
     )
 
-    from job_radar.pipeline.circuit_breaker import CircuitBreaker
-    cb = CircuitBreaker(client) if client else None
+    # Circuit breaker (optional, only if client provided)
+    cb = None
+    if client:
+        from job_radar.pipeline.circuit_breaker import CircuitBreaker
+        cb = CircuitBreaker(client)
 
     # 1. Try Groq (fastest)
     if groq_key:
@@ -124,7 +127,7 @@ def generate_job_summary(job: Dict[str, Any], client: Any = None) -> str:
                     if len(text) >= 30:
                         if cb:
                             cb.record_success("groq_social")
-                        return _trim_summary(text, 280)
+                        return text
             except Exception as e:
                 logger.debug("Groq social summary failed: %s", e)
                 if cb:
@@ -151,7 +154,7 @@ def generate_job_summary(job: Dict[str, Any], client: Any = None) -> str:
                     if len(text) >= 30:
                         if cb:
                             cb.record_success("openrouter_social")
-                        return _trim_summary(text, 280)
+                        return text
             except Exception as e:
                 logger.debug("OpenRouter social summary failed: %s", e)
                 if cb:

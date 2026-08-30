@@ -306,6 +306,9 @@ def enrich_job(client: Any, job_id: str) -> dict[str, Any]:
                         cb.record_success("s2_favicons")
                     else:
                         cb.record_failure("s2_favicons")
+                else:
+                    from job_radar.pipeline.metrics import record_metric
+                    record_metric(client, "circuit:open:s2_favicons", True, 0)
     except Exception as e:
         errors.append(f"logo: {e}")
 
