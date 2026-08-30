@@ -199,6 +199,8 @@ class ResumeGenerator:
 
     def _check_existing_document(self, idempotency_key: str) -> dict[str, Any] | None:
         """Check for existing completed document with same idempotency key."""
+        if self.db_client is None:
+            return None
         try:
             res = (
                 self.db_client.table("generated_documents")
@@ -233,6 +235,8 @@ class ResumeGenerator:
         previous_document_id: str | None = None,
     ) -> None:
         """Persist generated document and delete previous version if requested."""
+        if self.db_client is None:
+            return
         try:
             # Delete previous document if specified
             if previous_document_id:

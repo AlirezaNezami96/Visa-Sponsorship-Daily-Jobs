@@ -76,7 +76,7 @@ def send_radar_digest(
     return True
 
 
-def send_email(report: list, provider: str = None):
+def send_email(report: list, provider: Optional[str] = None):
     """Send legacy visa job digest."""
     provider = (provider or os.environ.get("EMAIL_PROVIDER", "resend")).lower()
     if not report:
@@ -97,7 +97,7 @@ def send_email(report: list, provider: str = None):
         raise ValueError(f"Unknown email provider: {provider}")
 
 
-def send_junior_ai_email(report: list, provider: str = None):
+def send_junior_ai_email(report: list, provider: Optional[str] = None):
     """Send junior AI job digest, sorted by ATS score where available."""
     provider = (provider or os.environ.get("EMAIL_PROVIDER", "resend")).lower()
     if not report:
@@ -126,6 +126,14 @@ def send_junior_ai_email(report: list, provider: str = None):
         _send_via_gmail_smtp(subject, html_content)
     else:
         raise ValueError(f"Unknown email provider: {provider}")
+
+
+def send_job_alert_email(email: str, title: str, text: str, provider: Optional[str] = None) -> bool:
+    """Send an instant job alert email to an individual subscriber."""
+    html_content = f"<div style='font-family: sans-serif; line-height: 1.5;'><h2>{title}</h2><pre style='white-space: pre-wrap; font-family: inherit;'>{text}</pre></div>"
+    subject = f"🔔 VisaLane Job Alert: {title}"
+    res = send_email_with_fallback(subject, html_content, to_email=email, preferred=provider)
+    return res is not None
 
 
 def send_justjoin_email(

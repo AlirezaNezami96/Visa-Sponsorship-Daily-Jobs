@@ -36,7 +36,7 @@ STAGES = [
 
 def _create_client() -> Any:
     """Create a Supabase service-role client."""
-    from supabase import create_client
+    from supabase import create_client  # type: ignore[attr-defined]
     url = os.environ["SUPABASE_URL"]
     key = os.environ["SUPABASE_KEY"]
     return create_client(url, key)
@@ -122,7 +122,8 @@ def notify_owner_if_needed(
     if recent_quarantines:
         lines.append(f"🛑 *New Quarantined Jobs ({len(recent_quarantines)}):*")
         for q in recent_quarantines[:5]:
-            lines.append(f"  • Job `{str(q.get('job_id'))[:8]}` ({q.get('stage')}): {q.get('reason')[:60]}")
+            reason_str = str(q.get("reason") or "")
+            lines.append(f"  • Job `{str(q.get('job_id'))[:8]}` ({q.get('stage')}): {reason_str[:60]}")
         if len(recent_quarantines) > 5:
             lines.append(f"  • ... and {len(recent_quarantines) - 5} more")
         lines.append("")

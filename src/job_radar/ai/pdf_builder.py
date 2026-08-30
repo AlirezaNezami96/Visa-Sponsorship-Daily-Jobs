@@ -72,7 +72,7 @@ SECTION_TITLES = {
 }
 
 
-class _Doc(_BaseDoc):
+class _Doc(_BaseDoc):  # type: ignore[valid-type, misc]
     def __init__(self):
         if FPDF is None:
             raise RuntimeError("fpdf2 is not installed. Install with `pip install fpdf2` to build PDFs.")

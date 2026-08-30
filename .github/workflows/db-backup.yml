@@ -26,6 +26,10 @@ jobs:
       - name: Dump Supabase Postgres
         run: |
           mkdir -p dump
+          if [ -z "${{ secrets.SUPABASE_DB_CONNECTION_STRING }}" ]; then
+            echo "SUPABASE_DB_CONNECTION_STRING is not set."
+            exit 1
+          fi
           docker run --rm \
             -v "$PWD/dump:/dump" \
             postgres:15 \
@@ -40,6 +44,10 @@ jobs:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           GDRIVE_BACKUP_FOLDER_ID: ${{ secrets.GDRIVE_BACKUP_FOLDER_ID }}
         run: |
+          if [ -z "${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}" ]; then
+            echo "GOOGLE_SERVICE_ACCOUNT_JSON is not set."
+            exit 1
+          fi
           curl -fsSL https://rclone.org/install.sh | sudo bash
           mkdir -p ~/.config/rclone /tmp/rclone-sa
           python3 - <<'PY'
@@ -52,7 +60,7 @@ jobs:
               "type = drive\n"
               "scope = drive.file\n"
               f"service_account_credentials_file = {sa_path}\n"
-              f"root_folder_id = {os.environ['GDRIVE_BACKUP_FOLDER_ID']}\n"
+              f"root_folder_id = {os.environ.get('GDRIVE_BACKUP_FOLDER_ID', '')}\n"
           )
           (pathlib.Path.home() / ".config/rclone/rclone.conf").write_text(conf)
           json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"])  # fail fast if malformed
@@ -77,7 +85,7 @@ jobs:
           name: visalane-db-backup-${{ github.run_id }}
           path: dump/*.sql.gz
           retention-days: 30
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Log run to backup_logs
         if: always()

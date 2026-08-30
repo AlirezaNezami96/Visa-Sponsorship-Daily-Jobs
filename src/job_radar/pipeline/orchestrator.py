@@ -192,7 +192,8 @@ async def run_pipeline(
 
     # 6. Check budget and spending limits before burning LLM tokens (FIX 4: Prevent LLM Money Leak)
     skip_ai = False
-    if getattr(sink, "limit_reached", False) or (callable(getattr(sink, "is_limit_reached", None)) and sink.is_limit_reached()):
+    is_limit_reached_fn = getattr(sink, "is_limit_reached", None)
+    if getattr(sink, "limit_reached", False) or (callable(is_limit_reached_fn) and is_limit_reached_fn()):
         logger.warning("User spending limit reached before AI stage. Skipping AI classification.")
         skip_ai = True
 

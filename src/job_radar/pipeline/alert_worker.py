@@ -21,7 +21,7 @@ BATCH_SIZE = int(os.getenv("ALERT_BATCH_SIZE", "50"))
 
 def _create_client() -> Any:
     """Create a Supabase service-role client."""
-    from supabase import create_client
+    from supabase import create_client  # type: ignore[attr-defined]
     url = os.environ["SUPABASE_URL"]
     key = os.environ["SUPABASE_KEY"]
     return create_client(url, key)

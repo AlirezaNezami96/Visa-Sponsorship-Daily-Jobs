@@ -40,7 +40,7 @@ def evaluate_visa_for_job(job: Job) -> Job:
     job_dict = job.to_legacy_dict()
     try:
         conf, auth, meta = evaluate_job_visa(job_dict)
-        job.visa_confidence = conf
+        job.visa_confidence = VisaConfidence(conf.value) if hasattr(conf, "value") else conf  # type: ignore[assignment]
         job.auth_fit = auth.value if hasattr(auth, "value") else str(auth)
         job.visa_sponsor_meta = meta
 
