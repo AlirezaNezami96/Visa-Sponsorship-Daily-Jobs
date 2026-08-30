@@ -13,7 +13,7 @@
     
     @media screen and (max-width: 600px) {
       .container-table { width: 100% !important; padding: 12px !important; }
-      .otp-slot { font-size: 28px !important; letter-spacing: 6px !important; padding: 16px 12px !important; }
+      .otp-slot { font-size: 32px !important; letter-spacing: 6px !important; padding: 14px 18px !important; }
       .card-content { padding: 28px 20px !important; }
     }
   </style>
@@ -21,7 +21,7 @@
 <body style="margin: 0; padding: 0; background-color: #0b0f19; color: #f1f5f9;">
   <!-- Preview text -->
   <div style="display: none; max-height: 0px; overflow: hidden;">
-    Your VisaLane verification code is {{ .Token }}. Use this 6-digit code to complete your sign-in.
+    Your VisaLane verification code is {{ .Token }}. Use this code to sign in.
   </div>
 
   <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #0b0f19; min-height: 100vh; padding: 40px 10px;">
@@ -76,15 +76,15 @@
                     
                     <!-- Subtitle -->
                     <p style="margin: 0 0 28px 0; font-size: 15px; line-height: 24px; color: #94a3b8; text-align: center;">
-                      Enter the 6-digit confirmation code below to verify your account on <span style="color: #e2e8f0; font-weight: 600;">VisaLane</span> and unlock global visa-sponsored jobs.
+                      Enter the confirmation code below to verify your account on <span style="color: #e2e8f0; font-weight: 600;">VisaLane</span>.
                     </p>
 
-                    <!-- OTP Code Box -->
+                    <!-- Simple Big OTP Code Box -->
                     <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 28px;">
                       <tr>
                         <td align="center">
-                          <div style="background: #090d16; border: 1.5px solid #2563eb; border-radius: 14px; padding: 18px 24px; display: inline-block; box-shadow: 0 0 24px rgba(37, 99, 235, 0.25);">
-                            <span class="otp-slot" style="font-family: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 34px; font-weight: 800; letter-spacing: 10px; color: #38bdf8; text-shadow: 0 0 12px rgba(56, 189, 248, 0.4); display: block; text-align: center; margin-right: -10px;">
+                          <div style="background: #090d16; border: 1.5px solid #2563eb; border-radius: 14px; padding: 18px 28px; display: inline-block; box-shadow: 0 0 24px rgba(37, 99, 235, 0.25);">
+                            <span class="otp-slot" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 40px; font-weight: 800; letter-spacing: 8px; color: #38bdf8; display: block; text-align: center; margin-right: -8px;">
                               {{ .Token }}
                             </span>
                           </div>
@@ -93,26 +93,13 @@
                     </table>
 
                     <!-- Expiration Notice -->
-                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 28px; background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(51, 65, 85, 0.6); border-radius: 10px;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 24px; background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(51, 65, 85, 0.6); border-radius: 10px;">
                       <tr>
                         <td style="padding: 12px 16px; text-align: center; font-size: 13px; color: #94a3b8;">
                           ⏱ This code is valid for <strong style="color: #f1f5f9;">10 minutes</strong> and can only be used once.
                         </td>
                       </tr>
                     </table>
-
-                    <!-- Direct Confirmation Button (Optional alternative) -->
-                    {{ if .ConfirmationURL }}
-                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 24px;">
-                      <tr>
-                        <td align="center">
-                          <a href="{{ .ConfirmationURL }}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; padding: 12px 28px; border-radius: 10px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35); text-align: center;">
-                            Verify & Continue directly &rarr;
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
-                    {{ end }}
 
                     <!-- Security Alert -->
                     <p style="margin: 0; font-size: 12px; line-height: 18px; color: #64748b; text-align: center;">
