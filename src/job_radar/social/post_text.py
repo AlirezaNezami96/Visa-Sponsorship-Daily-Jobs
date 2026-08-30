@@ -100,17 +100,12 @@ def generate_job_summary(job: Dict[str, Any], client: Any = None) -> str:
         f"Description: {desc[:2500]}"
     )
 
-    # Circuit breaker (optional, only if client provided)
-    cb = None
-    if client:
-        from job_radar.pipeline.circuit_breaker import CircuitBreaker
-        from job_radar.pipeline.metrics import record_metric
-        cb = CircuitBreaker(client)
+    from job_radar.pipeline.circuit_breaker import CircuitBreaker
+    cb = CircuitBreaker(client) if client else None
 
     # 1. Try Groq (fastest)
     if groq_key:
-        cb_name = "groq_social"
-        if cb is None or not cb.is_open(cb_name):
+        if cb is None or not cb.is_open("groq_social"):
             try:
                 import requests
                 resp = requests.post(
@@ -128,17 +123,16 @@ def generate_job_summary(job: Dict[str, Any], client: Any = None) -> str:
                     text = resp.json()["choices"][0]["message"]["content"].strip()
                     if len(text) >= 30:
                         if cb:
-                            cb.record_success(cb_name)
+                            cb.record_success("groq_social")
                         return _trim_summary(text, 280)
             except Exception as e:
                 logger.debug("Groq social summary failed: %s", e)
                 if cb:
-                    cb.record_failure(cb_name)
+                    cb.record_failure("groq_social")
 
     # 2. Try OpenRouter
     if openrouter_key:
-        cb_name = "openrouter_social"
-        if cb is None or not cb.is_open(cb_name):
+        if cb is None or not cb.is_open("openrouter_social"):
             try:
                 import requests
                 resp = requests.post(
@@ -156,12 +150,12 @@ def generate_job_summary(job: Dict[str, Any], client: Any = None) -> str:
                     text = resp.json()["choices"][0]["message"]["content"].strip()
                     if len(text) >= 30:
                         if cb:
-                            cb.record_success(cb_name)
+                            cb.record_success("openrouter_social")
                         return _trim_summary(text, 280)
             except Exception as e:
                 logger.debug("OpenRouter social summary failed: %s", e)
                 if cb:
-                    cb.record_failure(cb_name)
+                    cb.record_failure("openrouter_social")
 
     # 3. Deterministic fallback
     return _extractive_summary(desc, skills)
