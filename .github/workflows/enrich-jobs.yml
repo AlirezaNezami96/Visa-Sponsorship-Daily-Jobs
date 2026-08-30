@@ -7,12 +7,12 @@ on:
     - cron: '0 */2 * * *'  # Every 2 hours
   workflow_dispatch:
 
-concurrency:
-  group: enrich-jobs
-  cancel-in-progress: false
-
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 
 env:
   SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
