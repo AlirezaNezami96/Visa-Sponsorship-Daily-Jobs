@@ -102,13 +102,14 @@ def generate_job_summary(job: Dict[str, Any], client: Any = None) -> str:
 
     # Circuit breaker (optional, only if client provided)
     cb = None
-    if client:
+    if client is not None:
         from job_radar.pipeline.circuit_breaker import CircuitBreaker
         cb = CircuitBreaker(client)
 
     # 1. Try Groq (fastest)
     if groq_key:
-        if cb is None or not cb.is_open("groq_social"):
+        cb_name = "groq_social"
+        if cb is None or not cb.is_open(cb_name):
             try:
                 import requests
                 resp = requests.post(
@@ -125,17 +126,18 @@ def generate_job_summary(job: Dict[str, Any], client: Any = None) -> str:
                 if resp.status_code == 200:
                     text = resp.json()["choices"][0]["message"]["content"].strip()
                     if len(text) >= 30:
-                        if cb:
-                            cb.record_success("groq_social")
+                        if cb is not None:
+                            cb.record_success(cb_name)
                         return text
             except Exception as e:
                 logger.debug("Groq social summary failed: %s", e)
-                if cb:
-                    cb.record_failure("groq_social")
+                if cb is not None:
+                    cb.record_failure(cb_name)
 
     # 2. Try OpenRouter
     if openrouter_key:
-        if cb is None or not cb.is_open("openrouter_social"):
+        cb_name = "openrouter_social"
+        if cb is None or not cb.is_open(cb_name):
             try:
                 import requests
                 resp = requests.post(
@@ -152,13 +154,13 @@ def generate_job_summary(job: Dict[str, Any], client: Any = None) -> str:
                 if resp.status_code == 200:
                     text = resp.json()["choices"][0]["message"]["content"].strip()
                     if len(text) >= 30:
-                        if cb:
-                            cb.record_success("openrouter_social")
+                        if cb is not None:
+                            cb.record_success(cb_name)
                         return text
             except Exception as e:
                 logger.debug("OpenRouter social summary failed: %s", e)
-                if cb:
-                    cb.record_failure("openrouter_social")
+                if cb is not None:
+                    cb.record_failure(cb_name)
 
     # 3. Deterministic fallback
     return _extractive_summary(desc, skills)
