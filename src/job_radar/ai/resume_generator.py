@@ -10,21 +10,22 @@ Coordinates:
   7. Previous resume cleanup / deletion on regeneration
   8. PDF building via pdf_builder
 """
+
 from __future__ import annotations
 
 import datetime
 import hashlib
 import json
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
-from job_radar.errors.base import HallucinationError, UsageLimitError, ValidationError
+from job_radar.errors.base import HallucinationError, ValidationError
 from job_radar.llm.router import LLMRouter, get_llm_router
 from job_radar.llm.validated import run_validated_completion
+
 from .ats_scorer import compute_ats_score
 from .own_format import build_own_format_tailoring_prompt
 from .professional_format import build_professional_tailoring_prompt
-from .template_fetcher import get_professional_template
 from .validators import validate_resume_grounding
 
 logger = logging.getLogger(__name__)
@@ -47,21 +48,21 @@ def generate_idempotency_key(
 class ResumeGenerator:
     """Orchestrates end-to-end tailored resume generation with ATS scoring and validation."""
 
-    def __init__(self, llm_router: Optional[LLMRouter] = None, db_client: Optional[Any] = None):
+    def __init__(self, llm_router: LLMRouter | None = None, db_client: Any | None = None):
         self.llm_router = llm_router or get_llm_router()
         self.db_client = db_client
 
     def generate_tailored_resume(
         self,
         user_id: str,
-        profile_data: Dict[str, Any],
-        job_data: Dict[str, Any],
+        profile_data: dict[str, Any],
+        job_data: dict[str, Any],
         format_type: str = "professional",
         original_raw_text: str = "",
         profile_updated_at: str = "",
-        previous_document_id: Optional[str] = None,
+        previous_document_id: str | None = None,
         force_regenerate: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate a tailored resume in professional or user's own format.
 
         Args:
@@ -78,12 +79,11 @@ class ResumeGenerator:
             Dictionary containing tailored resume JSON, ATS scores, and metadata.
         """
         # 1. Fresher Check
-        if profile_data.get("is_fresher") or not profile_data.get("experience") and not profile_data.get("skills"):
-            if profile_data.get("is_fresher"):
-                raise ValidationError(
-                    "Tailored resume generation requires a full resume. Please upload your resume first.",
-                    user_message="AI resume tailoring is disabled for fresher accounts without a resume. Please upload your CV first.",
-                )
+        if profile_data.get("is_fresher"):
+            raise ValidationError(
+                "Tailored resume generation requires a full resume. Please upload your resume first.",
+                user_message="AI resume tailoring is disabled for fresher accounts without a resume. Please upload your CV first.",
+            )
 
         job_id = str(job_data.get("id") or job_data.get("job_id") or "unknown_job")
         norm_format = "own" if format_type.lower() == "own" else "professional"
@@ -105,7 +105,9 @@ class ResumeGenerator:
         # 3. Baseline ATS Score (Before tailoring)
         resume_text_repr = original_raw_text or json.dumps(profile_data)
         user_skills = profile_data.get("skills") or []
-        user_titles = profile_data.get("job_titles") or [e.get("title", "") for e in profile_data.get("experience", []) if isinstance(e, dict)]
+        user_titles = profile_data.get("job_titles") or [
+            e.get("title", "") for e in profile_data.get("experience", []) if isinstance(e, dict)
+        ]
         job_skills = job_data.get("skills") or []
         job_title = job_data.get("title") or ""
         job_desc = job_data.get("description") or ""
@@ -134,7 +136,7 @@ class ResumeGenerator:
             )
 
         # 5. Execute Generation via Validated AI Waterfall
-        def _validator(candidate: Dict[str, Any]) -> Optional[str]:
+        def _validator(candidate: dict[str, Any]) -> str | None:
             return validate_resume_grounding(candidate, profile_data)
 
         completion = run_validated_completion(
@@ -181,7 +183,7 @@ class ResumeGenerator:
             "idempotency_key": idempotency_key,
             "provider_used": completion.provider,
             "model_used": completion.model,
-            "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "generated_at": datetime.datetime.now(datetime.UTC).isoformat(),
         }
 
         # 7. Database Persistence & Previous Document Deletion
@@ -195,7 +197,7 @@ class ResumeGenerator:
 
         return result_payload
 
-    def _check_existing_document(self, idempotency_key: str) -> Optional[Dict[str, Any]]:
+    def _check_existing_document(self, idempotency_key: str) -> dict[str, Any] | None:
         """Check for existing completed document with same idempotency key."""
         try:
             res = (
@@ -219,7 +221,7 @@ class ResumeGenerator:
                     "idempotency_key": idempotency_key,
                     "cached": True,
                 }
-        except Exception as exc:
+        except (AttributeError, KeyError, TypeError, ValueError, RuntimeError) as exc:
             logger.debug("Idempotency lookup error: %s", exc)
         return None
 
@@ -227,48 +229,56 @@ class ResumeGenerator:
         self,
         user_id: str,
         job_id: str,
-        result_payload: Dict[str, Any],
-        previous_document_id: Optional[str] = None,
+        result_payload: dict[str, Any],
+        previous_document_id: str | None = None,
     ) -> None:
         """Persist generated document and delete previous version if requested."""
         try:
             # Delete previous document if specified
             if previous_document_id:
-                self.db_client.table("generated_documents").delete().eq("id", previous_document_id).eq("user_id", user_id).execute()
+                self.db_client.table("generated_documents").delete().eq("id", previous_document_id).eq(
+                    "user_id", user_id
+                ).execute()
 
             # Insert new record
-            insert_res = self.db_client.table("generated_documents").insert({
-                "user_id": user_id,
-                "job_id": job_id,
-                "document_type": "resume",
-                "format_type": result_payload["format_type"],
-                "status": "completed",
-                "ats_score_before": result_payload["ats_score_before"],
-                "ats_score_after": result_payload["ats_score_after"],
-                "idempotency_key": result_payload["idempotency_key"],
-                "output_json": result_payload["tailored_resume"],
-                "previous_document_id": previous_document_id,
-                "generation_metadata": {
-                    "provider": result_payload.get("provider_used"),
-                    "model": result_payload.get("model_used"),
-                },
-            }).execute()
+            insert_res = (
+                self.db_client.table("generated_documents")
+                .insert(
+                    {
+                        "user_id": user_id,
+                        "job_id": job_id,
+                        "document_type": "resume",
+                        "format_type": result_payload["format_type"],
+                        "status": "completed",
+                        "ats_score_before": result_payload["ats_score_before"],
+                        "ats_score_after": result_payload["ats_score_after"],
+                        "idempotency_key": result_payload["idempotency_key"],
+                        "output_json": result_payload["tailored_resume"],
+                        "previous_document_id": previous_document_id,
+                        "generation_metadata": {
+                            "provider": result_payload.get("provider_used"),
+                            "model": result_payload.get("model_used"),
+                        },
+                    }
+                )
+                .execute()
+            )
 
             if insert_res and insert_res.data:
                 result_payload["document_id"] = insert_res.data[0].get("id")
-        except Exception as exc:
+        except (AttributeError, KeyError, TypeError, ValueError, RuntimeError) as exc:
             logger.warning("Database persistence error during resume generation: %s", exc)
 
 
 def generate_resume(
     user_id: str,
-    profile_data: Dict[str, Any],
-    job_data: Dict[str, Any],
+    profile_data: dict[str, Any],
+    job_data: dict[str, Any],
     format_type: str = "professional",
     original_raw_text: str = "",
-    llm_router: Optional[LLMRouter] = None,
-    db_client: Optional[Any] = None,
-) -> Dict[str, Any]:
+    llm_router: LLMRouter | None = None,
+    db_client: Any | None = None,
+) -> dict[str, Any]:
     """Convenience functional wrapper for tailored resume generation."""
     generator = ResumeGenerator(llm_router=llm_router, db_client=db_client)
     return generator.generate_tailored_resume(

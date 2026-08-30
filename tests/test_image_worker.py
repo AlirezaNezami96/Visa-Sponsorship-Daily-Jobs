@@ -106,11 +106,12 @@ def test_wikimedia_circuit_breaker_skips_when_open():
         "city": "Stockholm",
     }
     client = MockImageSupabase(job_data=job_row)
+    from datetime import datetime, timezone
     client.circuits["wikimedia"] = {
         "name": "wikimedia",
         "state": "open",
         "consecutive_failures": 5,
-        "opened_at": "2026-08-30T08:00:00+00:00",
+        "opened_at": datetime.now(timezone.utc).isoformat(),
     }
 
     with patch("job_radar.pipeline.image_worker.fetch_landmark_photo") as mock_fetch:

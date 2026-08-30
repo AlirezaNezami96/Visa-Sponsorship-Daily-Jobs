@@ -14,19 +14,67 @@ The scorer is:
   - Used for "before" scoring (original resume)
   - AI-returned score is used for "after" scoring (tailored resume)
 """
+
 from __future__ import annotations
 
 import re
 from typing import Any
 
 # Words to ignore in keyword comparison
-_STOP_WORDS = frozenset({
-    "the", "and", "for", "with", "that", "this", "are", "have", "will",
-    "from", "your", "our", "their", "you", "we", "in", "on", "at", "to",
-    "of", "a", "an", "be", "is", "was", "as", "by", "or", "not", "but",
-    "also", "all", "any", "can", "do", "has", "had", "its", "may", "new",
-    "no", "one", "so", "up", "use", "who", "out", "if", "about", "into",
-})
+_STOP_WORDS = frozenset(
+    {
+        "the",
+        "and",
+        "for",
+        "with",
+        "that",
+        "this",
+        "are",
+        "have",
+        "will",
+        "from",
+        "your",
+        "our",
+        "their",
+        "you",
+        "we",
+        "in",
+        "on",
+        "at",
+        "to",
+        "of",
+        "a",
+        "an",
+        "be",
+        "is",
+        "was",
+        "as",
+        "by",
+        "or",
+        "not",
+        "but",
+        "also",
+        "all",
+        "any",
+        "can",
+        "do",
+        "has",
+        "had",
+        "its",
+        "may",
+        "new",
+        "no",
+        "one",
+        "so",
+        "up",
+        "use",
+        "who",
+        "out",
+        "if",
+        "about",
+        "into",
+    }
+)
 
 _WORD_RE = re.compile(r"\b[a-z][a-z0-9\-\+#\.]{1,40}\b")
 

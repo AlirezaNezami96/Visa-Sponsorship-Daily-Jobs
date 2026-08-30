@@ -1,9 +1,8 @@
 """Persona-specific templates and formats for outreach messages."""
+
 from __future__ import annotations
 
-from typing import Any, Dict
-
-PERSONA_GUIDELINES: Dict[str, Dict[str, str]] = {
+PERSONA_GUIDELINES: dict[str, dict[str, str]] = {
     "recruiter": {
         "focus": "Matching technical skills, availability, visa sponsorship qualification, and clear role fit.",
         "tone": "Direct, professional, structured, highlighting key qualifications.",

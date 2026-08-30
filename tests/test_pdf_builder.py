@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import unittest
+
 import pytest
 
 pytest.importorskip("fpdf")

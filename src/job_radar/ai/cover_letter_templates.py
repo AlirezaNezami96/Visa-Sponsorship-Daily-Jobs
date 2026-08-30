@@ -1,10 +1,9 @@
 """Templates and hooks for cover letter generation."""
+
 from __future__ import annotations
 
-from typing import Any, Dict, List
-
 # Opening hook templates that avoid cliché phrases
-HOOK_TEMPLATES: List[str] = [
+HOOK_TEMPLATES: list[str] = [
     "Having scaled {domain_skill} systems to handle {metric_achievement}, I was immediately drawn to {company}'s work on {company_focus}.",
     "When I saw that {company} is expanding its {domain_skill} capabilities, I knew my background in {user_specialty} would be an immediate fit.",
     "{company}'s reputation for {company_mission} resonates strongly with my experience in {user_specialty}.",

@@ -3,18 +3,19 @@
 Generates tailored resumes matching the Google Doc professional template structure,
 optimizing for ATS readability and keyword relevance (target ATS score 95+).
 """
+
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .template_fetcher import get_professional_template
 
 
 def build_professional_tailoring_prompt(
-    profile_data: Dict[str, Any],
-    job_data: Dict[str, Any],
-    template_config: Optional[Dict[str, Any]] = None,
+    profile_data: dict[str, Any],
+    job_data: dict[str, Any],
+    template_config: dict[str, Any] | None = None,
 ) -> str:
     """Build the AI prompt for professional template resume tailoring."""
     template = template_config or get_professional_template()
@@ -23,11 +24,11 @@ def build_professional_tailoring_prompt(
 Tailor the candidate's resume for the specific job opening below, formatting for the Professional ATS Template.
 
 TARGET JOB DETAILS:
-- Title: {job_data.get('title', 'Unknown')}
-- Company: {job_data.get('company', 'Unknown')}
-- Required Skills: {json.dumps(job_data.get('skills', []))}
+- Title: {job_data.get("title", "Unknown")}
+- Company: {job_data.get("company", "Unknown")}
+- Required Skills: {json.dumps(job_data.get("skills", []))}
 - Job Description:
-{job_data.get('description', '')[:4000]}
+{job_data.get("description", "")[:4000]}
 
 CANDIDATE PROFILE (SOURCE OF TRUTH):
 {json.dumps(profile_data, indent=2)}
@@ -92,5 +93,5 @@ OUTPUT JSON SCHEMA:
     }}
   ],
   "format_type": "professional",
-  "template_id": "{template.get('template_id', 'visalane_ats_standard_v1')}"
+  "template_id": "{template.get("template_id", "visalane_ats_standard_v1")}"
 }}"""

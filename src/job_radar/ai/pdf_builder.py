@@ -23,6 +23,7 @@ from typing import Any
 
 try:
     from fpdf import FPDF
+
     _BaseDoc = FPDF
 except ImportError:
     FPDF = None  # type: ignore[assignment, misc]

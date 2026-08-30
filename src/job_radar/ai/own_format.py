@@ -3,15 +3,16 @@
 Preserves the user's original resume structural layout, section order, and style,
 while tailoring bullet points, summary, and skills for the target job.
 """
+
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 def build_own_format_tailoring_prompt(
-    profile_data: Dict[str, Any],
-    job_data: Dict[str, Any],
+    profile_data: dict[str, Any],
+    job_data: dict[str, Any],
     original_raw_text: str = "",
 ) -> str:
     """Build the AI prompt for user's own format resume tailoring."""
@@ -19,17 +20,17 @@ def build_own_format_tailoring_prompt(
 Your mission is to tailor the candidate's resume for the target job while PRESERVING the candidate's exact structural layout, tone, and section hierarchy.
 
 TARGET JOB DETAILS:
-- Title: {job_data.get('title', 'Unknown')}
-- Company: {job_data.get('company', 'Unknown')}
-- Required Skills: {json.dumps(job_data.get('skills', []))}
+- Title: {job_data.get("title", "Unknown")}
+- Company: {job_data.get("company", "Unknown")}
+- Required Skills: {json.dumps(job_data.get("skills", []))}
 - Job Description:
-{job_data.get('description', '')[:4000]}
+{job_data.get("description", "")[:4000]}
 
 CANDIDATE ORIGINAL RESUME / PROFILE:
 {json.dumps(profile_data, indent=2)}
 
 ORIGINAL RESUME CONTEXT (FOR SECTION ORDER & STYLE REFERENCE):
-{original_raw_text[:3000] if original_raw_text else 'Preserve standard order from profile data'}
+{original_raw_text[:3000] if original_raw_text else "Preserve standard order from profile data"}
 
 STRICT RULES:
 1. PRESERVE STRUCTURE: Keep the candidate's exact section ordering and personal style.

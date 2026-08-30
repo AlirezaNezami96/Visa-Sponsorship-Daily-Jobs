@@ -6,15 +6,17 @@ Generates:
   3. Cold Email (subject <= 60 chars, body <= 200 words)
   4. Follow-up Email (sent 5 days later, value-add)
 """
+
 from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
-from job_radar.errors.base import HallucinationError, ValidationError
+from job_radar.errors.base import HallucinationError
 from job_radar.llm.router import LLMRouter, get_llm_router
 from job_radar.llm.validated import run_validated_completion
+
 from .outreach_templates import PERSONA_GUIDELINES
 from .validators import validate_outreach_message
 
@@ -22,9 +24,9 @@ logger = logging.getLogger(__name__)
 
 
 def build_outreach_prompt(
-    profile_data: Dict[str, Any],
-    job_data: Dict[str, Any],
-    contact: Dict[str, Any],
+    profile_data: dict[str, Any],
+    job_data: dict[str, Any],
+    contact: dict[str, Any],
     persona_type: str = "recruiter",
 ) -> str:
     """Construct prompt for generating personalized outreach messages across 4 formats."""
@@ -38,13 +40,13 @@ def build_outreach_prompt(
 Write 4 high-converting, personalized outreach messages from the candidate to {contact_name} ({contact_title} at {company_name}) regarding the {job_title} role.
 
 TARGET AUDIENCE PERSONA: {persona_type.upper()}
-- Tone Focus: {guidelines['focus']}
-- Persona Style: {guidelines['tone']}
+- Tone Focus: {guidelines["focus"]}
+- Persona Style: {guidelines["tone"]}
 
 TARGET JOB:
 - Title: {job_title}
 - Company: {company_name}
-- Required Skills: {json.dumps(job_data.get('skills', []))}
+- Required Skills: {json.dumps(job_data.get("skills", []))}
 
 CANDIDATE FACTS:
 {json.dumps(profile_data, indent=2)}
@@ -79,17 +81,17 @@ OUTPUT JSON SCHEMA:
 class OutreachGenerator:
     """Generates personalized multi-channel outreach messages."""
 
-    def __init__(self, llm_router: Optional[LLMRouter] = None):
+    def __init__(self, llm_router: LLMRouter | None = None):
         self.llm_router = llm_router or get_llm_router()
 
     def generate_messages(
         self,
-        profile_data: Dict[str, Any],
-        job_data: Dict[str, Any],
-        contact: Dict[str, Any],
+        profile_data: dict[str, Any],
+        job_data: dict[str, Any],
+        contact: dict[str, Any],
         persona_type: str = "recruiter",
-        user_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        user_id: str | None = None,
+    ) -> dict[str, Any]:
         """Generate all 4 outreach message variations for a target contact."""
         prompt = build_outreach_prompt(
             profile_data=profile_data,
@@ -98,7 +100,7 @@ class OutreachGenerator:
             persona_type=persona_type,
         )
 
-        def _validator(candidate: Dict[str, Any]) -> Optional[str]:
+        def _validator(candidate: dict[str, Any]) -> str | None:
             if not isinstance(candidate, dict):
                 return "Output must be a JSON object"
             conn = candidate.get("linkedin_connection", "")
@@ -132,13 +134,13 @@ class OutreachGenerator:
 
 
 def generate_outreach(
-    profile_data: Dict[str, Any],
-    job_data: Dict[str, Any],
-    contact: Dict[str, Any],
+    profile_data: dict[str, Any],
+    job_data: dict[str, Any],
+    contact: dict[str, Any],
     persona_type: str = "recruiter",
-    llm_router: Optional[LLMRouter] = None,
-    user_id: Optional[str] = None,
-) -> Dict[str, Any]:
+    llm_router: LLMRouter | None = None,
+    user_id: str | None = None,
+) -> dict[str, Any]:
     """Convenience functional helper for outreach generation."""
     generator = OutreachGenerator(llm_router=llm_router)
     return generator.generate_messages(

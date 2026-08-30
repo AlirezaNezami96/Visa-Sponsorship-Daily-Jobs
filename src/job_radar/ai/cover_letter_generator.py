@@ -3,23 +3,25 @@
 Uses fast models (Groq Llama 3.3 70B, OpenRouter free models, with Gemini fallback)
 to generate high-impact, grounded cover letters (250-400 words) without cliché openers.
 """
+
 from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
-from job_radar.errors.base import HallucinationError, ValidationError
+from job_radar.errors.base import HallucinationError
 from job_radar.llm.router import LLMRouter, get_llm_router
 from job_radar.llm.validated import run_validated_completion
+
 from .validators import validate_cover_letter_content
 
 logger = logging.getLogger(__name__)
 
 
 def build_cover_letter_prompt(
-    profile_data: Dict[str, Any],
-    job_data: Dict[str, Any],
+    profile_data: dict[str, Any],
+    job_data: dict[str, Any],
     company_intel: str = "",
 ) -> str:
     """Construct cover letter generation prompt."""
@@ -32,9 +34,9 @@ Write a compelling, tailored, and concise cover letter for the candidate applyin
 TARGET JOB DETAILS:
 - Title: {job_title}
 - Company: {company_name}
-- Required Skills: {json.dumps(job_data.get('skills', []))}
+- Required Skills: {json.dumps(job_data.get("skills", []))}
 - Job Description:
-{job_data.get('description', '')[:3000]}
+{job_data.get("description", "")[:3000]}
 {f"- Company Context / Mission: {company_intel}" if company_intel else ""}
 
 CANDIDATE FACTS (GROUNDING SOURCE OF TRUTH):
@@ -55,7 +57,7 @@ OUTPUT JSON SCHEMA:
   "opening_hook": string,
   "body_paragraphs": [string],
   "closing_call_to_action": string,
-  "sign_off": "Sincerely,\\n{profile_data.get('full_name', 'Candidate')}",
+  "sign_off": "Sincerely,\\n{profile_data.get("full_name", "Candidate")}",
   "full_text": string,
   "word_count": integer
 }}"""
@@ -64,16 +66,16 @@ OUTPUT JSON SCHEMA:
 class CoverLetterGenerator:
     """Generates and validates cover letters."""
 
-    def __init__(self, llm_router: Optional[LLMRouter] = None):
+    def __init__(self, llm_router: LLMRouter | None = None):
         self.llm_router = llm_router or get_llm_router()
 
     def generate(
         self,
-        profile_data: Dict[str, Any],
-        job_data: Dict[str, Any],
+        profile_data: dict[str, Any],
+        job_data: dict[str, Any],
         company_intel: str = "",
-        user_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        user_id: str | None = None,
+    ) -> dict[str, Any]:
         """Generate tailored cover letter."""
         company_name = job_data.get("company", "")
         prompt = build_cover_letter_prompt(
@@ -82,7 +84,7 @@ class CoverLetterGenerator:
             company_intel=company_intel,
         )
 
-        def _validator(candidate: Dict[str, Any]) -> Optional[str]:
+        def _validator(candidate: dict[str, Any]) -> str | None:
             if not isinstance(candidate, dict):
                 return "AI output must be a JSON object"
             full_text = candidate.get("full_text") or "\n\n".join(candidate.get("body_paragraphs", []))
@@ -130,12 +132,12 @@ class CoverLetterGenerator:
 
 
 def generate_cover_letter(
-    profile_data: Dict[str, Any],
-    job_data: Dict[str, Any],
+    profile_data: dict[str, Any],
+    job_data: dict[str, Any],
     company_intel: str = "",
-    llm_router: Optional[LLMRouter] = None,
-    user_id: Optional[str] = None,
-) -> Dict[str, Any]:
+    llm_router: LLMRouter | None = None,
+    user_id: str | None = None,
+) -> dict[str, Any]:
     """Convenience functional helper for cover letter generation."""
     generator = CoverLetterGenerator(llm_router=llm_router)
     return generator.generate(
