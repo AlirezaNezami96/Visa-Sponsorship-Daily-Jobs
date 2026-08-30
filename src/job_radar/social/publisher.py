@@ -7,10 +7,8 @@ import json
 import logging
 import os
 import sys
-from typing import Tuple
-import requests
 
-from job_radar.social.images import create_professional_cover_image
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +124,7 @@ def upload_image_to_linkedin(access_token: str, person_urn: str, image_bytes: by
 
 def publish_to_linkedin(
     access_token: str, person_urn: str, text: str, cover_bytes: bytes = None
-) -> Tuple[bool, int, str, str]:
+) -> tuple[bool, int, str, str]:
     url = "https://api.linkedin.com/rest/posts"
     linkedin_version = get_linkedin_api_version()
 
@@ -211,6 +209,7 @@ def cleanup_state_files():
 
 def check_and_publish_post():
     from pathlib import Path
+
     from job_radar.storage.supabase_client import SupabaseStorageClient
 
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -366,8 +365,9 @@ def check_and_publish_post():
     # ── Handling Repurposed Source Post Drafts ──
     if is_repurpose:
         from pathlib import Path
-        from job_radar.repurpose.publisher import LinkedInRepurposePublisher
+
         from job_radar.repurpose.models import ProcessingStatus
+        from job_radar.repurpose.publisher import LinkedInRepurposePublisher
         from job_radar.storage.supabase_client import SupabaseStorageClient
 
         db_id = pending_data.get("database_id")

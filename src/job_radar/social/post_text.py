@@ -9,14 +9,14 @@ Generates tailored text across platforms:
 Uses a deterministic hash of job_id to rotate through hook templates.
 AI summary waterfall: Groq -> OpenRouter -> Extractive rule-based fallback, with circuit breakers.
 """
+
 from __future__ import annotations
 
 import hashlib
-import json
 import logging
 import os
 import re
-from typing import Any, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -81,15 +81,14 @@ def _trim_summary(text: str, max_len: int = 280) -> str:
     return text[: max_len - 3].rsplit(" ", 1)[0] + "..."
 
 
-def generate_job_summary(job: Dict[str, Any], client: Any = None) -> str:
+def generate_job_summary(job: dict[str, Any], client: Any = None) -> str:
     """Generate a 2-3 sentence AI summary of the job description, or fall back to extractive."""
     desc = job.get("description_text") or job.get("description") or ""
     skills = job.get("skills") or []
 
-    # Try OpenRouter / Groq / Gemini if keys are available
+    # Try OpenRouter / Groq if keys are available
     openrouter_key = os.getenv("OPENROUTER_API_KEY")
     groq_key = os.getenv("GROQ_API_KEY")
-    gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEYS")
 
     prompt = (
         f"Summarize this job in 2 concise sentences for social media. "
@@ -104,6 +103,7 @@ def generate_job_summary(job: Dict[str, Any], client: Any = None) -> str:
     cb = None
     if client is not None:
         from job_radar.pipeline.circuit_breaker import CircuitBreaker
+
         cb = CircuitBreaker(client)
 
     # 1. Try Groq (fastest)
@@ -112,6 +112,7 @@ def generate_job_summary(job: Dict[str, Any], client: Any = None) -> str:
         if cb is None or not cb.is_open(cb_name):
             try:
                 import requests
+
                 resp = requests.post(
                     "https://api.groq.com/openai/v1/chat/completions",
                     headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
@@ -140,6 +141,7 @@ def generate_job_summary(job: Dict[str, Any], client: Any = None) -> str:
         if cb is None or not cb.is_open(cb_name):
             try:
                 import requests
+
                 resp = requests.post(
                     "https://openrouter.ai/api/v1/chat/completions",
                     headers={"Authorization": f"Bearer {openrouter_key}", "Content-Type": "application/json"},
@@ -166,7 +168,7 @@ def generate_job_summary(job: Dict[str, Any], client: Any = None) -> str:
     return _extractive_summary(desc, skills)
 
 
-def build_platform_post_text(job: Dict[str, Any], platform: str = "telegram", client: Any = None) -> str:
+def build_platform_post_text(job: dict[str, Any], platform: str = "telegram", client: Any = None) -> str:
     """Build platform-specific post text.
 
     Supported platforms: telegram, discord, slack, x, linkedin, bluesky, mastodon.
@@ -235,7 +237,7 @@ def build_platform_post_text(job: Dict[str, Any], platform: str = "telegram", cl
             f"📌 **{title}**",
             f"🏢 **{company}**",
             f"📍 {location} ({work_mode.capitalize()})",
-            f"🛂 **Visa Sponsorship:** Verified ✅",
+            "🛂 **Visa Sponsorship:** Verified ✅",
         ]
         if salary_line:
             lines.append(f"{salary_line.strip()}")
@@ -255,7 +257,7 @@ def build_platform_post_text(job: Dict[str, Any], platform: str = "telegram", cl
             f"Role: {title}",
             f"Company: {company}",
             f"Location: {location} ({work_mode.capitalize()})",
-            f"Visa Sponsorship: Verified",
+            "Visa Sponsorship: Verified",
         ]
         if salary_line:
             lines.append(f"Compensation: {salary_line.replace('💰 ', '')}")
@@ -275,7 +277,7 @@ def build_platform_post_text(job: Dict[str, Any], platform: str = "telegram", cl
             "",
             f"📌 {title} @ {company}",
             f"📍 {location} ({work_mode})",
-            f"🛂 Visa Sponsorship Verified",
+            "🛂 Visa Sponsorship Verified",
         ]
         if skills:
             lines.append(f"🛠 {skills_str}")

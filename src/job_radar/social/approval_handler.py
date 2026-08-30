@@ -6,17 +6,16 @@ the state machine from `manual_review` -> `done` (or `failed`) and mirrors
 """
 from __future__ import annotations
 
-import json
 import logging
-from typing import Any, Dict
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-def handle_approval_callback(client: Any, callback_data: str) -> Dict[str, Any]:
+def handle_approval_callback(client: Any, callback_data: str) -> dict[str, Any]:
     """Handle Telegram callback from manual review buttons."""
-    from job_radar.pipeline.state_machine import transition_stage
     from job_radar.pipeline.metrics import record_metric
+    from job_radar.pipeline.state_machine import transition_stage
 
     parts = callback_data.split("_", 2)
     if len(parts) != 3:

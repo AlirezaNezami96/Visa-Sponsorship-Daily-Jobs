@@ -3,15 +3,12 @@
 from __future__ import annotations
 
 import base64
-import hashlib
 import io
-import json
 import os
 import random
-import urllib.parse
-from typing import Optional, Tuple
-from PIL import Image, ImageDraw, ImageFont
+
 import requests
+from PIL import Image, ImageDraw, ImageFont
 
 FONT_FILE = "Roboto-Bold.ttf"
 ACTIVE_IMAGE_PROVIDER = "disabled"

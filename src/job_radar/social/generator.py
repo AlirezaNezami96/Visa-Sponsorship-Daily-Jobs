@@ -8,8 +8,8 @@ import logging
 import os
 import random
 import sys
-from datetime import datetime, timezone
-from typing import Optional, Tuple
+from datetime import UTC, datetime
+
 import requests
 
 from job_radar.social.images import create_professional_cover_image
@@ -49,7 +49,7 @@ def send_telegram_alert(bot_token: str, chat_id: str, text: str) -> None:
         logger.error("Failed to send Telegram alert: %s", e)
 
 
-def call_gemini_text_api(api_key: str) -> Tuple[str, str, str, str]:
+def call_gemini_text_api(api_key: str) -> tuple[str, str, str, str]:
     system_prompt = """# SYSTEM ROLE: Viral AI & Productivity Creator
 
 You are a top LinkedIn creator who shares dead-simple, practical AI tips, tools, and news. 
@@ -69,7 +69,7 @@ Return your response in exact JSON format:
   "bg_prompt": "<1-sentence visual description for a minimalist background image>"
 }"""
 
-    now_utc = datetime.now(timezone.utc)
+    now_utc = datetime.now(UTC)
     date_str = now_utc.strftime("%Y-%m-%d %H:%M:%S UTC")
     random_seed = random.randint(1000, 999999)
 
@@ -144,7 +144,7 @@ Return your response in exact JSON format:
 
 def send_telegram_draft(
     bot_token: str, chat_id: str, post_text: str, cover_bytes: bytes, img_source: str = "gemini"
-) -> Tuple[Optional[int], int]:
+) -> tuple[int | None, int]:
     photo_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
     photo_msg_id = None
     caption = "🖼️ <b>AI Generated LinkedIn Cover Illustration</b>"
@@ -233,7 +233,7 @@ def generate_and_dispatch_post() -> None:
         with open(COVER_FILE, "wb") as f:
             f.write(cover_bytes)
 
-        now_iso = datetime.now(timezone.utc).isoformat()
+        now_iso = datetime.now(UTC).isoformat()
         pending_data = {
             "text": post_text,
             "image_title": image_title,

@@ -151,4 +151,50 @@ Every 90 days, the workspace owner must execute the quarterly security audit:
    ```
 4. Confirm all active admins have verified TOTP MFA factors in `auth.mfa_factors`.
 
+---
+
+## 8. Multi-Platform Social Publishing Enable Runbook
+
+All social publishing ships **DISABLED by default**. No post will ever be dispatched until all 3 publishing gates are deliberately enabled by the workspace owner.
+
+### Publishing Gates Architecture
+1. **Global Kill Switch**: `SOCIAL_PUBLISHING_ENABLED=true` (Default: `false`)
+2. **Dry-Run Switch**: `PUBLISH_DRY_RUN=false` (Default: `true`)
+3. **Database Flag**: `platform_post_config.enabled=true` (Default: `false` for all platforms)
+
+### Secrets Inventory
+
+| Platform | GitHub Secrets | Validation Ping Endpoint |
+|---|---|---|
+| **X / Twitter** | `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_TOKEN_SECRET` | `GET https://api.x.com/2/users/me` |
+| **Bluesky** | `BLUESKY_HANDLE`, `BLUESKY_APP_PASSWORD` | `com.atproto.server.createSession` |
+| **Mastodon** | `MASTODON_INSTANCE_URL`, `MASTODON_ACCESS_TOKEN` | `GET /api/v1/accounts/verify_credentials` |
+| **LinkedIn** | `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_REFRESH_TOKEN`, `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET` | `GET https://api.linkedin.com/v2/userinfo` |
+| **Telegram** | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | `GET https://api.telegram.org/bot<token>/getMe` |
+| **Discord** | `DISCORD_WEBHOOK_URL` | `GET <webhook_url>` |
+| **Dev.to** | `DEVTO_API_KEY` | `GET https://dev.to/api/users/me` |
+
+### Step-by-Step Enable Procedure
+
+```bash
+# Step 1: Verify all configured credentials via read-only ping checks (zero posts dispatched)
+python scripts/check_social_credentials.py --platform all
+
+# Step 2: In GitHub Repository Settings -> Secrets and variables -> Actions:
+# Set:
+#   SOCIAL_PUBLISHING_ENABLED = true
+#   PUBLISH_DRY_RUN = false
+
+# Step 3: Enable platforms in database ONE AT A TIME via Supabase SQL Editor:
+UPDATE public.platform_post_config
+SET enabled = TRUE
+WHERE platform = 'bluesky';  # Start with single platform canary
+
+# Step 4: Monitor metrics and circuit breakers in admin dashboard for 24h:
+# Query:
+SELECT metric, count, error_count FROM metrics_daily WHERE day = CURRENT_DATE AND metric LIKE 'publish:%';
+SELECT * FROM service_circuits WHERE name LIKE 'social:%';
+```
+
+
 
