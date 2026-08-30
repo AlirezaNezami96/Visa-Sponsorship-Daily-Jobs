@@ -1,4 +1,4 @@
-"""Platform-specific publisher with pacing, anti-spam safeguards, and manual-review fallbacks.
+"""Platform-specific publisher with atomic claim, pacing, anti-spam safeguards, and manual-review fallbacks.
 
 Runs as: python -m job_radar.social.platform_publisher --platform [telegram|discord|slack|x|linkedin|bluesky|mastodon]
 
@@ -8,8 +8,9 @@ Enforces rules configured in `platform_post_config`:
 - daily post cap
 - enabled flag
 
-For LinkedIn/X without full automated credentials: defaults to manual_review
-with Telegram approval bot integration.
+Atomic claim via `claim_next_post_job` prevents duplicate-post races under concurrent runs.
+LinkedIn/X without automated credentials route to Telegram manual review.
+Approvals/rejections wire back into the state machine and mirror publication flags.
 """
 from __future__ import annotations
 
@@ -44,7 +45,6 @@ def get_platform_config(client: Any, platform: str) -> Dict[str, Any]:
     if resp and resp.data:
         return resp.data
 
-    # Sensible defaults
     defaults = {
         "telegram": {"min_gap_minutes": 5, "daily_cap": 40, "active_start_hour": 0, "active_end_hour": 24, "enabled": True},
         "discord": {"min_gap_minutes": 5, "daily_cap": 40, "active_start_hour": 0, "active_end_hour": 24, "enabled": True},
@@ -58,10 +58,7 @@ def get_platform_config(client: Any, platform: str) -> Dict[str, Any]:
 
 
 def check_pacing(client: Any, platform: str, config: Dict[str, Any]) -> Tuple[bool, str]:
-    """Check if the platform is currently allowed to publish under pacing rules.
-
-    Returns (allowed: bool, reason: str).
-    """
+    """Check if the platform is currently allowed to publish under pacing rules."""
     if not config.get("enabled", True):
         return False, "platform is disabled in config"
 
@@ -110,6 +107,48 @@ def check_pacing(client: Any, platform: str, config: Dict[str, Any]) -> Tuple[bo
     return True, "ok"
 
 
+def claim_next_post_job(client: Any, platform: str) -> Optional[Dict[str, Any]]:
+    """Claim the oldest pending post for this platform atomically using RPC or select+update."""
+    status_col = f"{platform}_status"
+
+    # 1. Try atomic database RPC (FOR UPDATE SKIP LOCKED)
+    try:
+        rpc_resp = client.rpc("claim_next_post_job", {"p_platform": platform}).execute()
+        if rpc_resp and rpc_resp.data and len(rpc_resp.data) > 0:
+            return rpc_resp.data[0]
+    except Exception as e:
+        logger.debug("RPC claim_next_post_job fallback: %s", e)
+
+    # 2. Fallback query (select then transition to processing)
+    resp = (
+        client.table("job_processing")
+        .select("job_id, post_text")
+        .eq("post_text_status", "done")
+        .eq(status_col, "pending")
+        .order("updated_at")
+        .limit(1)
+        .execute()
+    )
+
+    if not resp or not resp.data:
+        return None
+
+    row = resp.data[0]
+    job_id = row["job_id"]
+
+    # Transition to processing
+    client.table("job_processing").update({status_col: "processing"}).eq("job_id", job_id).eq(status_col, "pending").execute()
+
+    job_resp = client.table("jobs").select("image_url").eq("id", job_id).maybe_single().execute()
+    image_url = job_resp.data.get("image_url") if job_resp and job_resp.data else None
+
+    return {
+        "job_id": job_id,
+        "post_text": row.get("post_text"),
+        "image_url": image_url,
+    }
+
+
 def _send_telegram_post(text: str, image_url: Optional[str]) -> Tuple[bool, Optional[str]]:
     """Publish to Telegram channel with optional photo."""
     bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -120,7 +159,6 @@ def _send_telegram_post(text: str, image_url: Optional[str]) -> Tuple[bool, Opti
     import requests
     try:
         if image_url:
-            # Download image first or pass URL
             url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
             payload = {
                 "chat_id": chat_id,
@@ -133,7 +171,6 @@ def _send_telegram_post(text: str, image_url: Optional[str]) -> Tuple[bool, Opti
                 msg_id = res.json().get("result", {}).get("message_id")
                 return True, f"https://t.me/c/{chat_id.replace('-100', '')}/{msg_id}" if msg_id else "https://t.me"
 
-        # Fallback to plain message
         url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
         payload = {"chat_id": chat_id, "text": text, "parse_mode": "Markdown"}
         res = requests.post(url, json=payload, timeout=15)
@@ -196,7 +233,6 @@ def _send_bluesky_post(text: str, image_url: Optional[str]) -> Tuple[bool, Optio
 
     import requests
     try:
-        # Create session
         session_resp = requests.post(
             "https://bsky.social/xrpc/com.atproto.server.createSession",
             json={"identifier": handle, "password": app_password},
@@ -208,7 +244,6 @@ def _send_bluesky_post(text: str, image_url: Optional[str]) -> Tuple[bool, Optio
         access_jwt = session_data["accessJwt"]
         did = session_data["did"]
 
-        # Post record
         now_iso = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         record = {
             "$type": "app.bsky.feed.post",
@@ -256,6 +291,68 @@ def _send_mastodon_post(text: str, image_url: Optional[str]) -> Tuple[bool, Opti
         return False, str(e)
 
 
+def _send_linkedin_post(text: str, image_url: Optional[str]) -> Tuple[bool, Optional[str]]:
+    """Publish to LinkedIn API."""
+    token = os.getenv("LINKEDIN_ACCESS_TOKEN")
+    person_urn = os.getenv("LINKEDIN_PERSON_URN")
+    if not token or not person_urn:
+        return False, "missing LINKEDIN_ACCESS_TOKEN or LINKEDIN_PERSON_URN"
+
+    import requests
+    try:
+        url = "https://api.linkedin.com/v2/ugcPosts"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "X-Restli-Protocol-Version": "2.0.0",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "author": person_urn,
+            "lifecycleState": "PUBLISHED",
+            "specificContent": {
+                "com.linkedin.ugc.ShareContent": {
+                    "shareCommentary": {"text": text},
+                    "shareMediaCategory": "NONE",
+                }
+            },
+            "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"},
+        }
+        res = requests.post(url, headers=headers, json=payload, timeout=20)
+        if res.status_code in (200, 201):
+            post_id = res.headers.get("x-restli-id", "")
+            return True, f"https://www.linkedin.com/feed/update/{post_id}" if post_id else "https://linkedin.com"
+        return False, f"HTTP {res.status_code}: {res.text[:200]}"
+    except Exception as e:
+        return False, str(e)
+
+
+def _send_x_post(text: str, image_url: Optional[str]) -> Tuple[bool, Optional[str]]:
+    """Publish to Twitter/X API."""
+    bearer_token = os.getenv("TWITTER_BEARER_TOKEN")
+    api_key = os.getenv("TWITTER_API_KEY")
+    api_secret = os.getenv("TWITTER_API_SECRET")
+    access_token = os.getenv("TWITTER_ACCESS_TOKEN")
+    access_secret = os.getenv("TWITTER_ACCESS_SECRET")
+
+    if not (bearer_token or (api_key and access_token)):
+        return False, "missing Twitter/X API credentials"
+
+    import requests
+    try:
+        # OAuth 1.0a or OAuth 2.0 user context
+        from requests_oauthlib import OAuth1
+        auth = OAuth1(api_key, api_secret, access_token, access_secret)
+        url = "https://api.twitter.com/2/tweets"
+        payload = {"text": text[:280]}
+        res = requests.post(url, auth=auth, json=payload, timeout=15)
+        if res.status_code in (200, 201):
+            tweet_id = res.json().get("data", {}).get("id", "")
+            return True, f"https://x.com/i/web/status/{tweet_id}" if tweet_id else "https://x.com"
+        return False, f"HTTP {res.status_code}: {res.text[:200]}"
+    except Exception as e:
+        return False, str(e)
+
+
 def _send_for_manual_review(
     client: Any,
     job: Dict[str, Any],
@@ -282,10 +379,11 @@ def _send_for_manual_review(
             f"Job ID: `{job_id}`"
         )
 
+        # Full job_id in callback_data (e.g. approve_linkedin_<uuid> <= 53 chars <= 64 bytes limit)
         inline_keyboard = [
             [
-                {"text": "✅ Approve & Post", "callback_data": f"approve_{platform}_{job_id[:8]}"},
-                {"text": "❌ Reject", "callback_data": f"reject_{platform}_{job_id[:8]}"},
+                {"text": "✅ Approve & Post", "callback_data": f"approve_{platform}_{job_id}"},
+                {"text": "❌ Reject", "callback_data": f"reject_{platform}_{job_id}"},
             ]
         ]
 
@@ -304,10 +402,79 @@ def _send_for_manual_review(
         return False, str(e)
 
 
-def publish_next_job(client: Any, platform: str) -> Dict[str, Any]:
-    """Publish the next eligible job to the specified platform."""
+def handle_approval_callback(client: Any, callback_data: str) -> Dict[str, Any]:
+    """Wire Telegram approval/rejection button click to state machine and platform publisher."""
     from job_radar.pipeline.state_machine import transition_stage
-    from job_radar.pipeline.metrics import record_metric, update_pipeline_health
+    from job_radar.pipeline.metrics import record_metric
+
+    parts = callback_data.split("_", 2)
+    if len(parts) < 3:
+        return {"ok": False, "error": f"invalid callback_data: {callback_data}"}
+
+    action, platform, job_id = parts[0], parts[1], parts[2]
+
+    if action == "reject":
+        transition_stage(client, job_id, platform, "failed", error="rejected_by_admin")
+        record_metric(client, f"post:{platform}:rejected", True, 0)
+        logger.info("Admin rejected %s post for job %s", platform, job_id)
+        return {"ok": True, "action": "rejected", "job_id": job_id, "platform": platform}
+
+    if action == "approve":
+        # Fetch post text
+        resp = client.table("job_processing").select("post_text").eq("job_id", job_id).maybe_single().execute()
+        row = resp.data[0] if isinstance(resp.data, list) and resp.data else resp.data if isinstance(resp.data, dict) else {}
+        raw_text = row.get("post_text") if row else "{}"
+        try:
+            texts = json.loads(raw_text)
+        except Exception:
+            texts = {}
+        target_text = texts.get(platform, "")
+
+        # Fetch image
+        job_resp = client.table("jobs").select("image_url").eq("id", job_id).maybe_single().execute()
+        j_row = job_resp.data[0] if isinstance(job_resp.data, list) and job_resp.data else job_resp.data if isinstance(job_resp.data, dict) else {}
+        image_url = j_row.get("image_url") if j_row else None
+
+        # Dispatch
+        dispatchers = {
+            "linkedin": _send_linkedin_post,
+            "x": _send_x_post,
+            "telegram": _send_telegram_post,
+            "discord": _send_discord_post,
+            "slack": _send_slack_post,
+            "bluesky": _send_bluesky_post,
+            "mastodon": _send_mastodon_post,
+        }
+        handler = dispatchers.get(platform)
+        if not handler:
+            return {"ok": False, "error": f"no dispatcher for {platform}"}
+
+        success, post_url_or_err = handler(target_text, image_url)
+        if success:
+            post_url = post_url_or_err or f"https://{platform}.com"
+            transition_stage(client, job_id, platform, "done", url=post_url)
+            mirror_col = f"{platform}_post_published"
+            client.table("jobs").update({mirror_col: True}).eq("id", job_id).execute()
+            record_metric(client, f"post:{platform}:published", True, 0)
+            logger.info("Admin approved & published job %s to %s", job_id, platform)
+            return {"ok": True, "action": "published", "job_id": job_id, "url": post_url}
+        else:
+            err = post_url_or_err or "publish failed"
+            transition_stage(client, job_id, platform, "failed", error=err)
+            record_metric(client, f"post:{platform}:failed", False, 0)
+            return {"ok": False, "action": "failed", "job_id": job_id, "error": err}
+
+    return {"ok": False, "error": f"unknown action: {action}"}
+
+
+def publish_next_job(client: Any, platform: str) -> Dict[str, Any]:
+    """Publish the next eligible job to the specified platform with atomic claim and circuit breakers."""
+    from job_radar.pipeline.state_machine import transition_stage
+    from job_radar.pipeline.metrics import record_metric
+    from job_radar.pipeline.circuit_breaker import CircuitBreaker
+
+    cb = CircuitBreaker(client)
+    circuit_name = f"publish:{platform}"
 
     config = get_platform_config(client, platform)
     allowed, reason = check_pacing(client, platform, config)
@@ -316,25 +483,21 @@ def publish_next_job(client: Any, platform: str) -> Dict[str, Any]:
         record_metric(client, f"post:{platform}:skipped", True, 0)
         return {"ok": True, "action": "skipped", "reason": reason}
 
-    status_col = f"{platform}_status"
+    # Check circuit breaker
+    if cb.is_open(circuit_name):
+        logger.warning("Circuit %s is open, skipping publish", circuit_name)
+        record_metric(client, f"circuit:open:{circuit_name}", True, 0)
+        return {"ok": False, "action": "circuit_open", "error": "circuit open"}
 
-    # Find the oldest job ready for this platform
-    resp = (
-        client.table("job_processing")
-        .select("job_id, post_text")
-        .eq("post_text_status", "done")
-        .eq(status_col, "pending")
-        .order("updated_at")
-        .limit(1)
-        .execute()
-    )
-
-    if not resp or not resp.data:
+    # Atomic claim
+    claimed = claim_next_post_job(client, platform)
+    if not claimed:
         logger.info("No pending jobs for %s", platform)
         return {"ok": True, "action": "idle", "reason": "no pending jobs"}
 
-    job_id = resp.data[0]["job_id"]
-    raw_post_text = resp.data[0].get("post_text") or "{}"
+    job_id = claimed["job_id"]
+    raw_post_text = claimed.get("post_text") or "{}"
+    image_url = claimed.get("image_url")
 
     try:
         post_texts = json.loads(raw_post_text)
@@ -342,18 +505,16 @@ def publish_next_job(client: Any, platform: str) -> Dict[str, Any]:
         post_texts = {}
     target_text = post_texts.get(platform) or ""
 
-    # Fetch job details (image_url, etc.)
+    # Fetch job info
     job_resp = client.table("jobs").select("*").eq("id", job_id).maybe_single().execute()
     job = job_resp.data if job_resp else {}
-    image_url = job.get("image_url")
 
-    # Check if this platform requires manual review
+    # Check if manual review is required
     requires_manual = platform in ("linkedin", "x") and not os.getenv(f"{platform.upper()}_AUTO_PUBLISH")
 
     start_time = time.time()
 
     if requires_manual:
-        # Route to Telegram for approval
         ok, detail = _send_for_manual_review(client, job, platform, target_text, image_url)
         if ok:
             transition_stage(client, job_id, platform, "manual_review")
@@ -362,35 +523,39 @@ def publish_next_job(client: Any, platform: str) -> Dict[str, Any]:
             return {"ok": True, "action": "manual_review", "job_id": job_id}
         else:
             logger.warning("Failed to route to manual review: %s", detail)
+            transition_stage(client, job_id, platform, "failed", error=detail)
             return {"ok": False, "action": "manual_failed", "error": detail}
 
-    # Dispatch to platform handler
     dispatchers = {
         "telegram": _send_telegram_post,
         "discord": _send_discord_post,
         "slack": _send_slack_post,
         "bluesky": _send_bluesky_post,
         "mastodon": _send_mastodon_post,
+        "linkedin": _send_linkedin_post,
+        "x": _send_x_post,
     }
 
     handler = dispatchers.get(platform)
     if not handler:
         logger.warning("No automated dispatcher for platform %s", platform)
+        transition_stage(client, job_id, platform, "failed", error=f"no dispatcher for {platform}")
         return {"ok": False, "error": f"no dispatcher for {platform}"}
 
     success, post_url_or_err = handler(target_text, image_url)
     duration_ms = int((time.time() - start_time) * 1000)
 
     if success:
-        post_url = post_url_or_err
+        cb.record_success(circuit_name)
+        post_url = post_url_or_err or f"https://{platform}.com"
         transition_stage(client, job_id, platform, "done", url=post_url)
-        # Mirror to jobs table flag
         mirror_col = f"{platform}_post_published"
         client.table("jobs").update({mirror_col: True}).eq("id", job_id).execute()
         record_metric(client, f"post:{platform}:published", True, duration_ms)
         logger.info("Published job %s to %s -> %s", job_id, platform, post_url)
         return {"ok": True, "action": "published", "job_id": job_id, "url": post_url}
     else:
+        cb.record_failure(circuit_name)
         err_msg = post_url_or_err or "publish failed"
         logger.error("Failed to publish job %s to %s: %s", job_id, platform, err_msg)
         transition_stage(client, job_id, platform, "failed", error=err_msg)

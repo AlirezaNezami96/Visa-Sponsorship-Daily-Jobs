@@ -5,6 +5,7 @@ Runs as: python -m job_radar.pipeline.alert_worker
 On `metadata_status='done'`, matches the job against active user alerts
 and sends per-channel notifications. Channel failures are isolated —
 one dead channel never prevents delivery on others.
+Each channel has a 1-retry with 2s backoff and is protected by circuit breakers.
 """
 from __future__ import annotations
 
@@ -71,26 +72,65 @@ def _matches_alert(job: dict, filters: dict) -> bool:
     return True
 
 
+def _send_channel_with_retry(
+    client: Any,
+    channel: str,
+    send_fn: Any,
+) -> bool:
+    """Send on a single channel with 1 retry (2s backoff) and circuit breaker."""
+    from job_radar.pipeline.circuit_breaker import CircuitBreaker
+    from job_radar.pipeline.metrics import record_metric
+
+    cb = CircuitBreaker(client)
+    circuit_name = f"alert:{channel}"
+
+    if cb.is_open(circuit_name):
+        record_metric(client, f"circuit:open:{circuit_name}", True, 0)
+        logger.debug("Circuit open for alert channel %s", channel)
+        return False
+
+    # Attempt 1
+    try:
+        ok = send_fn()
+        if ok:
+            cb.record_success(circuit_name)
+            return True
+    except Exception as e:
+        logger.debug("Alert channel %s initial attempt failed: %s", channel, e)
+
+    # Retry with 2s backoff
+    time.sleep(2)
+    record_metric(client, f"alerts:{channel}:retry", True, 0)
+
+    try:
+        ok = send_fn()
+        if ok:
+            cb.record_success(circuit_name)
+            return True
+        else:
+            cb.record_failure(circuit_name)
+            return False
+    except Exception as e:
+        cb.record_failure(circuit_name)
+        logger.warning("Alert channel %s retry failed: %s", channel, e)
+        return False
+
+
 def _send_alert_channels(
     client: Any,
     alert: dict,
     job: dict,
 ) -> dict[str, bool]:
-    """Send notifications on all configured channels for an alert.
-
-    Returns {channel: success}. Each channel is independent — failures
-    don't block other channels.
-    """
+    """Send notifications on all configured channels for an alert with retry and circuit breakers."""
     from job_radar.notifications.channels import send_telegram, send_discord, send_slack
 
     channels = alert.get("channels", {})
     results: dict[str, bool] = {}
 
-    # Format the notification text
     title = job.get("title", "Untitled")
-    company = job.get("company_name") or ""
+    company = job.get("company_name") or job.get("company") or ""
     country = job.get("country") or job.get("country_code") or ""
-    url = job.get("apply_url") or ""
+    url = job.get("apply_url") or job.get("url") or ""
     visa = "✅ Visa Sponsored" if job.get("visa_sponsorship_verified") else ""
 
     text = f"🔔 New Job Alert: {title}"
@@ -105,39 +145,31 @@ def _send_alert_channels(
 
     # Telegram
     if channels.get("telegram"):
-        try:
-            results["telegram"] = send_telegram(text)
-        except Exception as e:
-            logger.warning("Alert telegram failed: %s", e)
-            results["telegram"] = False
+        results["telegram"] = _send_channel_with_retry(
+            client, "telegram", lambda: send_telegram(text)
+        )
 
     # Discord
     if channels.get("discord"):
-        try:
-            results["discord"] = send_discord(text)
-        except Exception as e:
-            logger.warning("Alert discord failed: %s", e)
-            results["discord"] = False
+        results["discord"] = _send_channel_with_retry(
+            client, "discord", lambda: send_discord(text)
+        )
 
     # Slack
     if channels.get("slack"):
-        try:
-            results["slack"] = send_slack(text)
-        except Exception as e:
-            logger.warning("Alert slack failed: %s", e)
-            results["slack"] = False
+        results["slack"] = _send_channel_with_retry(
+            client, "slack", lambda: send_slack(text)
+        )
 
-    # Email (via the notification email module)
+    # Email
     if channels.get("email"):
-        try:
+        email = channels.get("email_address") or alert.get("user_email")
+        if email:
             from job_radar.notifications.email import send_job_alert_email
-            email = channels.get("email_address") or alert.get("user_email")
-            if email:
-                results["email"] = send_job_alert_email(email, title, text)
-            else:
-                results["email"] = False
-        except Exception as e:
-            logger.warning("Alert email failed: %s", e)
+            results["email"] = _send_channel_with_retry(
+                client, "email", lambda: send_job_alert_email(email, title, text)
+            )
+        else:
             results["email"] = False
 
     return results
@@ -150,7 +182,6 @@ def process_alerts_for_job(client: Any, job_id: str) -> dict[str, Any]:
 
     start = time.time()
 
-    # Fetch job
     resp = client.table("jobs").select("*").eq("id", job_id).maybe_single().execute()
     if not resp or not resp.data:
         transition_stage(client, job_id, "alerts", "done")
@@ -158,7 +189,6 @@ def process_alerts_for_job(client: Any, job_id: str) -> dict[str, Any]:
 
     job = resp.data
 
-    # Fetch active instant alerts
     alerts_resp = (
         client.table("alerts")
         .select("*")
@@ -186,35 +216,31 @@ def process_alerts_for_job(client: Any, job_id: str) -> dict[str, Any]:
             .execute()
         )
         if dedup_resp and dedup_resp.data:
-            continue  # Already sent
+            continue
 
         matched += 1
 
-        # Send on all channels
         results = _send_alert_channels(client, alert, job)
         any_sent = any(results.values())
 
         if any_sent:
-            # Record dedup
             client.table("alert_sent_jobs").insert({
                 "alert_id": alert["id"],
                 "job_id": job_id,
             }).execute()
 
-            # Update alert last_sent_at
             client.table("alerts").update({
                 "last_sent_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             }).eq("id", alert["id"]).execute()
 
             sent += 1
 
-    # Always mark alerts as done (alert delivery failures are non-blocking)
     transition_stage(client, job_id, "alerts", "done")
 
     duration_ms = int((time.time() - start) * 1000)
-    record_metric(client, f"alerts:processed", True, duration_ms)
+    record_metric(client, "alerts:processed", True, duration_ms)
     if sent > 0:
-        record_metric(client, f"alerts:sent", True, 0)
+        record_metric(client, "alerts:sent", True, 0)
 
     return {"ok": True, "alerts_matched": matched, "alerts_sent": sent, "duration_ms": duration_ms}
 

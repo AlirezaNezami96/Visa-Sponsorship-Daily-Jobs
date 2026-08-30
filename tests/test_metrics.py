@@ -90,3 +90,16 @@ def test_record_metric_insert_and_update():
     assert row["count"] == 2
     assert row["error_count"] == 1
     assert row["sum_ms"] == 350
+
+
+def test_record_metric_atomic_rpc():
+    mock_client = MagicMock()
+    mock_rpc = MagicMock()
+    mock_client.rpc.return_value = mock_rpc
+
+    record_metric(mock_client, "ai:resume:ok", True, duration_ms=500)
+    mock_client.rpc.assert_called_once_with(
+        "record_metric",
+        {"p_metric": "ai:resume:ok", "p_ok": True, "p_ms": 500},
+    )
+    mock_rpc.execute.assert_called_once()

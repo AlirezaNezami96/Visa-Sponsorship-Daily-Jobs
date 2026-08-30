@@ -1,9 +1,13 @@
-"""Post text generator with rotating hooks, AI summarization, and deterministic fallbacks.
+"""Post text generator with rotating hooks, AI summarization, circuit breakers, and deterministic fallbacks.
 
-Generates tailored text across platforms (X <= 280 chars, Telegram/Discord full markdown,
-LinkedIn with tags, Bluesky/Mastodon).
+Generates tailored text across platforms:
+- X: strictly <= 280 chars with guaranteed URL preservation (URL is never sliced).
+- Telegram/Discord: full rich markdown.
+- LinkedIn: professional layout with hashtags and manual review tags.
+- Bluesky / Mastodon: concise multi-line summary.
+
 Uses a deterministic hash of job_id to rotate through hook templates.
-AI summary waterfall: OpenRouter / Gemini -> Groq -> Extractive rule-based fallback.
+AI summary waterfall: Groq -> OpenRouter -> Extractive rule-based fallback, with circuit breakers.
 """
 from __future__ import annotations
 
@@ -63,19 +67,36 @@ def _extractive_summary(description: str, skills: list[str]) -> str:
         summary = first_sentence
 
     if len(summary) > 280:
-        summary = summary[:277] + "..."
+        summary = summary[:277].rsplit(" ", 1)[0] + "..."
     return summary
 
 
-def generate_job_summary(job: Dict[str, Any]) -> str:
+def _trim_summary(text: str, max_len: int = 280) -> str:
+    """Trim text to max_len cleanly at a sentence or word boundary."""
+    if len(text) <= max_len:
+        return text
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    if sentences and len(sentences[0]) <= max_len and len(sentences[0]) >= 40:
+        return sentences[0]
+    return text[: max_len - 3].rsplit(" ", 1)[0] + "..."
+
+
+def generate_job_summary(job: Dict[str, Any], client: Any = None) -> str:
     """Generate a 2-3 sentence AI summary of the job description, or fall back to extractive."""
     desc = job.get("description_text") or job.get("description") or ""
     skills = job.get("skills") or []
 
-    # Try OpenRouter / Groq / Gemini if keys are available
     openrouter_key = os.getenv("OPENROUTER_API_KEY")
     groq_key = os.getenv("GROQ_API_KEY")
-    gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEYS")
+
+    # Check circuit breakers if client is available
+    cb = None
+    if client:
+        try:
+            from job_radar.pipeline.circuit_breaker import CircuitBreaker
+            cb = CircuitBreaker(client)
+        except Exception:
+            pass
 
     prompt = (
         f"Summarize this job in 2 concise sentences for social media. "
@@ -86,8 +107,8 @@ def generate_job_summary(job: Dict[str, Any]) -> str:
         f"Description: {desc[:2500]}"
     )
 
-    # 1. Try Groq (fastest)
-    if groq_key:
+    # 1. Try Groq
+    if groq_key and (not cb or not cb.is_open("groq_social")):
         try:
             import requests
             resp = requests.post(
@@ -99,17 +120,24 @@ def generate_job_summary(job: Dict[str, Any]) -> str:
                     "max_tokens": 120,
                     "temperature": 0.3,
                 },
-                timeout=8,
+                timeout=4,
             )
             if resp.status_code == 200:
+                if cb:
+                    cb.record_success("groq_social")
                 text = resp.json()["choices"][0]["message"]["content"].strip()
                 if len(text) >= 30:
-                    return text
+                    return _trim_summary(text, 280)
+            else:
+                if cb:
+                    cb.record_failure("groq_social")
         except Exception as e:
+            if cb:
+                cb.record_failure("groq_social")
             logger.debug("Groq social summary failed: %s", e)
 
     # 2. Try OpenRouter
-    if openrouter_key:
+    if openrouter_key and (not cb or not cb.is_open("openrouter_social")):
         try:
             import requests
             resp = requests.post(
@@ -121,35 +149,43 @@ def generate_job_summary(job: Dict[str, Any]) -> str:
                     "max_tokens": 120,
                     "temperature": 0.3,
                 },
-                timeout=8,
+                timeout=4,
             )
             if resp.status_code == 200:
+                if cb:
+                    cb.record_success("openrouter_social")
                 text = resp.json()["choices"][0]["message"]["content"].strip()
                 if len(text) >= 30:
-                    return text
+                    return _trim_summary(text, 280)
+            else:
+                if cb:
+                    cb.record_failure("openrouter_social")
         except Exception as e:
+            if cb:
+                cb.record_failure("openrouter_social")
             logger.debug("OpenRouter social summary failed: %s", e)
 
     # 3. Deterministic fallback
     return _extractive_summary(desc, skills)
 
 
-def build_platform_post_text(job: Dict[str, Any], platform: str = "telegram") -> str:
+def build_platform_post_text(job: Dict[str, Any], platform: str = "telegram", client: Any = None) -> str:
     """Build platform-specific post text.
 
     Supported platforms: telegram, discord, slack, x, linkedin, bluesky, mastodon.
+    For Twitter/X: strict 280 char enforcement preserving full URL without slicing.
     """
     job_id = str(job.get("id") or "")
     hook = get_rotating_hook(job_id)
-    title = job.get("title", "Software Engineer")
-    company = job.get("company", "Company")
-    country = job.get("country") or job.get("country_code") or "Global"
-    location = job.get("location") or country
-    work_mode = job.get("work_mode", "Remote")
-    url = job.get("apply_url") or job.get("url") or "https://visalane.online"
+    title = str(job.get("title") or "Software Engineer").strip()
+    company = str(job.get("company") or "Company").strip()
+    country = str(job.get("country") or job.get("country_code") or "Global").strip()
+    location = str(job.get("location") or country).strip()
+    work_mode = str(job.get("work_mode") or "Remote").strip()
+    url = str(job.get("apply_url") or job.get("url") or "https://visalane.online").strip()
     skills = job.get("skills") or []
     skills_str = ", ".join(skills[:5]) if skills else "Tech"
-    summary = generate_job_summary(job)
+    summary = generate_job_summary(job, client=client)
 
     salary_min = job.get("salary_min")
     salary_max = job.get("salary_max")
@@ -161,16 +197,41 @@ def build_platform_post_text(job: Dict[str, Any], platform: str = "telegram") ->
         salary_line = f"\n💰 From {salary_cur} {salary_min:,}"
 
     if platform == "x":
-        # Hard limit: 280 characters
-        # Structure: Hook \n Title @ Company \n 📍 Location (Mode) \n 🛂 Visa Sponsored \n 🔗 URL
-        header = f"{hook}\n\n📌 {title} @ {company}\n📍 {location} ({work_mode}){salary_line}\n🛂 Visa Sponsored\n\nApply: {url}"
-        if len(header) > 280:
-            # Compact format
-            header = f"🛂 {title} @ {company}\n📍 {location} | {work_mode}\nApply: {url}"
-        return header[:280]
+        # 1. Reserve suffix with intact URL first
+        apply_suffix = f"\n\nApply: {url}"
+        budget = 280 - len(apply_suffix)
+
+        if budget < 50:
+            # Extremely long URL edge case
+            apply_suffix = f"\n{url}"
+            budget = 280 - len(apply_suffix)
+
+        # 2. Try full format with hook
+        full_content = f"{hook}\n\n📌 {title} @ {company}\n📍 {location} ({work_mode}){salary_line}\n🛂 Visa Sponsored"
+        if len(full_content) <= budget:
+            return f"{full_content}{apply_suffix}"
+
+        # 3. Try compact format without hook
+        compact_content = f"📌 {title} @ {company}\n📍 {location} ({work_mode})\n🛂 Visa Sponsored"
+        if len(compact_content) <= budget:
+            return f"{compact_content}{apply_suffix}"
+
+        # 4. Truncate title & company if needed
+        avail_for_header = budget - len(f"📌 \n📍 {location} ({work_mode})\n🛂 Visa Sponsored") - 5
+        if avail_for_header > 20:
+            short_head = f"{title} @ {company}"[:avail_for_header].rsplit(" ", 1)[0] + "…"
+            content = f"📌 {short_head}\n📍 {location}\n🛂 Visa Sponsored"
+        else:
+            short_title = title[: max(15, budget - 40)].rsplit(" ", 1)[0] + "…"
+            content = f"📌 {short_title}\n🛂 Visa Sponsored"
+
+        result = f"{content.strip()}{apply_suffix}"
+        if len(result) > 280:
+            # Final safeguard
+            result = f"🛂 {title[:30]}… @ {company[:20]}…{apply_suffix}"
+        return result
 
     if platform in ("telegram", "discord", "slack"):
-        # Full rich markdown
         lines = [
             f"{hook}",
             "",
@@ -190,7 +251,6 @@ def build_platform_post_text(job: Dict[str, Any], platform: str = "telegram") ->
         return "\n".join(lines)
 
     if platform == "linkedin":
-        # Professional post format
         tags = "#VisaSponsorship #TechJobs #GlobalCareers #Relocation #Hiring"
         lines = [
             f"{hook}",
@@ -213,7 +273,6 @@ def build_platform_post_text(job: Dict[str, Any], platform: str = "telegram") ->
         return "\n".join(lines)
 
     if platform in ("bluesky", "mastodon"):
-        # 300-500 char format
         lines = [
             f"{hook}",
             "",
@@ -229,5 +288,4 @@ def build_platform_post_text(job: Dict[str, Any], platform: str = "telegram") ->
         lines.append(f"Apply: {url}")
         return "\n".join(lines)[:500]
 
-    # Default fallback
     return f"{hook}\n\n{title} @ {company}\nLocation: {location}\nApply: {url}"

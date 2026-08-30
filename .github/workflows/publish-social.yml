@@ -4,6 +4,10 @@ on:
     - cron: '0 */2 * * *'  # Every 2 hours
   workflow_dispatch:
 
+concurrency:
+  group: publish-social
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
@@ -15,11 +19,21 @@ env:
   BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
   MASTODON_INSTANCE_URL: ${{ secrets.MASTODON_INSTANCE_URL }}
   MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }}
+  LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+  LINKEDIN_PERSON_URN: ${{ secrets.LINKEDIN_PERSON_URN }}
+  TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
+  TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+  TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+  TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+  TWITTER_ACCESS_SECRET: ${{ secrets.TWITTER_ACCESS_SECRET }}
+  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+  TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
 
 jobs:
   publish-other-platforms:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -33,3 +47,7 @@ jobs:
         run: python -m job_radar.social.platform_publisher --platform bluesky || true
       - name: Publish to Mastodon
         run: python -m job_radar.social.platform_publisher --platform mastodon || true
+      - name: Publish or Review on Twitter/X
+        run: python -m job_radar.social.platform_publisher --platform x || true
+      - name: Publish or Review on LinkedIn
+        run: python -m job_radar.social.platform_publisher --platform linkedin || true

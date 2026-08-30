@@ -79,10 +79,23 @@ class MockSupabase:
 def test_valid_transitions():
     """Verify state transition rules."""
     assert "processing" in VALID_TRANSITIONS["pending"]
+    assert "manual_review" in VALID_TRANSITIONS["pending"]
     assert "done" in VALID_TRANSITIONS["processing"]
     assert "failed" in VALID_TRANSITIONS["processing"]
+    assert "manual_review" in VALID_TRANSITIONS["processing"]
     assert "quarantined" in VALID_TRANSITIONS["failed"]
     assert "pending" in VALID_TRANSITIONS["failed"]
+    assert "done" in VALID_TRANSITIONS["manual_review"]
+    assert "failed" in VALID_TRANSITIONS["manual_review"]
+
+
+def test_transition_stage_manual_review():
+    """Test valid transition to manual_review from pending or processing."""
+    client = MockSupabase({
+        "job_processing": {"job_id": "test-123", "linkedin_status": "pending"}
+    })
+    res = transition_stage(client, "test-123", "linkedin", "manual_review")
+    assert res["ok"] is True
 
 
 def test_transition_stage_success():

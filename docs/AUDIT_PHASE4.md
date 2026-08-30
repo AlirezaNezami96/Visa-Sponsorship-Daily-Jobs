@@ -134,3 +134,23 @@ Generated: 2026-08-30
 All 9 Phase-4 checklist items are **DONE**. No PARTIAL or MISSING items require fixes before proceeding to Phase 1.
 
 The only notable design choice is that per-endpoint rate limiting is handled at the Supabase platform level rather than in application code, which is appropriate for this architecture.
+
+---
+
+## 10. Phase 5.1 Defect Audit & Fix Verification
+
+| Defect | Severity | Root Cause | Fix Applied | Status |
+|--------|----------|------------|-------------|--------|
+| **C1** | Critical | Image worker dict vs `CardJob` contract mismatch & missing landmarks | Re-wired to `CardJob`, added landmark fetch with Wikimedia circuit breaker & fallback | ✅ FIXED |
+| **C2** | Critical | LinkedIn/X publishers not executed in workflow | Added `x` and `linkedin` steps to `publish-social.yml` | ✅ FIXED |
+| **C3** | Critical | Manual review routing broken & callback UUID truncated | Added `manual_review` transitions to state machine, full 36-char UUID callback_data, approval wiring | ✅ FIXED |
+| **C4** | Critical | `slack_post_published` column missing | Added column in migration `20260831_pipeline_fixes.sql` | ✅ FIXED |
+| **M1** | Major | Duplicate-post race condition | Added atomic `claim_next_post_job` RPC (`FOR UPDATE SKIP LOCKED`) & concurrency groups | ✅ FIXED |
+| **M2** | Major | Twitter/X post URL sliced | Re-budgeted X builder to reserve URL first; text <= 280 & guaranteed `endswith(url)` | ✅ FIXED |
+| **M3** | Major | Circuit breakers not wired into workers | Connected `CircuitBreaker` across logo fetch, wikimedia, alert channels, AI summaries, & publishers | ✅ FIXED |
+| **M4** | Major | Skill enrichment was rule-only | Added AI skill extraction (Groq/Gemini <=3s) with disk cache & rule fallback | ✅ FIXED |
+| **M5** | Major | Non-atomic select-then-upsert metrics | Replaced with atomic `record_metric` SQL function | ✅ FIXED |
+| **M6** | Major | Watchdog cadence was 2h | Updated `watchdog.yml` schedule to `*/30 * * * *` (every 30m) | ✅ FIXED |
+| **M7** | Major | Monitoring admin action missing | Created `POST /functions/v1/admin-retry` for quarantine retry/dismissal | ✅ FIXED |
+| **M8** | Major | Schema gaps (bucket policy, indexes) | Added `job-cards` bucket creation, public policy, and 5 partial indexes in migration | ✅ FIXED |
+

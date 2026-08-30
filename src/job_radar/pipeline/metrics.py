@@ -35,9 +35,18 @@ def record_metric(
     """
     today = date.today().isoformat()
     try:
-        # Upsert: insert if new, update counts if exists
-        # Using raw SQL via RPC would be ideal, but we can approximate with
-        # select-then-upsert since metrics are append-only and idempotent.
+        # 1. Attempt single-call atomic database RPC
+        if hasattr(client, "rpc"):
+            try:
+                client.rpc(
+                    "record_metric",
+                    {"p_metric": name, "p_ok": bool(ok), "p_ms": int(duration_ms)},
+                ).execute()
+                return
+            except Exception as rpc_err:
+                logger.debug("RPC record_metric fallback: %s", rpc_err)
+
+        # 2. Fallback select-then-upsert for local mocks / instances without RPC
         resp = (
             client.table("metrics_daily")
             .select("count, error_count, sum_ms")
@@ -48,7 +57,6 @@ def record_metric(
         )
 
         if resp and resp.data:
-            # Update existing row
             current = resp.data
             update = {
                 "count": current["count"] + 1,
@@ -61,7 +69,6 @@ def record_metric(
                 "day", today
             ).eq("metric", name).execute()
         else:
-            # Insert new row
             client.table("metrics_daily").insert({
                 "day": today,
                 "metric": name,
@@ -71,7 +78,6 @@ def record_metric(
             }).execute()
 
     except Exception as e:
-        # Metrics must never break the pipeline
         logger.warning("Failed to record metric %s: %s", name, e)
 
 

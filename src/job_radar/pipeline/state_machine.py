@@ -33,14 +33,13 @@ STAGES = (
 )
 
 VALID_TRANSITIONS = {
-    "pending": {"processing"},
-    "processing": {"done", "failed"},
+    "pending": {"processing", "manual_review"},
+    "processing": {"done", "failed", "manual_review"},
     "failed": {"pending", "quarantined"},
+    "manual_review": {"done", "failed"},
     # Terminal states — no transitions out
     "done": set(),
     "quarantined": set(),
-    # LinkedIn/X special
-    "manual_review": {"done", "failed"},
 }
 
 
@@ -122,7 +121,7 @@ def transition_stage(
         .maybe_single()
         .execute()
     )
-    row = resp.data if resp else None
+    row = resp.data[0] if isinstance(resp.data, list) and resp.data else resp.data if isinstance(resp.data, dict) else None
     if not row:
         logger.warning("job_processing row not found for job_id=%s", job_id)
         return {"ok": False, "quarantined": False, "attempts": 0}

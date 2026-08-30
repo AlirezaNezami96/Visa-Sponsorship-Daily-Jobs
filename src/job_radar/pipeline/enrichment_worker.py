@@ -3,9 +3,8 @@
 Runs as: python -m job_radar.pipeline.enrichment_worker
 
 Claims jobs with `metadata_status='pending'` via the state machine, then runs
-concurrent sub-tasks (skills, visa, salary, logo, etc.) in a thread pool.
-Field-level NULL on sub-task failure; stage fails only if skills AND visa both
-fail 3×.
+concurrent sub-tasks (skills with AI + rule fallback, salary, work mode, company logo)
+in a thread pool with circuit breakers and field-level failure isolation.
 """
 from __future__ import annotations
 
@@ -31,7 +30,7 @@ def _create_client() -> Any:
 
 
 def _extract_skills_rule_based(text: str) -> list[str]:
-    """Extract skills using simple keyword matching (no AI needed)."""
+    """Extract skills using keyword matching."""
     KNOWN_SKILLS = {
         "python", "javascript", "typescript", "react", "vue", "angular",
         "nodejs", "java", "kotlin", "swift", "go", "rust", "ruby",
@@ -52,11 +51,65 @@ def _extract_skills_rule_based(text: str) -> list[str]:
     lower = text.lower()
     found = []
     for skill in KNOWN_SKILLS:
-        # Word boundary matching
         pattern = r'\b' + re.escape(skill) + r'\b'
         if re.search(pattern, lower):
             found.append(skill)
     return sorted(set(found))
+
+
+def _extract_skills_ai(text: str, client: Any = None) -> list[str]:
+    """Extract skills using fast LLM call (<=3s) with circuit breaker."""
+    groq_key = os.getenv("GROQ_API_KEY")
+    if not groq_key or len(text.strip()) < 50:
+        return []
+
+    cb = None
+    if client:
+        try:
+            from job_radar.pipeline.circuit_breaker import CircuitBreaker
+            cb = CircuitBreaker(client)
+            if cb.is_open("ai_skills"):
+                return []
+        except Exception:
+            pass
+
+    import requests
+    prompt = (
+        "Extract a JSON array of up to 10 technical and professional skills from this job description. "
+        "Return ONLY a JSON array of strings, e.g. [\"Python\", \"PostgreSQL\", \"AWS\"].\n\n"
+        f"Job text: {text[:2000]}"
+    )
+    try:
+        resp = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
+            json={
+                "model": "llama-3.3-70b-versatile",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 80,
+                "temperature": 0.1,
+            },
+            timeout=3,
+        )
+        if resp.status_code == 200:
+            if cb:
+                cb.record_success("ai_skills")
+            content = resp.json()["choices"][0]["message"]["content"].strip()
+            # Clean JSON fences if present
+            content = re.sub(r"^```(json)?|```$", "", content).strip()
+            import json
+            parsed = json.loads(content)
+            if isinstance(parsed, list):
+                return [str(s).lower().strip() for s in parsed if s]
+        else:
+            if cb:
+                cb.record_failure("ai_skills")
+    except Exception as e:
+        if cb:
+            cb.record_failure("ai_skills")
+        logger.debug("AI skill extraction failed: %s", e)
+
+    return []
 
 
 def _normalize_salary(raw: str | None) -> dict[str, Any]:
@@ -65,10 +118,8 @@ def _normalize_salary(raw: str | None) -> dict[str, Any]:
     if not raw:
         return result
 
-    # Common patterns: "$80,000 - $120,000", "€50k-€70k", "80000-120000 USD"
     raw_clean = raw.replace(",", "").replace(" ", "")
 
-    # Detect currency
     currency_map = {"$": "USD", "€": "EUR", "£": "GBP", "¥": "JPY", "₹": "INR"}
     for sym, code in currency_map.items():
         if sym in raw:
@@ -80,12 +131,10 @@ def _normalize_salary(raw: str | None) -> dict[str, Any]:
                 result["currency"] = code
                 break
 
-    # Extract numbers
     numbers = re.findall(r'\d+(?:\.\d+)?', raw_clean)
     nums = []
     for n in numbers:
         val = float(n)
-        # Handle "k" suffix
         if f"{n}k" in raw_clean.lower() or f"{n}K" in raw_clean:
             val *= 1000
         nums.append(int(val))
@@ -115,8 +164,7 @@ def _normalize_work_mode(raw: str | None) -> str | None:
 
 
 def _fetch_company_logo(client: Any, company_name: str, website: str | None) -> str | None:
-    """Fetch company logo via Google's S2 favicon service and upload to Storage."""
-    import requests
+    """Fetch company logo via Google's S2 favicon service with circuit breaker."""
     if not website:
         return None
 
@@ -124,23 +172,40 @@ def _fetch_company_logo(client: Any, company_name: str, website: str | None) -> 
     if not domain:
         return None
 
+    cb = None
+    try:
+        from job_radar.pipeline.circuit_breaker import CircuitBreaker
+        cb = CircuitBreaker(client)
+        if cb.is_open("s2_favicons"):
+            from job_radar.pipeline.metrics import record_metric
+            record_metric(client, "circuit:open:s2_favicons", True, 0)
+            return None
+    except Exception:
+        pass
+
+    import requests
     try:
         favicon_url = f"https://www.google.com/s2/favicons?domain={domain}&sz=128"
-        resp = requests.get(favicon_url, timeout=10)
+        resp = requests.get(favicon_url, timeout=6)
         if resp.status_code != 200 or len(resp.content) < 100:
+            if cb:
+                cb.record_failure("s2_favicons")
             return None
 
-        # Upload to Storage
         path = f"logos/{domain.replace('.', '_')}.png"
         client.storage.from_("companies").upload(
             path, resp.content,
             file_options={"content-type": "image/png", "upsert": "true"},
         )
 
-        # Return public URL
+        if cb:
+            cb.record_success("s2_favicons")
+
         supabase_url = os.environ.get("SUPABASE_URL", "")
         return f"{supabase_url}/storage/v1/object/public/companies/{path}"
     except Exception as e:
+        if cb:
+            cb.record_failure("s2_favicons")
         logger.debug("Logo fetch failed for %s: %s", domain, e)
         return None
 
@@ -168,20 +233,33 @@ def enrich_job(client: Any, job_id: str) -> dict[str, Any]:
     job = resp.data
     update: dict[str, Any] = {}
 
-    # --- Sub-task 1: Skill extraction ---
+    # --- Sub-task 1: Skill extraction (AI with rule fallback) ---
     skills_ok = False
     try:
-        desc = job.get("description_text") or ""
+        desc = job.get("description_text") or job.get("description") or ""
         title = job.get("title") or ""
-        skills = _extract_skills_rule_based(f"{title} {desc}")
-        if skills:
-            update["skills"] = skills
+        full_text = f"{title} {desc}"
+
+        # 1. Try AI skill extraction
+        ai_skills = _extract_skills_ai(full_text, client=client)
+        if ai_skills:
+            update["skills"] = ai_skills
             update["skills_extracted_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
             skills_ok = True
+            record_metric(client, "enrich:skills:ai", True, 0)
         else:
-            update["skill_extraction_error"] = "no skills detected"
+            # 2. Rule-based fallback
+            rule_skills = _extract_skills_rule_based(full_text)
+            if rule_skills:
+                update["skills"] = rule_skills
+                update["skills_extracted_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                skills_ok = True
+                record_metric(client, "enrich:skills:rule", True, 0)
+            else:
+                update["skill_extraction_error"] = "no skills detected"
     except Exception as e:
         errors.append(f"skills: {e}")
+        update["skill_extraction_error"] = str(e)[:200]
 
     # --- Sub-task 2: Salary normalization ---
     try:
@@ -230,10 +308,8 @@ def enrich_job(client: Any, job_id: str) -> dict[str, Any]:
         update["processed_enrichment"] = True
         client.table("jobs").update(update).eq("id", job_id).execute()
 
-    # Transition state
     duration_ms = int((time.time() - start) * 1000)
 
-    # Stage fails only if skills extraction failed (critical sub-task)
     if skills_ok or not job.get("description_text"):
         transition_stage(client, job_id, "metadata", "done",
                         metrics_fn=lambda n, o, d: record_metric(client, n, o, d))

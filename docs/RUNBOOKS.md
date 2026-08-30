@@ -73,3 +73,29 @@ UPDATE platform_post_config
 SET min_gap_minutes = 15, daily_cap = 20, enabled = TRUE
 WHERE platform = 'telegram';
 ```
+
+---
+
+## 5. Retrying Quarantine via Admin API
+```bash
+# Retry quarantined job
+curl -X POST \
+  -H "x-admin-key: YOUR_ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"quarantine_id": "QUARANTINE_UUID", "action": "retry"}' \
+  "https://YOUR_PROJECT_REF.supabase.co/functions/v1/admin-retry"
+
+# Dismiss quarantined job
+curl -X POST \
+  -H "x-admin-key: YOUR_ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"quarantine_id": "QUARANTINE_UUID", "action": "dismiss"}' \
+  "https://YOUR_PROJECT_REF.supabase.co/functions/v1/admin-retry"
+```
+
+---
+
+## 6. Schema Column Notes
+- `applicants_count`: Intentionally `NULL` by default unless explicitly provided by upstream ATS scrapers (e.g. LinkedIn/Adzuna metadata).
+- `skill_extraction_error`: Populated when AI/rule skill extraction finds no valid skills for a job description.
+

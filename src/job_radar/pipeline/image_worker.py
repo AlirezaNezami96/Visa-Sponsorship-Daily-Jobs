@@ -3,19 +3,26 @@
 Runs as: python -m job_radar.pipeline.image_worker
 
 Claims `image_status='pending'` jobs, renders social cards via the existing
-card_renderer (Pillow/PIL, deterministic, no AI), uploads to Supabase Storage,
-and sets `jobs.image_url`.
+card_renderer (Pillow/PIL, deterministic, no AI), optionally fetching a licensed
+landmark photo for the city (wrapped in a circuit breaker), uploads to Supabase
+Storage bucket `job-cards`, and sets `jobs.image_url`.
 
 Budget-aware: max 25 per run. Failures increment attempts, quarantine after 3.
 """
 from __future__ import annotations
 
+import io
 import logging
 import os
-import io
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
+
+from job_radar.pipeline.circuit_breaker import CircuitBreaker
+from job_radar.pipeline.metrics import record_metric
+from job_radar.pipeline.state_machine import transition_stage
+from job_radar.social.card_renderer import card_job_from_row, render_card_png
+from job_radar.social.landmark import fetch_landmark_photo
 
 logger = logging.getLogger(__name__)
 
@@ -31,22 +38,24 @@ def _create_client() -> Any:
     return create_client(url, key)
 
 
-def render_and_upload(client: Any, job_id: str) -> dict[str, Any]:
-    """Render a social card and upload to Storage.
+def render_and_upload(job_id: str, client: Any = None) -> dict[str, Any]:
+    """Render a social card and upload to Storage using a per-thread Supabase client.
 
-    Uses the existing card_renderer module (frozen — never rewritten).
+    Uses the existing card_renderer module and landmark photo fetcher with circuit breakers.
     """
-    from job_radar.pipeline.state_machine import transition_stage
-    from job_radar.pipeline.metrics import record_metric
 
+    if client is None:
+        client = _create_client()
+
+    cb = CircuitBreaker(client)
     start = time.time()
 
     # Fetch job data
     resp = (
         client.table("jobs")
-        .select("id, title, company, country, country_code, location, "
+        .select("id, title, company, country, country_code, city, location, "
                 "work_mode, salary_min, salary_max, salary_currency, "
-                "visa_sponsorship_verified, skills, company_logo_url")
+                "visa_sponsorship_verified, visa_sponsorship_confidence, skills, company_logo_url")
         .eq("id", job_id)
         .maybe_single()
         .execute()
@@ -58,31 +67,26 @@ def render_and_upload(client: Any, job_id: str) -> dict[str, Any]:
     job = resp.data
 
     try:
-        from job_radar.social.card_renderer import render_card
+        card = card_job_from_row(job)
+        photo: bytes | None = None
 
-        # Build card data payload
-        card_data = {
-            "title": job.get("title", "Unknown Position"),
-            "company": job.get("company", "Unknown Company"),
-            "location": job.get("location") or job.get("country") or "",
-            "country_code": job.get("country_code", ""),
-            "work_mode": job.get("work_mode", ""),
-            "visa": bool(job.get("visa_sponsorship_verified")),
-            "skills": (job.get("skills") or [])[:6],
-            "salary_min": job.get("salary_min"),
-            "salary_max": job.get("salary_max"),
-            "salary_currency": job.get("salary_currency"),
-            "company_logo_url": job.get("company_logo_url"),
-        }
+        if card.city:
+            if not cb.is_open("wikimedia"):
+                try:
+                    photo, meta = fetch_landmark_photo(client, card.city, card.country)
+                    if photo is not None:
+                        cb.record_success("wikimedia")
+                except Exception as e:
+                    cb.record_failure("wikimedia")
+                    logger.debug("Wikimedia landmark fetch failed: %s", e)
+            else:
+                record_metric(client, "circuit:open:wikimedia", True, 0)
+                logger.debug("Wikimedia circuit open, skipping landmark fetch for %s", card.city)
 
-        # Render card to bytes
-        img = render_card(card_data)
-        buf = io.BytesIO()
-        img.save(buf, format="PNG", optimize=True)
-        buf.seek(0)
-        image_bytes = buf.read()
+        # Render deterministic PNG
+        image_bytes = render_card_png(card, photo)
 
-        # Upload to Storage
+        # Upload to Storage bucket
         path = f"cards/{job_id}.png"
         client.storage.from_("job-cards").upload(
             path, image_bytes,
@@ -121,24 +125,24 @@ def run_image_batch() -> dict[str, Any]:
     from job_radar.pipeline.state_machine import claim_pending
     from job_radar.pipeline.metrics import update_pipeline_health
 
-    client = _create_client()
+    main_client = _create_client()
 
     # Ensure storage bucket exists
     try:
-        buckets = client.storage.list_buckets()
+        buckets = main_client.storage.list_buckets()
         if not any(b.name == "job-cards" for b in buckets):
-            client.storage.create_bucket("job-cards", options={"public": True})
+            main_client.storage.create_bucket("job-cards", options={"public": True})
     except Exception:
         pass  # Bucket may already exist
 
     claimed = claim_pending(
-        client, "image", limit=BATCH_SIZE,
+        main_client, "image", limit=BATCH_SIZE,
         prerequisite_stage="metadata",
     )
 
     if not claimed:
         logger.info("No pending jobs for image generation")
-        update_pipeline_health(client, "image", backlog=0)
+        update_pipeline_health(main_client, "image", backlog=0)
         return {"processed": 0, "succeeded": 0, "failed": 0}
 
     logger.info("Claimed %d jobs for image generation", len(claimed))
@@ -146,7 +150,8 @@ def run_image_batch() -> dict[str, Any]:
     failed = 0
 
     with ThreadPoolExecutor(max_workers=THREAD_POOL_SIZE) as pool:
-        futures = {pool.submit(render_and_upload, client, jid): jid for jid in claimed}
+        # Per-thread execution (render_and_upload instantiates its own Supabase client)
+        futures = {pool.submit(render_and_upload, jid): jid for jid in claimed}
         for future in as_completed(futures):
             jid = futures[future]
             try:
@@ -160,7 +165,7 @@ def run_image_batch() -> dict[str, Any]:
                 failed += 1
 
     update_pipeline_health(
-        client, "image",
+        main_client, "image",
         success=succeeded > 0,
         error=f"{failed} jobs failed" if failed else None,
     )

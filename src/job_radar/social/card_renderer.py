@@ -38,6 +38,12 @@ class CardJob:
     work_mode: str | None = None
     visa_sponsorship_verified: bool = False
     visa_sponsorship_confidence: int = 0
+    company: str | None = None
+    company_logo_url: str | None = None
+    skills: tuple[str, ...] | list[str] | None = None
+    salary_min: int | None = None
+    salary_max: int | None = None
+    salary_currency: str | None = None
 
 
 @dataclass(frozen=True)
@@ -376,12 +382,23 @@ def render_card_png(job: CardJob, photo_bytes: bytes | None = None) -> bytes:
 def card_job_from_row(row: dict[str, Any]) -> CardJob:
     """Build a CardJob from a `jobs` table row (PostgREST shape)."""
     company = row.get("companies") or {}
+    company_name = row.get("company") or (company.get("name") if isinstance(company, dict) else None) or ""
     country = row.get("country") or (company.get("country") if isinstance(company, dict) else None) or ""
+    city = row.get("city")
+    if not city and row.get("location"):
+        parts = str(row.get("location")).split(",")
+        city = parts[0].strip() if parts else None
     return CardJob(
         title=str(row.get("title") or "Untitled role"),
         country=str(country or ""),
-        city=row.get("city"),
+        city=city,
         work_mode=row.get("work_mode"),
         visa_sponsorship_verified=bool(row.get("visa_sponsorship_verified")),
         visa_sponsorship_confidence=int(row.get("visa_sponsorship_confidence") or 0),
+        company=company_name or None,
+        company_logo_url=row.get("company_logo_url"),
+        skills=row.get("skills") or (),
+        salary_min=row.get("salary_min"),
+        salary_max=row.get("salary_max"),
+        salary_currency=row.get("salary_currency"),
     )
