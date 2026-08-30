@@ -379,7 +379,6 @@ def _send_for_manual_review(
             f"Job ID: `{job_id}`"
         )
 
-        # Full job_id in callback_data (e.g. approve_linkedin_<uuid> <= 53 chars <= 64 bytes limit)
         inline_keyboard = [
             [
                 {"text": "✅ Approve & Post", "callback_data": f"approve_{platform}_{job_id}"},
