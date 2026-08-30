@@ -1,0 +1,53 @@
+# Upptime configuration for VisaLane
+# Deploy this to a separate repository (e.g. your-org/visalane-status) with GitHub Pages enabled.
+# See https://upptime.js.org for setup instructions.
+
+owner: AlirezaNezami96
+repo: visalane-status
+
+sites:
+  - name: Supabase Edge Functions Health
+    url: https://YOUR_SUPABASE_PROJECT_REF.supabase.co/functions/v1/health
+    expectedStatusCodes: [200]
+
+  - name: Search Jobs API
+    url: https://YOUR_SUPABASE_PROJECT_REF.supabase.co/functions/v1/search-jobs?limit=1
+    expectedStatusCodes: [200]
+
+  - name: Frontend Web App
+    url: https://visalane.online
+    expectedStatusCodes: [200, 301, 302]
+
+status-website:
+  cname: status.visalane.online
+  baseUrl: /
+  logoUrl: https://visalane.online/logo.png
+  name: VisaLane Status
+  introTitle: "**VisaLane** System & Pipeline Status"
+  introMessage: Real-time uptime monitoring for VisaLane APIs, pipeline stages, and web services.
+  navbar:
+    - title: Status
+      href: /
+    - title: VisaLane
+      href: https://visalane.online
+    - title: GitHub
+      href: https://github.com/AlirezaNezami96/Visa-Sponsorship-Daily-Jobs
+
+# Response time graphs
+graphs: true
+
+# Check every 5 minutes
+workflowSchedule:
+  graphs: "0 0 * * *"
+  response_time: "0 23 * * *"
+  staticSite: "0 1 * * *"
+  summary: "0 0 * * *"
+  updateTemplate: "0 0 * * *"
+  updates: "0 3 * * *"
+  uptime: "*/5 * * * *"
+
+# Notification triggers
+notifications:
+  - type: telegram
+    telegramBotToken: $TELEGRAM_BOT_TOKEN
+    telegramChatId: $TELEGRAM_CHAT_ID

@@ -2,6 +2,30 @@
 
 All notable changes to the **VisaLane Platform & Visa Sponsorship Jobs Scraper** are documented here.
 
+## [2.3.0] - 2026-08-30
+
+### ⚙️ 5-Stage Queued Pipeline State Machine
+- **Formal State Machine**: Database-backed `job_processing` table tracking per-stage status (`pending` $\to$ `processing` $\to$ `done` / `failed` / `quarantined`) with atomic transitions and attempt tracking.
+- **Circuit Breakers (`service_circuits`)**: Dynamic circuit breaker wrapping all external APIs (AI providers, image scrapers, Wikimedia, ATS platforms) with automatic cooldown and half-open probing.
+- **Dead-Letter Quarantine (`processing_quarantine`)**: Automatic isolation for jobs failing 3 consecutive attempts, preventing poison-pill blocking and emitting owner alerts.
+- **Metadata Enrichment Worker**: Multi-threaded metadata extraction worker (`enrichment_worker.py`) with field-level fault tolerance for skills, salary normalization, work mode detection, and company favicon logos.
+- **Alert Worker**: Instant multi-channel notification engine (`alert_worker.py`) with channel-level fault isolation (Telegram, Discord, Slack, Resend Email).
+
+### 🎨 Image Generation Queue Pipeline
+- **Deterministic Card Rendering**: Incremental image generator worker (`image_worker.py`) executing Pillow-based card rendering with public Supabase Storage upload and budget-aware concurrency caps.
+
+### 📱 Social Publishing & Anti-Spam Pacing
+- **Multi-Platform Publisher**: Dedicated publisher engine (`platform_publisher.py`) enforcing platform-specific active hours, hourly/daily post caps, and minimum post gap intervals.
+- **Dynamic Post Text Generator**: Hook rotation algorithm (`hash(job_id) % len`) with 280-char enforcement for Twitter/X, rich Markdown for Telegram/Discord, and manual-review Telegram bot routing for LinkedIn and X.
+
+### 📊 Observability, Health & Watchdog
+- **Daily Aggregated Metrics (`metrics_daily`)**: Zero raw-event table scan design — single-row daily upserts tracking event counts, error counts, and latency sums.
+- **Pipeline Watchdog**: Autonomous background supervisor (`watchdog.py`) resetting stale processing locks (>30m), monitoring stage backlogs, and dispatching owner alerts on anomalies.
+- **Admin Metrics API**: Secure `GET /admin-metrics` Edge Function delivering full pipeline health, circuit breaker states, and quarantine lists in a single request.
+- **Public Health Endpoint**: Lightweight `GET /health` endpoint compatible with status monitors (Upptime / GitHub Pages).
+
+---
+
 ## [2.2.0] - 2026-08-30
 
 ### 🔐 Phase 4: Full OAuth 2.0 Subsystem

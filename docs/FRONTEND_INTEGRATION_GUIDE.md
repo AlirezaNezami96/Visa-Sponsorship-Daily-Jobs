@@ -415,3 +415,46 @@ Base URL: `https://<YOUR_PROJECT_REF>.supabase.co/functions/v1`
   }
 }
 ```
+
+---
+
+### 8. System Health Check (Upptime & Monitoring)
+* **Endpoint**: `GET /health`
+* **Public / No Auth Required**
+* **Response (200 OK)**:
+```json
+{
+  "status": "ok",
+  "version": "1.0.0",
+  "service": "visalane-backend",
+  "timestamp": "2026-08-30T08:30:00.000Z"
+}
+```
+
+---
+
+### 9. Admin Metrics & Pipeline Status
+* **Endpoint**: `GET /admin-metrics?from=YYYY-MM-DD&to=YYYY-MM-DD`
+* **Headers**: `Authorization: Bearer <ADMIN_JWT>` or `x-admin-key: <ADMIN_API_KEY>`
+* **Response (200 OK)**:
+```json
+{
+  "range": { "from": "2026-08-23", "to": "2026-08-30" },
+  "summary": {
+    "total_events": 1420,
+    "total_errors": 12,
+    "error_rate_percent": 0.85,
+    "avg_latency_ms": 340
+  },
+  "pipeline_health": [
+    { "stage": "metadata", "backlog": 0, "last_success_at": "2026-08-30T08:00:00Z" },
+    { "stage": "image", "backlog": 2, "last_success_at": "2026-08-30T08:15:00Z" }
+  ],
+  "circuits": [
+    { "name": "gemini_api", "state": "closed", "consecutive_failures": 0 }
+  ],
+  "metrics_daily": [ ... ],
+  "quarantine": [ ... ]
+}
+```
+
