@@ -100,12 +100,13 @@ if (typeof Deno !== "undefined" && typeof Deno.serve === "function") {
       }
 
       const { data: profile } = await client.from("profiles").select("*").eq("id", user.id).maybeSingle();
+      const userProfile: ProfileRow = { id: user.id, ...(profile ?? {}) };
       const store = createGenerationStore(client);
 
       const outcome = await runGeneration(
         {
           userId: user.id,
-          profile: (profile ?? null) as ProfileRow | null,
+          profile: userProfile,
           usageField: "import_attempts",
           documentType: "resume",
           jobId: null,

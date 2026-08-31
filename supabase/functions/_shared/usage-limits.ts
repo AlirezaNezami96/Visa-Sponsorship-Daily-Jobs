@@ -137,8 +137,11 @@ export async function checkUsage(
   }
   const plan = effectivePlan(profile);
   const limit = DAILY_LIMITS[plan][field];
+  const userId = String(profile?.id ?? "").trim();
+  if (!userId) {
+    return { allowed: true, count: 0, limit, plan };
+  }
   const today = new Date().toISOString().slice(0, 10);
-  const userId = String(profile?.id ?? "");
   const { data, error } = await client.from("usage_limits").select(field).eq("date", today).eq("user_id", userId);
   if (error) {
     throw new Error(`usage check failed: ${error.message}`);
