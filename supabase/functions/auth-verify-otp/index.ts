@@ -35,14 +35,14 @@ export async function handleVerifyOtpRequest(req: Request): Promise<Response> {
   }
 
   if (!rawToken || typeof rawToken !== "string") {
-    return badRequest("Verification token is required.", "Please enter the 6-digit confirmation code.");
+    return badRequest("Verification token is required.", "Please enter the confirmation code.");
   }
 
   const token = rawToken.trim().replace(/\s+/g, "");
   if (!isValidOtp(token)) {
     return badRequest(
-      "Invalid confirmation code format. The code must be exactly 6 digits.",
-      "Please enter the 6 digits sent to your email.",
+      "Invalid confirmation code format. The code must be 6 to 8 digits.",
+      "Please enter the verification code sent to your email.",
     );
   }
 

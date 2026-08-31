@@ -56,12 +56,14 @@ describe("Auth & OTP Service Utilities", () => {
   });
 
   describe("OTP Format Validation", () => {
-    it("accepts valid 6-digit OTP codes", () => {
+    it("accepts valid 6-digit and 8-digit OTP codes", () => {
       expect(isValidOtp("123456")).toBe(true);
       expect(isValidOtp("000000")).toBe(true);
       expect(isValidOtp("999999")).toBe(true);
       expect(isValidOtp("012345")).toBe(true);
       expect(isValidOtp(" 654321 ")).toBe(true); // handles whitespace trimming
+      expect(isValidOtp("12345678")).toBe(true); // 8-digit OTP
+      expect(isValidOtp(" 87654321 ")).toBe(true);
     });
 
     it("rejects invalid OTP codes of wrong length or non-digit characters", () => {
@@ -70,7 +72,7 @@ describe("Auth & OTP Service Utilities", () => {
         "   ",
         "123",
         "12345",
-        "1234567",
+        "123456789", // > 8 digits
         "abcdef",
         "12a456",
         "123 45",

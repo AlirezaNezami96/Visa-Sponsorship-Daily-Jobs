@@ -67,12 +67,12 @@ export function isValidEmail(email: string | null | undefined): boolean {
 
 /**
  * Validates OTP format:
- * - Exactly 6 digits (000000 - 999999) or 6 alphanumeric characters.
+ * - 6 to 8 numeric digits (e.g. 123456 or 12345678).
  */
 export function isValidOtp(token: string | null | undefined): boolean {
   if (!token || typeof token !== "string") return false;
   const clean = token.trim();
-  return /^[0-9]{6}$/.test(clean);
+  return /^[0-9]{6,8}$/.test(clean);
 }
 
 /**

@@ -63,7 +63,7 @@ describe("auth-verify-otp Edge Function", () => {
   });
 
   it("rejects invalid token lengths or non-digit tokens with 400 Bad Request", async () => {
-    const invalidTokens = ["123", "12345", "1234567", "abcdef", "12a456"];
+    const invalidTokens = ["123", "12345", "123456789", "abcdef", "12a456"];
     for (const token of invalidTokens) {
       const req = new Request("https://visalane.online/auth-verify-otp", {
         method: "POST",
