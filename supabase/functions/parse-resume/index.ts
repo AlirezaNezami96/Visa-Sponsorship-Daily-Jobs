@@ -17,6 +17,7 @@ import { handleOptions, json, badRequest, unauthorized, serverError } from "../_
 import { buildParseResumePrompt, PROMPT_VERSIONS } from "../_shared/prompts.ts";
 import { runGeneration } from "../_shared/generation.ts";
 import { createGenerationStore } from "../_shared/supabase-store.ts";
+import { logSystemEvent } from "../_shared/system-logger.ts";
 import type { ProfileRow } from "../_shared/usage-limits.ts";
 
 async function resumeTextFromStorage(client: ReturnType<typeof createUserClient>, storagePath: string): Promise<string> {
@@ -55,108 +56,153 @@ function detectSections(parsed: Record<string, unknown>): string[] {
 
 if (typeof Deno !== "undefined" && typeof Deno.serve === "function") {
   Deno.serve(async (req) => {
-  const preflight = handleOptions(req);
-  if (preflight) return preflight;
-  if (req.method !== "POST") return json({ error: { code: "method_not_allowed", message: "POST only" } }, { status: 405 });
-  if (!hasAuthHeader(req)) return unauthorized();
+    const preflight = handleOptions(req);
+    if (preflight) return preflight;
+    if (req.method !== "POST") return json({ error: { code: "method_not_allowed", message: "POST only" } }, { status: 405 });
+    if (!hasAuthHeader(req)) return unauthorized();
 
-  try {
-    const client = createUserClient(req);
-    const user = await getAuthUser(client);
-    if (!user) return unauthorized();
+    let userId: string | null = null;
 
-    const body = await req.json().catch(() => ({}));
-    let resumeText: string = typeof body.resume_text === "string" ? body.resume_text : "";
+    try {
+      const client = createUserClient(req);
+      const user = await getAuthUser(client);
+      if (!user) return unauthorized();
+      userId = user.id;
 
-    if (resumeText.trim().length < 20 && typeof body.storage_path === "string" && body.storage_path.trim()) {
-      try {
-        resumeText = await resumeTextFromStorage(client, String(body.storage_path));
-      } catch (err) {
-        return badRequest(String((err as Error).message ?? err));
+      const body = await req.json().catch(() => ({}));
+      let resumeText: string = typeof body.resume_text === "string" ? body.resume_text : "";
+
+      if (resumeText.trim().length < 20 && typeof body.storage_path === "string" && body.storage_path.trim()) {
+        try {
+          resumeText = await resumeTextFromStorage(client, String(body.storage_path));
+        } catch (err) {
+          const errMsg = String((err as Error).message ?? err);
+          await logSystemEvent({
+            level: "warn",
+            source: "parse-resume",
+            message: `Resume storage read failed: ${errMsg}`,
+            details: { storage_path: body.storage_path, error: errMsg },
+            userId,
+          });
+          return badRequest(errMsg);
+        }
       }
-    }
 
-    if (resumeText.trim().length < 20) {
-      return badRequest("resume_text must be provided (>= 20 chars)");
-    }
+      if (resumeText.trim().length < 20) {
+        await logSystemEvent({
+          level: "warn",
+          source: "parse-resume",
+          message: "Resume parsing rejected: text is shorter than 20 characters",
+          details: { textLength: resumeText.trim().length },
+          userId,
+        });
+        return badRequest("resume_text must be provided (>= 20 chars)");
+      }
 
-    const { data: profile } = await client.from("profiles").select("*").eq("id", user.id).maybeSingle();
-    const store = createGenerationStore(client);
+      const { data: profile } = await client.from("profiles").select("*").eq("id", user.id).maybeSingle();
+      const store = createGenerationStore(client);
 
-    const outcome = await runGeneration(
-      {
-        userId: user.id,
-        profile: (profile ?? null) as ProfileRow | null,
-        usageField: "import_attempts",
-        documentType: "resume",
-        jobId: null,
-        promptVersion: PROMPT_VERSIONS.parseResume,
-        buildPrompt: () => buildParseResumePrompt(resumeText),
-        validate: (p) => {
-          if (!Array.isArray(p.skills) || !Array.isArray(p.job_titles)) return "missing skills/job_titles arrays";
-          return null;
+      const outcome = await runGeneration(
+        {
+          userId: user.id,
+          profile: (profile ?? null) as ProfileRow | null,
+          usageField: "import_attempts",
+          documentType: "resume",
+          jobId: null,
+          promptVersion: PROMPT_VERSIONS.parseResume,
+          buildPrompt: () => buildParseResumePrompt(resumeText),
+          validate: (p) => {
+            if (!Array.isArray(p.skills) || !Array.isArray(p.job_titles)) return "missing skills/job_titles arrays";
+            return null;
+          },
+          analyticsEvent: "resume_parsed",
         },
-        analyticsEvent: "resume_parsed",
-      },
-      { store },
-    );
+        { store },
+      );
 
-    if (!outcome.ok) {
-      return json({ error: { code: outcome.code, message: outcome.message } }, { status: outcome.status });
-    }
+      if (!outcome.ok) {
+        await logSystemEvent({
+          level: "error",
+          source: "parse-resume",
+          message: `AI resume parsing failed: ${outcome.message}`,
+          details: { code: outcome.code, status: outcome.status },
+          userId,
+        });
+        return json({ error: { code: outcome.code, message: outcome.message } }, { status: outcome.status });
+      }
 
-    const parsedOutput = outcome.body.output as Record<string, unknown>;
-    const sectionsDetected = detectSections(parsedOutput);
-    const exp = Array.isArray(parsedOutput.experience) ? parsedOutput.experience : [];
-    const isFresher = exp.length === 0;
-    const nowIso = new Date().toISOString();
+      const parsedOutput = outcome.body.output as Record<string, unknown>;
+      const sectionsDetected = detectSections(parsedOutput);
+      const exp = Array.isArray(parsedOutput.experience) ? parsedOutput.experience : [];
+      const isFresher = exp.length === 0;
+      const nowIso = new Date().toISOString();
 
-    // Persist structured parsed data & metadata back onto the resume row when provided
-    if (typeof body.resume_id === "string") {
+      // Persist structured parsed data & metadata back onto the resume row when provided
+      if (typeof body.resume_id === "string") {
+        try {
+          await client
+            .from("resumes")
+            .update({
+              parsed_data: parsedOutput,
+              sections_detected: sectionsDetected,
+              parse_status: "completed",
+              parse_confidence: 0.9,
+            })
+            .eq("id", body.resume_id)
+            .eq("user_id", user.id);
+        } catch (err) {
+          console.warn("Failed to update resumes row:", err);
+        }
+      }
+
+      // Persist to user profile
       try {
         await client
-          .from("resumes")
+          .from("profiles")
           .update({
-            parsed_data: parsedOutput,
-            sections_detected: sectionsDetected,
-            parse_status: "completed",
-            parse_confidence: 0.9,
+            parsed_resume: parsedOutput,
+            skills_cache: Array.isArray(parsedOutput.skills) ? parsedOutput.skills : [],
+            is_fresher: isFresher,
+            last_resume_parse: nowIso,
+            resume_onboarding_complete: true,
+            full_name: typeof parsedOutput.full_name === "string" ? parsedOutput.full_name : undefined,
           })
-          .eq("id", body.resume_id)
-          .eq("user_id", user.id);
+          .eq("id", user.id);
       } catch (err) {
-        console.warn("Failed to update resumes row:", err);
+        console.warn("Failed to update profile row:", err);
       }
-    }
 
-    // Persist to user profile
-    try {
-      await client
-        .from("profiles")
-        .update({
-          parsed_resume: parsedOutput,
-          skills_cache: Array.isArray(parsedOutput.skills) ? parsedOutput.skills : [],
-          is_fresher: isFresher,
-          last_resume_parse: nowIso,
-          resume_onboarding_complete: true,
-          full_name: typeof parsedOutput.full_name === "string" ? parsedOutput.full_name : undefined,
-        })
-        .eq("id", user.id);
+      await logSystemEvent({
+        level: "info",
+        source: "parse-resume",
+        message: `Successfully parsed resume (${sectionsDetected.length} sections detected, ${(parsedOutput.skills as unknown[])?.length ?? 0} skills)`,
+        details: {
+          sections: sectionsDetected,
+          skillsCount: (parsedOutput.skills as unknown[])?.length ?? 0,
+          isFresher,
+          resumeId: body.resume_id || null,
+        },
+        userId,
+      });
+
+      const responsePayload = {
+        ...outcome.body,
+        sections_detected: sectionsDetected,
+        is_fresher: isFresher,
+        confidence: 0.9,
+      };
+
+      return json(responsePayload);
     } catch (err) {
-      console.warn("Failed to update profile row:", err);
+      const errMsg = String((err as Error).message ?? err);
+      await logSystemEvent({
+        level: "error",
+        source: "parse-resume",
+        message: `Unhandled exception during resume parsing: ${errMsg}`,
+        details: { error: errMsg, stack: (err as Error).stack },
+        userId,
+      });
+      return serverError();
     }
-
-    const responsePayload = {
-      ...outcome.body,
-      sections_detected: sectionsDetected,
-      is_fresher: isFresher,
-      confidence: 0.9,
-    };
-
-    return json(responsePayload);
-  } catch (err) {
-    console.error("parse-resume error:", err);
-    return serverError();
-  }
   });
 }
