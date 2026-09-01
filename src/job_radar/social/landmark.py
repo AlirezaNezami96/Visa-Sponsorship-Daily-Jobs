@@ -128,7 +128,7 @@ def _search_commons(session, city: str, country: str) -> dict[str, Any] | None:
         "iiurlwidth": str(MIN_SOURCE_WIDTH),
         "format": "json",
     }
-    resp = session.get(WIKIMEDIA_API, params=params, headers={"User-Agent": USER_AGENT}, timeout=30)
+    resp = session.get(WIKIMEDIA_API, params=params, headers={"User-Agent": USER_AGENT}, timeout=5)
     if resp.status_code != 200:
         return None
     data = resp.json()
@@ -182,7 +182,7 @@ def fetch_landmark_photo(
         url = info.get("thumburl") or info.get("url")
         if not url:
             return None, None
-        resp = session.get(url, headers={"User-Agent": USER_AGENT}, timeout=60)
+        resp = session.get(url, headers={"User-Agent": USER_AGENT}, timeout=8)
         if resp.status_code != 200 or not resp.content:
             return None, None
         photo = resp.content

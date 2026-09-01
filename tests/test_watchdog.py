@@ -54,5 +54,75 @@ def test_notify_owner_when_quarantines_exist():
         open_circuits=[],
         recent_quarantines=[{"job_id": "123", "stage": "image", "reason": "timeout"}],
         backlogs={"metadata": 5},
+        force=True,
     )
     assert notified is True
+
+
+def test_notify_owner_suppresses_duplicate_alerts():
+    """Duplicate alert for same issues within cooldown should be suppressed."""
+    # First alert fires
+    first = notify_owner_if_needed(
+        stuck_reset={},
+        open_circuits=[{"name": "gemini_api", "state": "open", "consecutive_failures": 5}],
+        recent_quarantines=[],
+        backlogs={"metadata": 5},
+        force=True,
+    )
+    assert first is True
+
+    # Immediate second alert for identical state should be suppressed
+    second = notify_owner_if_needed(
+        stuck_reset={},
+        open_circuits=[{"name": "gemini_api", "state": "open", "consecutive_failures": 5}],
+        recent_quarantines=[],
+        backlogs={"metadata": 5},
+        force=False,
+    )
+    assert second is False
+
+
+def test_notify_owner_muted_when_alerts_disabled(monkeypatch):
+    """When WATCHDOG_ALERTS_ENABLED=false, no alerts should fire."""
+    monkeypatch.setenv("WATCHDOG_ALERTS_ENABLED", "false")
+    notified = notify_owner_if_needed(
+        stuck_reset={},
+        open_circuits=[{"name": "gemini_api", "state": "open", "consecutive_failures": 5}],
+        recent_quarantines=[{"job_id": "123", "stage": "image", "reason": "timeout"}],
+        backlogs={"metadata": 5},
+        force=True,
+    )
+    assert notified is False
+
+
+def test_reset_all_circuits():
+    """reset_all_circuits should update service_circuits table."""
+    from job_radar.pipeline.watchdog import reset_all_circuits
+
+    mock_client = MagicMock()
+    mock_table = MagicMock()
+    mock_client.table.return_value = mock_table
+    mock_table.update.return_value = mock_table
+    mock_table.neq.return_value = mock_table
+    mock_table.execute.return_value.data = [{"id": 1}, {"id": 2}]
+
+    count = reset_all_circuits(mock_client)
+    assert count == 2
+    mock_client.table.assert_called_with("service_circuits")
+
+
+def test_resolve_all_quarantines():
+    """resolve_all_quarantines should update processing_quarantine table."""
+    from job_radar.pipeline.watchdog import resolve_all_quarantines
+
+    mock_client = MagicMock()
+    mock_table = MagicMock()
+    mock_client.table.return_value = mock_table
+    mock_table.update.return_value = mock_table
+    mock_table.is_.return_value = mock_table
+    mock_table.execute.return_value.data = [{"id": "q1"}]
+
+    count = resolve_all_quarantines(mock_client)
+    assert count == 1
+    mock_client.table.assert_called_with("processing_quarantine")
+
