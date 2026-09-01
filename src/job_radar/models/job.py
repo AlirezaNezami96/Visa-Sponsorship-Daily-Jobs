@@ -124,6 +124,7 @@ class Job(BaseModel):
     visa_status: Optional[str] = None  # sponsors | likely | opt_friendly | unknown | no
     visa_score: Optional[float] = None
     visa_evidence: List[str] = Field(default_factory=list)
+    visa_tier: Optional[str] = None
 
     # Global Occupation Taxonomy & Industry
     isco_code: Optional[str] = None
