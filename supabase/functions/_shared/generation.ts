@@ -25,6 +25,7 @@ import {
   type UsageField,
   USAGE_FIELDS,
 } from "./usage-limits.ts";
+import { logSystemEvent } from "./system-logger.ts";
 
 export interface GeneratedDocumentInput {
   user_id: string;
@@ -129,6 +130,13 @@ async function observeFallback(store: GenerationStore, req: GenerationRequest, f
       event_name: "ai_fallback_triggered",
       user_id: req.userId,
       metadata: { from_provider: fromProvider, reason, document_type: req.documentType },
+    });
+    await logSystemEvent({
+      level: "warn",
+      source: "ai-generation-waterfall",
+      message: `AI provider fallback: ${fromProvider} failed (${reason.slice(0, 100)}). Advancing waterfall for ${req.documentType}.`,
+      userId: req.userId,
+      details: { from_provider: fromProvider, reason, document_type: req.documentType, job_id: req.jobId },
     });
   } catch { /* analytics must never break generation */ }
 }
@@ -279,6 +287,13 @@ export async function runGeneration(req: GenerationRequest, deps: GenerationDeps
         user_id: req.userId,
         job_id: req.jobId,
         metadata: { where: "generation", document_type: req.documentType, message: message.slice(0, 300) },
+      });
+      await logSystemEvent({
+        level: "error",
+        source: "ai-generation-waterfall",
+        message: `All AI providers failed for ${req.documentType}: ${message.slice(0, 150)}`,
+        userId: req.userId,
+        details: { lastViolation, documentType: req.documentType, jobId: req.jobId },
       });
     } catch { /* best-effort bookkeeping */ }
     return { ok: false, status: 500, code: "ai_generation_failed", message };

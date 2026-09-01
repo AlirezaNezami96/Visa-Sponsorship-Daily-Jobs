@@ -15,13 +15,14 @@ export interface JobRow extends JobContext {
 export async function loadJob(client: SupabaseClient, jobId: string): Promise<JobRow | null> {
   const { data, error } = await client
     .from("jobs")
-    .select("id, title, company_id, location_raw, description_text, apply_url, companies(name), job_people(name,title,email,email_status,linkedin_search_url)")
+    .select("id, title, company_id, location_raw, description_text, requirements, apply_url, companies(name), job_people(name,title,email,email_status,linkedin_search_url)")
     .eq("id", jobId)
     .maybeSingle();
   if (error || !data) return null;
 
   const row = data as Record<string, unknown>;
-  const company = (row.companies as { name?: string } | null)?.name ?? "";
+  const company = (row.companies as { name?: string } | null)?.name || (row.company_name as string) || "Company";
+  const reqs = Array.isArray(row.requirements) ? (row.requirements as string[]) : [];
   return {
     id: jobId,
     title: String(row.title ?? ""),
@@ -30,7 +31,7 @@ export async function loadJob(client: SupabaseClient, jobId: string): Promise<Jo
     location: (row.location_raw as string | null) ?? null,
     description: (row.description_text as string | null) ?? null,
     apply_url: (row.apply_url as string | null) ?? null,
-    requirements: [],
+    requirements: reqs,
     // contacts carried alongside for outreach generation
     contacts: (row.job_people as Array<Record<string, unknown>> | null) ?? [],
   } as JobRow & { company_id: string | null; apply_url: string | null; contacts: Array<Record<string, unknown>> };
