@@ -201,9 +201,8 @@ def run(
         logger.info("[DRY RUN] Seen store and Supabase left unmodified (atomic write skipped)")
 
     # VisaLane backend sync: companies/jobs tables + alert/social/enrichment
-    # staging. Opt-in (VISALANE_SYNC=1) so existing cron workflows keep their
-    # current behavior; fail-open — a sync error never breaks the radar run.
-    if not dry_run and os.environ.get("VISALANE_SYNC") == "1" and qualified_jobs:
+    # staging. Enabled by default whenever Supabase is configured; fail-open.
+    if not dry_run and os.environ.get("VISALANE_SYNC", "1") == "1" and qualified_jobs:
         try:
             from job_radar.visalane.stages import sync_qualified_jobs
 

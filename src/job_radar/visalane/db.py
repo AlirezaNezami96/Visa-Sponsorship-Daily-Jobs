@@ -27,7 +27,7 @@ def get_service_client():
         _CHECKED = True
 
         url = os.environ.get("SUPABASE_URL", "").strip()
-        key = os.environ.get("SUPABASE_KEY", "").strip()
+        key = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_KEY") or "").strip()
         if not url or not key:
             logger.debug("SUPABASE_URL/SUPABASE_KEY not set — VisaLane sync disabled.")
             return None

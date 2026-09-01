@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from job_radar.pipeline.orchestrator import PipelineResult, run_pipeline
-from job_radar.pipeline.sink import InMemoryJobSink, JobSink, PersonalSink
+from job_radar.pipeline.sink import InMemoryJobSink, JobSink, PersonalSink, SupabaseJobSink
 
 __all__ = [
     "run_pipeline",
@@ -10,4 +10,5 @@ __all__ = [
     "JobSink",
     "InMemoryJobSink",
     "PersonalSink",
+    "SupabaseJobSink",
 ]

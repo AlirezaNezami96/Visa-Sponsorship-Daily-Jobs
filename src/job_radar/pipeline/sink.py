@@ -74,3 +74,39 @@ class PersonalSink(JobSink):
 
     async def close(self) -> None:
         logger.info("Personal sink closed. Total emitted jobs: %d", len(self.emitted_jobs))
+
+
+class SupabaseJobSink(JobSink):
+    """Direct Supabase sink: converts Job models to VisaLane rows and writes to companies/jobs."""
+
+    def __init__(self, source_name: str = "pipeline", do_alerts: bool = True, do_social: bool = True) -> None:
+        self.source_name = source_name
+        self.do_alerts = do_alerts
+        self.do_social = do_social
+        self.jobs: List[Job] = []
+        self.stats: Dict[str, Any] = {}
+        self.sync_stats: Dict[str, Any] = {}
+
+    async def emit(self, jobs: List[Job]) -> None:
+        self.jobs.extend(jobs)
+        if not jobs:
+            return
+        try:
+            from job_radar.visalane.stages import sync_qualified_jobs
+
+            legacy_jobs = [j.to_legacy_dict() for j in jobs]
+            self.sync_stats = sync_qualified_jobs(
+                legacy_jobs,
+                source_name=self.source_name,
+                do_alerts=self.do_alerts,
+                do_social=self.do_social,
+            )
+            logger.info("SupabaseJobSink synced %d jobs: %s", len(jobs), self.sync_stats)
+        except Exception as exc:
+            logger.warning("SupabaseJobSink sync failed: %s", exc)
+
+    async def emit_stats(self, stats: Dict[str, Any]) -> None:
+        self.stats.update(stats)
+
+    async def close(self) -> None:
+        logger.info("SupabaseJobSink closed. Total jobs: %d", len(self.jobs))
