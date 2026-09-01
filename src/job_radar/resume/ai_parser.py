@@ -6,14 +6,14 @@ validation, anti-hallucination checks, and waterfall fallback.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 from job_radar.llm.router import LLMRouter, get_llm_router
-from job_radar.llm.validated import parse_ai_json, run_validated_completion
+from job_radar.llm.validated import run_validated_completion
 
 logger = logging.getLogger(__name__)
 
-RESUME_PARSE_SCHEMA: Dict[str, Any] = {
+RESUME_PARSE_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
         "full_name": {"type": ["string", "null"]},
@@ -26,6 +26,17 @@ RESUME_PARSE_SCHEMA: Dict[str, Any] = {
         "summary": {"type": ["string", "null"]},
         "job_titles": {"type": "array", "items": {"type": "string"}},
         "skills": {"type": "array", "items": {"type": "string"}},
+        "links": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "type": {"type": "string", "enum": ["linkedin", "github", "portfolio", "website", "other"]},
+                    "url": {"type": "string"},
+                },
+                "required": ["type", "url"],
+            },
+        },
         "experience": {
             "type": "array",
             "items": {
@@ -40,6 +51,7 @@ RESUME_PARSE_SCHEMA: Dict[str, Any] = {
                 "required": ["company", "title"],
             },
         },
+
         "education": {
             "type": "array",
             "items": {
@@ -140,12 +152,18 @@ RESUME_PARSE_SCHEMA: Dict[str, Any] = {
 
 def build_resume_parse_prompt(raw_text: str) -> str:
     """Construct structured extraction prompt for AI model."""
-    return f"""Extract structured data from this resume text.
+    return f"""You are an expert resume parsing engine. Extract all candidate information from the provided resume text into a strict JSON object.
+Extract all social and professional links (LinkedIn, GitHub, Portfolios, Personal Websites, Blogs, etc.) from the header and contact sections into the `links` array.
 
 HARD RULES:
 - Use ONLY facts and statements present in the resume text. NEVER invent or hallucinate information.
 - If a section or field is not present in the resume, use null or empty array [].
 - Return ONLY valid JSON matching the schema, with NO markdown code fences.
+
+Rules for links:
+1. Always format links as valid absolute URLs starting with "https://".
+2. If only a username or handle is given (e.g. "linkedin: johndoe" or "github: johndoe"), expand it to the full URL ("https://linkedin.com/in/johndoe", "https://github.com/johndoe").
+3. Do not include email addresses in the links array.
 
 JSON SCHEMA REQUIREMENT:
 {{
@@ -153,12 +171,15 @@ JSON SCHEMA REQUIREMENT:
   "email": string|null,
   "phone": string|null,
   "location": string|null,
-  "linkedin_url": string|null,
-  "github_url": string|null,
-  "website_url": string|null,
-  "summary": string|null,
   "job_titles": [string],
   "skills": [string],
+  "summary": string|null,
+  "links": [
+    {{
+      "type": "linkedin" | "github" | "portfolio" | "website" | "other",
+      "url": "https://..."
+    }}
+  ],
   "experience": [
     {{
       "company": string,
@@ -168,6 +189,7 @@ JSON SCHEMA REQUIREMENT:
       "highlights": [string]
     }}
   ],
+
   "education": [
     {{
       "institution": string,
@@ -232,7 +254,7 @@ RESUME TEXT:
 {raw_text[:14000]}"""
 
 
-def validate_resume_parse_output(parsed: Any) -> Optional[str]:
+def validate_resume_parse_output(parsed: Any) -> str | None:
     """Validate that the AI response is a dict and has valid basic types."""
     if not isinstance(parsed, dict):
         return "Parsed output must be a JSON object"
@@ -242,10 +264,10 @@ def validate_resume_parse_output(parsed: Any) -> Optional[str]:
 class AIResumeParser:
     """High-level AI resume parsing orchestrator."""
 
-    def __init__(self, llm_router: Optional[LLMRouter] = None):
+    def __init__(self, llm_router: LLMRouter | None = None):
         self.llm_router = llm_router or get_llm_router()
 
-    def parse(self, raw_text: str, user_id: Optional[str] = None) -> Dict[str, Any]:
+    def parse(self, raw_text: str, user_id: str | None = None) -> dict[str, Any]:
         """Extract structured resume data from text using AI."""
         if not raw_text or not raw_text.strip():
             return {}
@@ -270,17 +292,18 @@ class AIResumeParser:
             direct_result = self.llm_router.complete_json(prompt)
             if isinstance(direct_result, dict):
                 return direct_result
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("Direct LLM completion fallback failed: %s", exc)
+
 
         return {}
 
 
 def parse_resume_with_ai(
     raw_text: str,
-    llm_router: Optional[Any] = None,
-    user_id: Optional[str] = None,
-) -> Dict[str, Any]:
+    llm_router: Any | None = None,
+    user_id: str | None = None,
+) -> dict[str, Any]:
     """Convenience functional wrapper for AI resume parsing."""
     parser = AIResumeParser(llm_router=llm_router)
     return parser.parse(raw_text, user_id=user_id)

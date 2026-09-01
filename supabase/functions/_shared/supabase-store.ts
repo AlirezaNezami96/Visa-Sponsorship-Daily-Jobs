@@ -82,7 +82,7 @@ export async function renderDocumentViaEngine(args: {
   output_json: unknown;
   profile: Record<string, unknown>;
   job: Record<string, unknown>;
-}): Promise<{ storage_path: string } | null> {
+}): Promise<{ storage_path: string; docx_path?: string } | null> {
   const engineUrl = (getEnv("ENGINE_URL") ?? "").replace(/\/$/, "");
   const internalKey = getEnv("INTERNAL_API_KEY") ?? "";
   if (!engineUrl || !internalKey) return null;
@@ -94,8 +94,8 @@ export async function renderDocumentViaEngine(args: {
       body: JSON.stringify(args),
     });
     if (!resp.ok) return null;
-    const body = (await resp.json()) as { storage_path?: string };
-    return body.storage_path ? { storage_path: body.storage_path } : null;
+    const body = (await resp.json()) as { storage_path?: string; docx_path?: string };
+    return body.storage_path ? { storage_path: body.storage_path, docx_path: body.docx_path } : null;
   } catch {
     return null;
   }

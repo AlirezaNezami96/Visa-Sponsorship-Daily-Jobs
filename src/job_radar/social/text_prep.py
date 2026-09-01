@@ -15,9 +15,14 @@ except ImportError:
 
 def get_text_length(text: str, is_grapheme: bool = False) -> int:
     """Return text length either in graphemes (Bluesky) or standard characters."""
-    if is_grapheme and grapheme is not None:
+    if not is_grapheme:
+        return len(text)
+    if grapheme is not None:
         return grapheme.length(text)
-    return len(text)
+    # Standard library fallback: match regional flag sequences (2 code points per flag)
+    cluster_pattern = re.compile(r"[\U0001F1E6-\U0001F1FF]{2}|.")
+    return len(cluster_pattern.findall(text))
+
 
 
 def truncate_keep_url(

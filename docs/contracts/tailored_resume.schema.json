@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "visalane/contracts/tailored_resume.schema.json",
   "title": "Tailored Resume Generation Output",
-  "description": "Contract for POST /functions/v1/generate-tailored-resume. Grounded in resume_matcher.py outputs (ats_score, keywords_to_add, resume_editing_prompt). tailoring_notes explains what changed and feeds the FE 'what changed' summary. Never invent experience not present in the source resume.",
+  "description": "Contract for POST /functions/v1/generate-tailored-resume. Supports ordered ResumeSection[] list across all 12 section types for both 'own' and 'professional' format modes, with zero silent omissions and strict hallucination defense.",
   "type": "object",
   "properties": {
     "tailored_resume_markdown": {
@@ -12,15 +12,43 @@
     "keywords_added": {
       "type": "array",
       "items": { "type": "string" },
-      "description": "JD keywords from resume_matcher.keywords_to_add that were woven in."
+      "description": "JD keywords from requirements that were truthfully woven in."
     },
     "tailoring_notes": {
       "type": "array",
       "items": { "type": "string" },
       "description": "Human-readable bullets: what was emphasized/reordered, e.g. 'Emphasized React Native experience to match mobile requirement'."
     },
-    "estimated_ats_score": { "type": ["integer", "null"], "minimum": 0, "maximum": 100 },
+    "ats_score_before": { "type": ["integer", "null"], "minimum": 0, "maximum": 100 },
+    "ats_score_after": { "type": ["integer", "null"], "minimum": 0, "maximum": 100 },
+    "format_type": { "type": "string", "enum": ["own", "professional"] },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "summary", "skills", "experience", "education",
+              "projects", "certifications", "publications", "awards",
+              "languages", "volunteer_work", "links", "interests", "custom"
+            ]
+          },
+          "label": { "type": "string" },
+          "items": { "type": "array" }
+        },
+        "required": ["type", "label", "items"]
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Real JD requirements not present in candidate background."
+    },
+    "docx_url": { "type": ["string", "null"] },
+    "pdf_url": { "type": ["string", "null"] },
     "prompt_version": { "type": "string" }
   },
-  "required": ["tailored_resume_markdown", "tailoring_notes", "prompt_version"]
+  "required": ["tailored_resume_markdown", "tailoring_notes", "sections", "prompt_version"]
 }

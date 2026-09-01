@@ -2,15 +2,27 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "visalane/contracts/parsed_resume.schema.json",
   "title": "Parsed Resume Output",
-  "description": "Contract for POST /functions/v1/parse-resume. Structured extraction from raw resume text. Privacy rule (ported from resume_fetch.py): raw resume text is processed in memory and never logged; only structured data + optional stored raw_text behind user-owned RLS.",
+  "description": "Contract for POST /functions/v1/parse-resume. Structured extraction of all 12 potential candidate section types and detected document structure.",
   "type": "object",
   "properties": {
     "full_name": { "type": ["string", "null"] },
     "email": { "type": ["string", "null"], "format": "email" },
     "phone": { "type": ["string", "null"] },
+    "location": { "type": ["string", "null"] },
     "job_titles": { "type": "array", "items": { "type": "string" } },
     "skills": { "type": "array", "items": { "type": "string" } },
     "summary": { "type": ["string", "null"] },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "enum": ["linkedin", "github", "portfolio", "website", "other"] },
+          "url": { "type": "string" }
+        },
+        "required": ["type", "url"]
+      }
+    },
     "experience": {
       "type": "array",
       "items": {
@@ -35,6 +47,101 @@
           "year": { "type": ["string", "null"] }
         },
         "required": ["institution"]
+      }
+    },
+    "projects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": ["string", "null"] },
+          "technologies": { "type": "array", "items": { "type": "string" } },
+          "bullets": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["name"]
+      }
+    },
+    "certifications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "issuer": { "type": ["string", "null"] },
+          "year": { "type": ["string", "null"] }
+        },
+        "required": ["name"]
+      }
+    },
+    "languages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "language": { "type": "string" },
+          "proficiency": { "type": ["string", "null"] }
+        },
+        "required": ["language"]
+      }
+    },
+    "volunteer_work": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "organization": { "type": "string" },
+          "role": { "type": ["string", "null"] },
+          "description": { "type": ["string", "null"] }
+        },
+        "required": ["organization"]
+      }
+    },
+    "publications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "venue": { "type": ["string", "null"] },
+          "year": { "type": ["string", "null"] }
+        },
+        "required": ["title"]
+      }
+    },
+    "awards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "issuer": { "type": ["string", "null"] },
+          "year": { "type": ["string", "null"] }
+        },
+        "required": ["title"]
+      }
+    },
+    "interests": { "type": "array", "items": { "type": "string" } },
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "relationship": { "type": ["string", "null"] },
+          "contact": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "detected_structure": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string" },
+          "label": { "type": "string" }
+        },
+        "required": ["type", "label"]
       }
     },
     "prompt_version": { "type": "string" }

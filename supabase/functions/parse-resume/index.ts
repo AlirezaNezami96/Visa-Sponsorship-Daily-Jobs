@@ -43,6 +43,61 @@ const SECTION_KEYS = [
   "interests", "references",
 ];
 
+const HEADING_PATTERNS: Array<{ type: string; defaultLabel: string; regex: RegExp }> = [
+  { type: "summary", defaultLabel: "Professional Summary", regex: /^(?:professional\s+)?summary|profile|about\s+me|objective/i },
+  { type: "skills", defaultLabel: "Core Skills", regex: /^(?:technical\s+)?skills|core\s+competencies|technologies|proficiencies/i },
+  { type: "experience", defaultLabel: "Work Experience", regex: /^(?:work\s+|professional\s+)?experience|employment(?:\s+history)?|work\s+history/i },
+  { type: "projects", defaultLabel: "Projects", regex: /^(?:key\s+|personal\s+)?projects|what\s+i'?ve\s+built/i },
+  { type: "education", defaultLabel: "Education", regex: /^education|academic\s+background|academics/i },
+  { type: "certifications", defaultLabel: "Certifications", regex: /^certifications?|certificates?|licenses/i },
+  { type: "publications", defaultLabel: "Publications", regex: /^publications?|papers/i },
+  { type: "awards", defaultLabel: "Honors & Awards", regex: /^awards?|honors(?:\s+&\s+awards)?/i },
+  { type: "languages", defaultLabel: "Languages", regex: /^languages?/i },
+  { type: "volunteer_work", defaultLabel: "Volunteer Experience", regex: /^volunteer(?:ing|\s+work|\s+experience)?|community\s+service/i },
+  { type: "interests", defaultLabel: "Interests", regex: /^interests?|hobbies/i },
+  { type: "links", defaultLabel: "Links", regex: /^(?:social\s+|portfolio\s+)?links|websites/i },
+];
+
+function detectResumeStructure(resumeText: string, parsed: Record<string, unknown>): Array<{ type: string; label: string }> {
+  // If LLM returned valid detected_structure, sanitize and use it
+  if (Array.isArray(parsed.detected_structure) && parsed.detected_structure.length > 0) {
+    const validStructure: Array<{ type: string; label: string }> = [];
+    const seen = new Set<string>();
+    for (const item of parsed.detected_structure) {
+      if (item && typeof item.type === "string" && !seen.has(item.type)) {
+        seen.add(item.type);
+        validStructure.push({
+          type: item.type,
+          label: typeof item.label === "string" && item.label.trim() ? item.label.trim() : item.type,
+        });
+      }
+    }
+    if (validStructure.length > 0) return validStructure;
+  }
+
+  // Deterministic line heading scanning fallback
+  const lines = resumeText.split("\n");
+  const found: Array<{ type: string; label: string; index: number }> = [];
+  const seen = new Set<string>();
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line.length > 0 && line.length < 50 && !line.includes("  |  ")) {
+      const cleanLine = line.replace(/^[\#\*\-\s]+/, "").replace(/[\:\#\*]+$/, "").trim();
+      for (const p of HEADING_PATTERNS) {
+        if (!seen.has(p.type) && p.regex.test(cleanLine)) {
+          seen.add(p.type);
+          found.push({ type: p.type, label: cleanLine, index: i });
+          break;
+        }
+      }
+    }
+  }
+
+  found.sort((a, b) => a.index - b.index);
+  return found.map(({ type, label }) => ({ type, label }));
+}
+
 function detectSections(parsed: Record<string, unknown>): string[] {
   const detected: string[] = [];
   for (const k of SECTION_KEYS) {
@@ -134,11 +189,12 @@ if (typeof Deno !== "undefined" && typeof Deno.serve === "function") {
 
       const parsedOutput = outcome.body.output as Record<string, unknown>;
       const sectionsDetected = detectSections(parsedOutput);
+      const sectionOrder = detectResumeStructure(resumeText, parsedOutput);
       const exp = Array.isArray(parsedOutput.experience) ? parsedOutput.experience : [];
       const isFresher = exp.length === 0;
       const nowIso = new Date().toISOString();
 
-      // Persist structured parsed data & metadata back onto the resume row when provided
+      // Persist structured parsed data & section_order onto the resume row when provided
       if (typeof body.resume_id === "string") {
         try {
           await client
@@ -146,6 +202,7 @@ if (typeof Deno !== "undefined" && typeof Deno.serve === "function") {
             .update({
               parsed_data: parsedOutput,
               sections_detected: sectionsDetected,
+              section_order: sectionOrder,
               parse_status: "completed",
               parse_confidence: 0.9,
             })
@@ -158,20 +215,26 @@ if (typeof Deno !== "undefined" && typeof Deno.serve === "function") {
 
       // Persist to user profile
       try {
+        const profileUpdate: Record<string, unknown> = {
+          parsed_resume: parsedOutput,
+          skills_cache: Array.isArray(parsedOutput.skills) ? parsedOutput.skills : [],
+          is_fresher: isFresher,
+          last_resume_parse: nowIso,
+          resume_onboarding_complete: true,
+          full_name: typeof parsedOutput.full_name === "string" ? parsedOutput.full_name : undefined,
+        };
+        if (Array.isArray(parsedOutput.links)) {
+          profileUpdate.links = parsedOutput.links;
+        }
         await client
           .from("profiles")
-          .update({
-            parsed_resume: parsedOutput,
-            skills_cache: Array.isArray(parsedOutput.skills) ? parsedOutput.skills : [],
-            is_fresher: isFresher,
-            last_resume_parse: nowIso,
-            resume_onboarding_complete: true,
-            full_name: typeof parsedOutput.full_name === "string" ? parsedOutput.full_name : undefined,
-          })
+          .update(profileUpdate)
           .eq("id", user.id);
       } catch (err) {
         console.warn("Failed to update profile row:", err);
       }
+
+
 
       await logSystemEvent({
         level: "info",

@@ -34,11 +34,11 @@ def parse_retry_after(
                 if "retry_after" in data:
                     return float(data["retry_after"])
                 # Telegram style: parameters.retry_after
-                if "parameters" in data and isinstance(data["parameters"], dict):
-                    if "retry_after" in data["parameters"]:
-                        return float(data["parameters"]["retry_after"])
-        except Exception:
-            pass
+                if isinstance(data.get("parameters"), dict) and "retry_after" in data["parameters"]:
+                    return float(data["parameters"]["retry_after"])
+        except Exception as e:
+            logger.debug("Failed parsing retry_after from body: %s", e)
+
 
     return None
 

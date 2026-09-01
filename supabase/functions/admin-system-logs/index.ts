@@ -137,6 +137,9 @@ if (typeof Deno !== "undefined" && typeof Deno.serve === "function") {
       // Distinct available sources
       const availableSources = Array.from(
         new Set([
+          "publishing-pipeline",
+          "admin-publishing-trigger",
+          "social-publish",
           "parse-resume",
           "generate-tailored-resume",
           "generate-cover-letter",
@@ -144,12 +147,12 @@ if (typeof Deno !== "undefined" && typeof Deno.serve === "function") {
           "find-contacts",
           "extract-job-skills",
           "jobs-scraper",
-          "social-publish",
           "auth",
           "usage-limits",
           ...(logs?.map((l) => l.source) || []),
         ]),
       );
+
 
       return adminJson({
         logs: logs || [],

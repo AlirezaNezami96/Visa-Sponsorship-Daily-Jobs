@@ -1,23 +1,60 @@
-"""Social subpackage for job_radar."""
+"""Social subpackage for job_radar with independent platform-native generation & publishing."""
+from __future__ import annotations
 
-from job_radar.social.generator import (
-    call_gemini_text_api,
-    generate_and_dispatch_post,
+from job_radar.social.adapters import (
+    ADAPTER_REGISTRY,
+    BlueskyAdapter,
+    DevtoAdapter,
+    DiscordAdapter,
+    LinkedInAdapter,
+    MastodonAdapter,
+    PlatformAdapter,
+    PublishResult,
+    TelegramAdapter,
+    XAdapter,
+    extract_emojis,
+    get_adapter,
+    log_post_event,
 )
-from job_radar.social.images import (
-    create_professional_cover_image,
-    generate_tech_illustration,
+from job_radar.social.profiles import (
+    PLATFORM_PROFILES,
+    CadenceConfig,
+    PlatformProfile,
+    get_profile,
 )
-from job_radar.social.publisher import (
-    check_and_publish_post,
-    publish_to_linkedin,
+from job_radar.social.scheduler import (
+    CrossPlatformStaggerQueue,
+    DailyBudgetTracker,
+    PlatformDeduplicator,
+    next_post_time,
+)
+from job_radar.social.tier_router import (
+    RoutingError,
+    validate_tier_routing,
 )
 
 __all__ = [
-    "call_gemini_text_api",
-    "check_and_publish_post",
-    "create_professional_cover_image",
-    "generate_and_dispatch_post",
-    "generate_tech_illustration",
-    "publish_to_linkedin",
+    "ADAPTER_REGISTRY",
+    "PLATFORM_PROFILES",
+    "BlueskyAdapter",
+    "CadenceConfig",
+    "CrossPlatformStaggerQueue",
+    "DailyBudgetTracker",
+    "DevtoAdapter",
+    "DiscordAdapter",
+    "LinkedInAdapter",
+    "MastodonAdapter",
+    "PlatformAdapter",
+    "PlatformDeduplicator",
+    "PlatformProfile",
+    "PublishResult",
+    "RoutingError",
+    "TelegramAdapter",
+    "XAdapter",
+    "extract_emojis",
+    "get_adapter",
+    "get_profile",
+    "log_post_event",
+    "next_post_time",
+    "validate_tier_routing",
 ]

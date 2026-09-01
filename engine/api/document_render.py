@@ -1,19 +1,19 @@
 """Internal document-render endpoint for the Supabase Edge Functions.
 
 After the Edge Function's AI waterfall produces validated structured JSON, it
-calls this endpoint to assemble the deterministic PDF (fpdf2 — no AI in
-layout), upload it to Supabase Storage
-(`users/{uid}/jobs/{job_id}/{type}/{document_id}.pdf`, private bucket), and
-record `generated_documents.file_path`. The Edge Function then mints the
-signed preview URL for the frontend.
+calls this endpoint to assemble deterministic documents:
+- DOCX (python-docx — primary ATS format for resumes)
+- PDF (fpdf2 — secondary preview format)
+Uploads them to Supabase Storage (`users/{uid}/jobs/{job_id}/{type}/{document_id}.[docx|pdf]`),
+records `generated_documents.file_path`, and returns storage paths.
 
-Auth: shared secret header `x-internal-key` (env INTERNAL_API_KEY). Never
-exposed to the browser.
+Auth: shared secret header `x-internal-key` (env INTERNAL_API_KEY).
 """
 from __future__ import annotations
 
 import logging
 import uuid
+from pathlib import Path
 from typing import Any, Optional
 
 import httpx
@@ -40,37 +40,31 @@ class DocumentRenderRequest(BaseModel):
     job: dict[str, Any] = {}
 
 
-def _build_pdf(req: DocumentRenderRequest) -> bytes:
-    builder = _load_pdf_builder()
-    if req.document_type == "resume":
-        return builder.build_resume_pdf(req.profile, req.output_json, format_type=req.format_type or "professional")
-    if req.document_type == "cover_letter":
-        return builder.build_cover_letter_pdf(req.profile, req.output_json, req.job)
-    raise HTTPException(status_code=400, detail=f"unsupported document_type: {req.document_type}")
-
-
-def _load_pdf_builder():
-    """Load job_radar.ai.pdf_builder without importing the full job_radar chain.
-
-    The engine container ships only the pdf_builder module + bundled fonts, so
-    the heavy pipeline package (feedparser/apify/etc.) must not be imported.
-    """
+def _load_builders():
+    """Load docx_builder and pdf_builder safely."""
     try:
-        from job_radar.ai import pdf_builder  # full local install
-
-        return pdf_builder
+        from job_radar.ai import docx_builder, pdf_builder
+        return docx_builder, pdf_builder
     except ImportError:
         import importlib.util
-        from pathlib import Path
 
         repo_root = Path(__file__).resolve().parents[2]
-        mod_path = repo_root / "src" / "job_radar" / "ai" / "pdf_builder.py"
-        spec = importlib.util.spec_from_file_location("visalane_pdf_builder", mod_path)
-        if spec is None or spec.loader is None:
-            raise HTTPException(status_code=500, detail=f"pdf_builder not found at {mod_path}")
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
+        pdf_path = repo_root / "src" / "job_radar" / "ai" / "pdf_builder.py"
+        docx_path = repo_root / "src" / "job_radar" / "ai" / "docx_builder.py"
+
+        spec_pdf = importlib.util.spec_from_file_location("visalane_pdf_builder", pdf_path)
+        if spec_pdf is None or spec_pdf.loader is None:
+            raise HTTPException(status_code=500, detail=f"pdf_builder not found at {pdf_path}")
+        mod_pdf = importlib.util.module_from_spec(spec_pdf)
+        spec_pdf.loader.exec_module(mod_pdf)
+
+        spec_docx = importlib.util.spec_from_file_location("visalane_docx_builder", docx_path)
+        if spec_docx is None or spec_docx.loader is None:
+            raise HTTPException(status_code=500, detail=f"docx_builder not found at {docx_path}")
+        mod_docx = importlib.util.module_from_spec(spec_docx)
+        spec_docx.loader.exec_module(mod_docx)
+
+        return mod_docx, mod_pdf
 
 
 def _supabase_headers(settings) -> dict[str, str]:
@@ -80,17 +74,17 @@ def _supabase_headers(settings) -> dict[str, str]:
     }
 
 
-def _upload_to_storage(settings, path: str, pdf: bytes) -> bool:
+def _upload_to_storage(settings, path: str, data: bytes, content_type: str) -> bool:
     url = f"{settings.supabase_url}/storage/v1/object/{USERS_BUCKET}/{path}"
     headers = {
         **_supabase_headers(settings),
-        "Content-Type": "application/pdf",
+        "Content-Type": content_type,
         "x-upsert": "true",
     }
-    resp = httpx.post(url, content=pdf, headers=headers, timeout=60)
+    resp = httpx.post(url, content=data, headers=headers, timeout=60)
     if resp.status_code in (200, 201):
         return True
-    logger.error("document upload failed (%d): %s", resp.status_code, resp.text[:300])
+    logger.error("document upload failed (%d) for %s: %s", resp.status_code, path, resp.text[:300])
     return False
 
 
@@ -120,18 +114,43 @@ async def render_document(req: DocumentRenderRequest, x_internal_key: str = Head
     if not settings.supabase_url or not settings.supabase_service_role_key:
         raise HTTPException(status_code=503, detail="supabase storage not configured")
 
-    pdf = _build_pdf(req)
+    docx_builder, pdf_builder = _load_builders()
     document_id = req.document_id or str(uuid.uuid4())
     job_part = req.job_id or "no-job"
-    path = f"{req.user_id}/jobs/{job_part}/{req.document_type}/{document_id}.pdf"
 
-    if not _upload_to_storage(settings, path, pdf):
-        raise HTTPException(status_code=502, detail="storage upload failed")
+    pdf_bytes: Optional[bytes] = None
+    docx_bytes: Optional[bytes] = None
+    docx_path: Optional[str] = None
 
-    _update_document_row(settings, document_id, path, len(pdf))
+    if req.document_type == "resume":
+        format_type = req.format_type or "professional"
+        docx_bytes = docx_builder.build_resume_docx(req.profile, req.output_json, format_type=format_type)
+        pdf_bytes = pdf_builder.build_resume_pdf(req.profile, req.output_json, format_type=format_type)
+    elif req.document_type == "cover_letter":
+        pdf_bytes = pdf_builder.build_cover_letter_pdf(req.profile, req.output_json, req.job)
+    else:
+        raise HTTPException(status_code=400, detail=f"unsupported document_type: {req.document_type}")
+
+    pdf_path = f"{req.user_id}/jobs/{job_part}/{req.document_type}/{document_id}.pdf"
+    if pdf_bytes and not _upload_to_storage(settings, pdf_path, pdf_bytes, "application/pdf"):
+        raise HTTPException(status_code=502, detail="pdf storage upload failed")
+
+    if docx_bytes:
+        docx_path = f"{req.user_id}/jobs/{job_part}/{req.document_type}/{document_id}.docx"
+        _upload_to_storage(
+            settings,
+            docx_path,
+            docx_bytes,
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+
+    if pdf_bytes:
+        _update_document_row(settings, document_id, pdf_path, len(pdf_bytes))
+
     return {
         "document_id": document_id,
-        "storage_path": path,
+        "storage_path": pdf_path,
+        "docx_path": docx_path,
         "bucket": USERS_BUCKET,
-        "file_size": len(pdf),
+        "file_size": len(pdf_bytes) if pdf_bytes else len(docx_bytes or b""),
     }

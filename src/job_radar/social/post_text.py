@@ -288,3 +288,5 @@ def build_platform_post_text(job: dict[str, Any], platform: str = "telegram", cl
         return "\n".join(lines)[:500]
 
     return f"{hook}\n\n{title} @ {company}\nLocation: {location}\nApply: {url}"
+
+

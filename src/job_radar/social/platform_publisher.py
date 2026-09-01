@@ -349,6 +349,20 @@ def alert_owner_permanent_error(platform: str, job_id: str, error: str) -> None:
         logger.warning("Failed to dispatch permanent error alert: %s", e)
 
 
+def _log_system_event(client: Any, level: str, message: str, details: dict[str, Any] | None = None) -> None:
+    """Safely record an operational log in the system_logs table."""
+    try:
+        client.table("system_logs").insert({
+            "level": level,
+            "source": "publishing-pipeline",
+            "message": message,
+            "details": details or {},
+            "environment": os.getenv("ENVIRONMENT", "production"),
+        }).execute()
+    except Exception as e:
+        logger.debug("Failed to record system_log: %s", e)
+
+
 def publish_next_job(client: Any, platform: str) -> dict[str, Any]:
     """Publish the next eligible job to the specified platform with multi-gate checks, adapters, and circuit breakers."""
     from job_radar.pipeline.circuit_breaker import CircuitBreaker
@@ -404,6 +418,12 @@ def publish_next_job(client: Any, platform: str) -> dict[str, Any]:
         logger.info("[DRY RUN] Publishing job %s to %s with text: %s", job_id, platform, target_text[:100])
         transition_stage(client, job_id, platform, "done", url="dry-run")
         record_metric(client, f"publish:{platform}:dryrun", True, 0)
+        _log_system_event(
+            client,
+            level="info",
+            message=f"[DRY RUN] Published job {job.get('title', job_id)} to {platform}",
+            details={"job_id": job_id, "platform": platform, "mode": "dry_run"},
+        )
         return {"ok": True, "action": "dry_run", "job_id": job_id, "url": "dry-run"}
 
     # 6. Manual review routing
@@ -414,10 +434,22 @@ def publish_next_job(client: Any, platform: str) -> dict[str, Any]:
             transition_stage(client, job_id, platform, "manual_review")
             record_metric(client, f"publish:{platform}:manual", True, 0)
             logger.info("Routed job %s to Telegram manual review for %s", job_id, platform)
+            _log_system_event(
+                client,
+                level="info",
+                message=f"Routed job {job.get('title', job_id)} to Telegram manual review for {platform}",
+                details={"job_id": job_id, "platform": platform, "stage": "manual_review"},
+            )
             return {"ok": True, "action": "manual_review", "job_id": job_id}
         else:
             logger.warning("Failed to route to manual review: %s", detail)
             transition_stage(client, job_id, platform, "failed", error=detail)
+            _log_system_event(
+                client,
+                level="error",
+                message=f"Failed to route job {job_id} to manual review for {platform}: {detail}",
+                details={"job_id": job_id, "platform": platform, "error": detail},
+            )
             return {"ok": False, "action": "manual_failed", "error": detail}
 
     # 7. Resolve Adapter & Execute
@@ -425,6 +457,12 @@ def publish_next_job(client: Any, platform: str) -> dict[str, Any]:
     if not adapter:
         logger.warning("No social adapter registered for platform %s", platform)
         transition_stage(client, job_id, platform, "failed", error=f"no adapter for {platform}")
+        _log_system_event(
+            client,
+            level="error",
+            message=f"No social adapter registered for platform {platform}",
+            details={"job_id": job_id, "platform": platform},
+        )
         return {"ok": False, "error": f"no adapter for {platform}"}
 
     start_time = time.time()
@@ -441,6 +479,18 @@ def publish_next_job(client: Any, platform: str) -> dict[str, Any]:
         client.table("jobs").update({mirror_col: True}).eq("id", job_id).execute()
         record_metric(client, f"publish:{platform}:published", True, duration_ms)
         logger.info("Published job %s to %s -> %s", job_id, platform, post_url)
+        _log_system_event(
+            client,
+            level="info",
+            message=f"Automated pipeline published job '{job.get('title', job_id)}' to {platform} -> {post_url}",
+            details={
+                "job_id": job_id,
+                "platform": platform,
+                "post_url": post_url,
+                "duration_ms": duration_ms,
+                "job_title": job.get("title"),
+            },
+        )
         return {"ok": True, "action": "published", "job_id": job_id, "url": post_url}
     else:
         cb.record_failure(circuit_name)
@@ -448,6 +498,17 @@ def publish_next_job(client: Any, platform: str) -> dict[str, Any]:
         logger.error("Failed to publish job %s to %s: %s", job_id, platform, err_msg)
         transition_stage(client, job_id, platform, "failed", error=err_msg)
         record_metric(client, f"publish:{platform}:failed", False, duration_ms)
+        _log_system_event(
+            client,
+            level="error",
+            message=f"Automated pipeline failed to publish job {job_id} to {platform}: {err_msg}",
+            details={
+                "job_id": job_id,
+                "platform": platform,
+                "error": err_msg,
+                "duration_ms": duration_ms,
+            },
+        )
 
         if result.permanent:
             record_metric(client, f"publish:{platform}:permanent_auth_error", False, 0)

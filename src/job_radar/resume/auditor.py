@@ -50,9 +50,9 @@ def audit_bullet_replacement(
         (is_valid, final_bullet_text, list_of_dropped_claims)
     """
     # Fast-path heuristic check: Check if invented high-magnitude fake percentages appeared
-    metric_pattern = r"\b\d+%|\b\d+x\b|\$\d+"
-    orig_nums = set(re.findall(metric_pattern, original_bullet_text))
-    new_nums = set(re.findall(metric_pattern, rewritten_bullet_text))
+    metric_pattern = r"\b\d+\s*%(?!\w)|\b\d+(?:\.\d+)?x\b|\$\s*\d+(?:,\d{3})*(?:\.\d+)?(?:k|m|b)?\b"
+    orig_nums = set(re.findall(metric_pattern, original_bullet_text, re.IGNORECASE))
+    new_nums = set(re.findall(metric_pattern, rewritten_bullet_text, re.IGNORECASE))
 
     planted_fakes = [n for n in new_nums if n not in orig_nums]
     if planted_fakes:
