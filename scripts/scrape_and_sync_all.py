@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 import sys
 from pathlib import Path
 
@@ -41,10 +40,10 @@ async def main():
     config = JobSearchConfig(
         keywords=[],  # All roles
         countries=[],  # Worldwide
-        visaSponsorshipOnly=True,
-        includeUnknownVisa=False,
-        minVisaConfidence="unknown",  # Captures stated_in_jd, on_sponsor_list, historical_filings, likely
-        enableOverseasSources=True,
+        visa_sponsorship_only=True,
+        include_unknown_visa=False,
+        min_visa_confidence="unknown",  # Captures stated_in_jd, on_sponsor_list, historical_filings, likely
+        enable_overseas_sources=True,
         enable_ai_classification=False,  # Keep cost $0 for automated scheduled scraping
         max_results=500,
         concurrency=8,
