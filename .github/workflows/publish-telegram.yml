@@ -1,10 +1,10 @@
 name: Publish Telegram
 on:
-  workflow_run:
-    workflows: ["Job Image Generation Pipeline"]
-    types: [completed]
-  schedule:
-    - cron: '*/30 * * * *'  # Every 30 minutes
+  # workflow_run:
+  #   workflows: ["Job Image Generation Pipeline"]
+  #   types: [completed]
+  # schedule:
+  #   - cron: '*/30 * * * *'  # Every 30 minutes
   workflow_dispatch:
 
 concurrency:

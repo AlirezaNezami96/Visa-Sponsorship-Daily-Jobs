@@ -1,10 +1,10 @@
 name: Enrich Jobs
 on:
-  workflow_run:
-    workflows: ["Daily Job Scraping", "European Job Boards", "Adzuna & Multi-Source"]
-    types: [completed]
-  schedule:
-    - cron: '0 */2 * * *'  # Every 2 hours
+  # workflow_run:
+  #   workflows: ["Daily Job Scraping", "European Job Boards", "Adzuna & Multi-Source"]
+  #   types: [completed]
+  # schedule:
+  #   - cron: '0 */2 * * *'  # Every 2 hours
   workflow_dispatch:
 
 permissions:

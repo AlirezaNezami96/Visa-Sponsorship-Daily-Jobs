@@ -11,17 +11,18 @@ concurrency:
   cancel-in-progress: false
 
 on:
-  schedule:
-    # 4 runs/day at 03:20, 09:20, 15:20, 21:20 UTC (20 min after remote scanner)
-    - cron: "20 3,9,15,21 * * *"
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - "seen_jobs.json"
-      - "state/**"
-      - "*.md"
-      - "docs/**"
+  # Automated schedule disabled per project configuration
+  # schedule:
+  #   # 4 runs/day at 03:20, 09:20, 15:20, 21:20 UTC (20 min after remote scanner)
+  #   - cron: "20 3,9,15,21 * * *"
+  # push:
+  #   branches:
+  #     - main
+  #   paths-ignore:
+  #     - "seen_jobs.json"
+  #     - "state/**"
+  #     - "*.md"
+  #     - "docs/**"
   workflow_dispatch:
     inputs:
       dry_run:

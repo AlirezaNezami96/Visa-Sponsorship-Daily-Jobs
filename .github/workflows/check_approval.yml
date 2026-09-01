@@ -7,8 +7,8 @@ name: Check LinkedIn Approval & Publish
 on:
   repository_dispatch:
     types: [telegram_approval]
-  schedule:
-    - cron: "0 16-21 * * *"
+  # schedule:
+  #   - cron: "0 16-21 * * *"
   workflow_dispatch:
 
 concurrency:

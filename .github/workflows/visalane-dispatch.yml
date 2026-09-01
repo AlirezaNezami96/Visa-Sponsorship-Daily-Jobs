@@ -6,9 +6,9 @@ name: VisaLane Dispatch (alerts, social, enrichment)
 #   - optional contact enrichment (0-credit Apollo) on a slower cadence
 
 on:
-  schedule:
-    - cron: '*/30 * * * *'   # alert/social pass twice an hour
-    - cron: '0 6 * * *'      # daily enrichment pass
+  # schedule:
+  #   - cron: '*/30 * * * *'   # alert/social pass twice an hour
+  #   - cron: '0 6 * * *'      # daily enrichment pass
   workflow_dispatch:
     inputs:
       enrichment:

@@ -7,8 +7,8 @@ name: AI Smoke (nightly, live keys)
 # The mock-provider variant runs on every PR as part of `ci.yml`.
 
 on:
-  schedule:
-    - cron: '30 2 * * *'  # 02:30 UTC nightly
+  # schedule:
+  #   - cron: '30 2 * * *'  # 02:30 UTC nightly
   workflow_dispatch:
 
 permissions:

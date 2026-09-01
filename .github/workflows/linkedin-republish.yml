@@ -14,11 +14,11 @@
 name: Repurpose & Publish LinkedIn Post
 
 on:
-  schedule:
-    # 07:30 UTC -> 11:00 Iran Standard Time (UTC+03:30)
-    - cron: "30 7 * * *"
-    # 15:30 UTC -> 19:00 Iran Standard Time (UTC+03:30)
-    - cron: "30 15 * * *"
+  # schedule:
+  #   # 07:30 UTC -> 11:00 Iran Standard Time (UTC+03:30)
+  #   - cron: "30 7 * * *"
+  #   # 15:30 UTC -> 19:00 Iran Standard Time (UTC+03:30)
+  #   - cron: "30 15 * * *"
   workflow_dispatch:
     inputs:
       dry_run:

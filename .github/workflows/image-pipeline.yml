@@ -1,10 +1,10 @@
 name: Job Image Generation Pipeline
 on:
-  workflow_run:
-    workflows: ["Enrich Jobs"]
-    types: [completed]
-  schedule:
-    - cron: '*/30 * * * *'  # Every 30 minutes
+  # workflow_run:
+  #   workflows: ["Enrich Jobs"]
+  #   types: [completed]
+  # schedule:
+  #   - cron: '*/30 * * * *'  # Every 30 minutes
   workflow_dispatch:
 
 permissions:
