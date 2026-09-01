@@ -7,7 +7,7 @@ Extracts named entities, certifications, licenses, and domain skills without har
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 # Broad, extensible skills & credentials dictionary by sector
 SECTOR_SKILLS: Dict[str, Dict[str, Tuple[str, ...]]] = {
