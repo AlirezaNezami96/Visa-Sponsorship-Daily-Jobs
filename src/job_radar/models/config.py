@@ -60,6 +60,7 @@ class JobSearchConfig:
 
     # Advanced Options
     max_per_source: int = 500
+    max_companies_per_ats: int = 50
     concurrency: int = 5
     timeout_per_source_secs: int = 30
     max_runtime_secs: int = 300

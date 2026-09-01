@@ -119,6 +119,7 @@ class VisaEvaluator:
     def __init__(self, db_path: Path = DEFAULT_DB_PATH):
         self.db_path = db_path
         self._sponsors: Optional[Dict[str, SponsorRecord]] = None
+        self._negative_sponsors: Optional[Dict[str, SponsorRecord]] = None
         self._aliases: Optional[Dict[str, str]] = None
         self._token_index: Optional[Dict[str, Any]] = None
         self._match_cache: Dict[str, Tuple[Any, str]] = {}
@@ -135,13 +136,90 @@ class VisaEvaluator:
 
     def _ensure_db_loaded(self) -> None:
         if self._sponsors is None:
-            self._sponsors = load_all_sponsors(db_path=self.db_path)
+            all_sponsors = load_all_sponsors(db_path=self.db_path)
             self._aliases = load_all_aliases(db_path=self.db_path)
-            # Inverted token index over ~125k sponsor names: turns each fuzzy
-            # registry scan from O(all sponsors) into O(token-sharing
-            # candidates) with identical >= 0.92 results (see normalizer).
+
+            # Partition into positive and negative sponsors
+            self._sponsors = {}
+            self._negative_sponsors = {}
+            for norm, record in all_sponsors.items():
+                is_negative = (
+                    record.rating == "NON_COMPLIANT"
+                    or record.confidence_tier == "negative"
+                    or record.extra.get("negative_signal") is True
+                )
+                if is_negative:
+                    self._negative_sponsors[norm] = record
+                else:
+                    self._sponsors[norm] = record
+
+            logger.info(
+                "Loaded %d positive and %d negative sponsor records.",
+                len(self._sponsors), len(self._negative_sponsors),
+            )
+
+            # Inverted token index over positive sponsor names only
             self._token_index = build_token_index(self._sponsors)
             self._match_cache = {}
+
+    def _check_negative_signal(self, company_name: str, country: Optional[str] = None) -> Optional[SponsorRecord]:
+        """Check if a company matches a negative/non-compliant sponsor record."""
+        if not self._negative_sponsors:
+            return None
+
+        norm = normalize_company_name(company_name)
+        if not norm:
+            return None
+
+        # Direct match
+        if norm in self._negative_sponsors:
+            record = self._negative_sponsors[norm]
+            # If country is specified, only match same-country negative signals
+            if country and record.country != country.upper():
+                return None
+            return record
+
+        # Fuzzy match against negative sponsors
+        neg_match, neg_method = match_company_to_sponsor(
+            company_name=company_name,
+            sponsors_by_norm=self._negative_sponsors,
+            alias_map=self._aliases or {},
+        )
+        if neg_match:
+            if country and neg_match.country != country.upper():
+                return None
+            return neg_match
+
+        return None
+
+    @staticmethod
+    def _infer_country_from_location(location: str) -> Optional[str]:
+        """Infer ISO-2 country code from a location string."""
+        loc = location.lower()
+        mappings = {
+            "united kingdom": "UK", ", uk": "UK", "london": "UK", "england": "UK",
+            "scotland": "UK", "wales": "UK", "manchester": "UK", "birmingham": "UK",
+            "canada": "CA", "toronto": "CA", "vancouver": "CA", "montreal": "CA",
+            "ottawa": "CA", "calgary": "CA",
+            "united states": "US", ", us": "US", "usa": "US", "new york": "US",
+            "san francisco": "US", "seattle": "US", "chicago": "US", "boston": "US",
+            "germany": "DE", "berlin": "DE", "munich": "DE", "frankfurt": "DE",
+            "netherlands": "NL", "amsterdam": "NL", "rotterdam": "NL", "hague": "NL",
+            "ireland": "IE", "dublin": "IE", "cork": "IE",
+            "denmark": "DK", "copenhagen": "DK", "aarhus": "DK",
+            "finland": "FI", "helsinki": "FI",
+            "australia": "AU", "sydney": "AU", "melbourne": "AU",
+            "new zealand": "NZ", "auckland": "NZ", "wellington": "NZ",
+            "france": "FR", "paris": "FR",
+            "sweden": "SE", "stockholm": "SE",
+            "switzerland": "CH", "zurich": "CH",
+            "singapore": "SG",
+            "poland": "PL", "warsaw": "PL", "krakow": "PL",
+        }
+        for key, code in mappings.items():
+            if key in loc:
+                return code
+        return None
 
     def evaluate_job(
         self,
@@ -162,6 +240,9 @@ class VisaEvaluator:
         desc = job.get("description") or job.get("snippet") or ""
         remote_scope = (job.get("remote_scope") or "").lower()
 
+        # Infer country from location for negative-signal matching
+        inferred_country = self._infer_country_from_location(location)
+
         candidate_needs_sponsorship = True
         willing_countries = ["UK", "DE", "NL", "IE", "CA"]
         if candidate_auth:
@@ -176,6 +257,20 @@ class VisaEvaluator:
             "routes": [],
             "notes": "",
         }
+
+        # 0. Check for NEGATIVE government signal (non-compliant employer list)
+        neg_record = self._check_negative_signal(company, inferred_country)
+        if neg_record:
+            sponsor_meta["matched_sponsor"] = neg_record.legal_name
+            sponsor_meta["match_type"] = "negative_government_list"
+            sponsor_meta["country"] = neg_record.country
+            sponsor_meta["rating"] = neg_record.rating
+            sponsor_meta["notes"] = (
+                f"Employer found on official {neg_record.country} non-compliant employer list "
+                f"(source: {neg_record.source}). "
+                f"{neg_record.extra.get('consequence', 'Compliance action taken.')}"
+            )
+            return VisaConfidence.EXPLICIT_NO, AuthFit.INELIGIBLE, sponsor_meta
 
         # 1. Check for EXPLICIT NO in JD text (highest priority)
         if _EXPLICIT_NO_REGEX.search(desc):
@@ -220,11 +315,25 @@ class VisaEvaluator:
             if matched_sponsor.source == "govuk_register":
                 sponsor_meta["notes"] = f"Licensed UK Sponsor ({matched_sponsor.rating})"
                 return VisaConfidence.ON_SPONSOR_LIST, AuthFit.SPONSOR_REQUIRED_AND_PLAUSIBLE, sponsor_meta
-
-            if matched_sponsor.source == "dol_lca":
+            elif matched_sponsor.source == "inz_accredited_register":
+                sponsor_meta["notes"] = f"Accredited New Zealand Sponsor (AEWV) - {matched_sponsor.rating}"
+                return VisaConfidence.ON_SPONSOR_LIST, AuthFit.SPONSOR_REQUIRED_AND_PLAUSIBLE, sponsor_meta
+            elif matched_sponsor.source == "home_affairs_sponsors":
+                sponsor_meta["notes"] = f"Approved Australian Standard Business Sponsor ({', '.join(matched_sponsor.routes)})"
+                return VisaConfidence.ON_SPONSOR_LIST, AuthFit.SPONSOR_REQUIRED_AND_PLAUSIBLE, sponsor_meta
+            elif matched_sponsor.source in ("ind_recognised_register", "siri_fasttrack", "migri_certified", "enterprise_gov_ie_permits", "curated_official_registry"):
+                sponsor_meta["notes"] = f"Official {matched_sponsor.country} Government Verified Sponsor ({matched_sponsor.rating})"
+                return VisaConfidence.ON_SPONSOR_LIST, AuthFit.SPONSOR_REQUIRED_AND_PLAUSIBLE, sponsor_meta
+            elif matched_sponsor.source == "esdc_lmia":
+                sponsor_meta["notes"] = f"Approved Canadian LMIA Employer ({matched_sponsor.extra.get('approved_positions', 1)} positions)"
+                return VisaConfidence.ON_SPONSOR_LIST, AuthFit.SPONSOR_REQUIRED_AND_PLAUSIBLE, sponsor_meta
+            elif matched_sponsor.source == "dol_lca":
                 lca_count = matched_sponsor.extra.get("lca_count_12m", 0)
                 sponsor_meta["notes"] = f"US DOL LCA historical filings: {lca_count} certified in past 12m"
                 return VisaConfidence.HISTORICAL_FILINGS, AuthFit.SPONSOR_REQUIRED_AND_PLAUSIBLE, sponsor_meta
+            else:
+                sponsor_meta["notes"] = f"Registered Sponsor: {matched_sponsor.legal_name} ({matched_sponsor.rating})"
+                return VisaConfidence.ON_SPONSOR_LIST, AuthFit.SPONSOR_REQUIRED_AND_PLAUSIBLE, sponsor_meta
 
         # 4. Check salary floor threshold if country has a statutory floor (e.g. DE EU Blue Card, NL HSM)
         salary_min = job.get("salary_min")

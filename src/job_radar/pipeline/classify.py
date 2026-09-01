@@ -10,27 +10,28 @@ from typing import Any, Dict, List, Optional, Tuple
 from job_radar.llm.router import complete
 from job_radar.models.config import JobSearchConfig
 from job_radar.models.job import Job
+from job_radar.taxonomy import normalize_job_posting
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_CLASSIFICATION_PROMPT = """You are an expert technical recruiter and job analyst.
-Evaluate the following job posting based on relevance, tech stack, and role fit.
+DEFAULT_CLASSIFICATION_PROMPT = """You are an expert global job quality auditor and recruitment analyst.
+Evaluate the following job posting based on legitimacy, data completeness, and role attributes.
 
 Respond in strict JSON format matching this schema:
 {
   "relevance_score": 0.85,
-  "classification_track": "ai_ml",
-  "is_ai_role": true,
-  "classification_reason": "Clear 1-sentence explanation of fit/mismatch",
-  "technologies": ["Python", "PyTorch", "Transformers"],
-  "seniority": "junior",
+  "classification_track": "professional",
+  "is_legitimate_job": true,
+  "classification_reason": "Clear 1-sentence explanation of role and posting authenticity",
+  "skills": ["SQL", "Data Analysis", "Project Management"],
+  "seniority": "mid",
   "remote_scope": "worldwide"
 }
 
 Rules:
-1. relevance_score: Float between 0.0 and 1.0 representing overall match quality.
-2. is_ai_role: Boolean, true if role focuses on AI/ML/Data/LLM engineering.
-3. classification_track: "ai_ml" | "general_swe" | "data_engineering" | "frontend" | "mobile" | "other"
+1. relevance_score: Float between 0.0 and 1.0 representing posting quality and legitimacy (0 only for scam/spam/broken text). Never zero out for being outside tech/AI.
+2. is_legitimate_job: Boolean, true if this is an authentic job opening in any occupation.
+3. classification_track: "healthcare" | "trades" | "engineering" | "finance" | "tech" | "hospitality" | "education" | "logistics" | "other"
 4. Output valid JSON ONLY.
 """
 
@@ -150,6 +151,26 @@ async def classify_jobs_stage(
     passed_jobs: List[Job] = []
 
     for job in jobs:
+        # Always run deterministic taxonomy normalization
+        norm = normalize_job_posting(
+            title=job.title,
+            company=job.company,
+            location=job.location,
+            description=job.description or job.snippet or "",
+            destination_country=job.country,
+            remote_flag=bool(job.remote or job.is_remote),
+        )
+        if not job.isco_code:
+            job.isco_code = norm.isco_code
+            job.isco_title = norm.isco_title
+            job.isco_major_group_code = norm.isco_major_group_code
+            job.isco_major_group_title = norm.isco_major_group_title
+            job.industry = norm.industry
+            if norm.credentials:
+                job.credentials = norm.credentials
+            if norm.seniority != "unspecified" and not job.seniority:
+                job.seniority = norm.seniority
+
         if classified_count < max_calls:
             clf = await classify_job(job, config, semaphore)
             if clf:
@@ -162,15 +183,16 @@ async def classify_jobs_stage(
                         score = score / 100.0
                     job.relevance_score = round(score, 2)
 
-                job.classification_track = clf.get("classification_track") or clf.get("track")
+                job.classification_track = clf.get("classification_track") or clf.get("track") or norm.isco_major_group_title
                 job.classification_reason = clf.get("classification_reason") or clf.get("why")
                 job.relevance_why = job.classification_reason
-                job.is_ai_role = clf.get("is_ai_role") or clf.get("is_ai_ml_day_to_day")
+                job.is_ai_role = clf.get("is_ai_role") or clf.get("is_ai_ml_day_to_day") or (norm.isco_code in ("2512", "2514", "2519"))
                 job.remote_scope_ai = clf.get("remote_scope")
 
-                if clf.get("technologies") and isinstance(clf["technologies"], list):
+                skills_found = clf.get("skills") or clf.get("technologies") or []
+                if skills_found and isinstance(skills_found, list):
                     existing_tech = set(job.technologies)
-                    for t in clf["technologies"]:
+                    for t in skills_found:
                         if t not in existing_tech:
                             job.technologies.append(t)
         else:

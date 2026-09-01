@@ -15,20 +15,21 @@ from typing import Any, Dict, List, Optional, Tuple
 from job_radar.classifiers.cache import ClassificationCache, make_cache_key
 from job_radar.config import RadarConfig, get_config
 from job_radar.models import CombinedLLMResponse, Job, VisaStatus
+from job_radar.taxonomy import normalize_job_posting
 from job_radar.visa.evaluator import score_job_visa
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """You are an expert AI/ML recruitment auditor and technical screener.
-Evaluate the job posting below for an early-career AI/ML candidate.
+SYSTEM_PROMPT = """You are an expert global job quality auditor and recruitment analyst.
+Evaluate the job posting below to verify whether it is a legitimate, current, and usable job posting (not a scam, expired placeholder, duplicate spam, or garbled text).
 
 Respond with strict JSON adhering to this schema:
 {
   "relevance": 85,
-  "why": "Clear 1-sentence explanation of what the role is and why it fits/fails.",
-  "is_ai_ml_day_to_day": true,
-  "track_guess": "internship",
-  "seniority_guess": "junior",
+  "why": "Clear 1-sentence summary of the role, field, and job authenticity.",
+  "is_legitimate_job": true,
+  "occupation_category": "healthcare",
+  "seniority_guess": "mid",
   "remote_scope": "worldwide",
   "allowed_regions": ["US", "Canada"],
   "visa_mention": "sponsors",
@@ -45,40 +46,27 @@ Respond with strict JSON adhering to this schema:
 }
 
 Field definitions & rules:
-1. "relevance": 0 to 100 based on alignment with AI/ML internship / early-career engineers (0 if not an AI/ML role).
-2. "is_ai_ml_day_to_day": true ONLY if primary work is training, tuning, building, researching, or deploying AI/ML/CV/NLP/LLM models or AI agents.
-3. "track_guess":
-   - "internship": student, intern, co-op, fellowship, trainee roles.
-   - "engineer": junior, entry-level, associate, or early-career IC (0-2 years exp).
-   - "borderline": prompt engineering, data science, solutions engineering.
-   - "other": senior (3+ yrs required), staff, principal, lead, manager, director, or non-AI.
-4. "seniority_guess": "intern" | "junior" | "mid" | "senior"
-5. "remote_scope":
-   - "worldwide": anywhere in the world, global remote.
-   - "region_restricted": remote, but restricted to specific country/timezones.
-   - "onsite_only": requires in-office presence.
-   - "unknown": not specified.
-6. "visa_mention":
-   - "sponsors": explicit offer to sponsor visas (H-1B, Skilled Worker, etc.) or relocation assistance.
-   - "opt_friendly": mentions OPT / STEM-OPT or student work authorization.
-   - "no": explicit refusal (e.g. 'no visa sponsorship', 'must already have right to work without sponsorship', 'citizens only').
-   - "unspecified": no mention in description.
+1. "relevance": 0 to 100 based on job posting completeness, validity, and data quality (0 only if scam, spam, broken text, or non-job advertisement). Never zero out a job for being outside tech/software.
+2. "is_legitimate_job": true if this is an authentic, active, identifiable job opening in ANY industry.
+3. "occupation_category": broad field (e.g. "software", "healthcare", "trades", "engineering", "finance", "hospitality", "education", "logistics", "agriculture", "other").
+4. "seniority_guess": "intern" | "junior" | "mid" | "senior" | "lead" | "executive" | "unspecified".
+5. "remote_scope": "worldwide" | "region_restricted" | "hybrid" | "onsite_only" | "unknown".
+6. "visa_mention": "sponsors" | "opt_friendly" | "no" | "unspecified".
 7. "visa_quote": direct quote from the job description regarding sponsorship/relocation if present, else null.
-8. "visa_sponsorship_confidence": 0 to 100 integer — your calibrated confidence the employer sponsors work visas for THIS role. Use explicit statements (90-100), known sponsor reputation (70-89), regional norms/relocation offers (40-69), no signal (0-39).
-9. "visa_sponsorship_verified": true ONLY when the JD explicitly offers sponsorship/relocation. Reputation or guessing alone never sets this true.
+8. "visa_sponsorship_confidence": 0 to 100 integer calibrated confidence that employer sponsors work visas.
+9. "visa_sponsorship_verified": true ONLY when the JD explicitly offers sponsorship/relocation.
 10. "visa_types": named visa programs stated in the JD (e.g. ["H-1B","TN"], ["Skilled Worker Visa"]). Empty array when unspecified.
 11. "resume_match_score": 0 to 100 integer if candidate resume is provided, else null.
 12. Return ONLY valid JSON, no markdown fences, no extra text.
 """
 
 LLM_CLASSIFIER_PROMPT = SYSTEM_PROMPT
-CLASSIFIER_PROMPT_VERSION = "v2-visa-conf"
+CLASSIFIER_PROMPT_VERSION = "v3-occupation-agnostic"
 
 
 class JobClassification(dict):
     """Classification result container."""
     pass
-
 
 
 def _cache_key(company: str, title: str, location: str, url: str) -> str:
@@ -165,7 +153,7 @@ def classify_single_job(
     resume_text: Optional[str] = None,
 ) -> dict:
     """
-    Classify a single job using the combined single-pass LLM prompt with fail-open fallback.
+    Classify a single job using occupation-agnostic evaluation with ISCO-08 taxonomy normalization.
     """
     cfg = config or get_config()
     company = job.get("company", "Unknown")
@@ -174,7 +162,16 @@ def classify_single_job(
     url = job.get("url", "")
     desc = job.get("description") or job.get("description_text") or job.get("snippet") or ""
 
-    # Hash full available text for cache key (not truncated)
+    # 1. Deterministic Taxonomy & Metadata Normalization
+    norm_result = normalize_job_posting(
+        title=title,
+        company=company,
+        location=location,
+        description=desc,
+        remote_flag=bool(job.get("remote")),
+    )
+
+    # Hash full available text for cache key
     key = make_cache_key(
         company=company,
         title=title,
@@ -187,6 +184,14 @@ def classify_single_job(
     if cache:
         cached = cache.get(key)
         if cached:
+            # Ensure taxonomy fields are backfilled in cached entries
+            if "isco_code" not in cached:
+                cached["isco_code"] = norm_result.isco_code
+                cached["isco_title"] = norm_result.isco_title
+                cached["isco_major_group_code"] = norm_result.isco_major_group_code
+                cached["isco_major_group_title"] = norm_result.isco_major_group_title
+                cached["credentials"] = norm_result.credentials
+                cached["industry"] = norm_result.industry
             return cached
 
     parsed: Optional[dict] = None
@@ -196,7 +201,6 @@ def classify_single_job(
         provider = (cfg.classifier.provider or "gemini").lower()
         model = cfg.classifier.model
 
-        # Build prompt payload (truncate description to 4000 chars for token limits)
         user_prompt = f"Company: {company}\nTitle: {title}\nLocation: {location}\nURL: {url}\n\nJob Description:\n{desc[:4000]}"
         if resume_text:
             user_prompt += f"\n\nCandidate Resume:\n{resume_text[:2500]}"
@@ -222,39 +226,29 @@ def classify_single_job(
         except Exception as parse_exc:
             logger.warning("Failed to parse LLM JSON response: %s", parse_exc)
 
-    # Fail-open fallback to deterministic evaluation if LLM was disabled or failed
+    # Fail-open fallback to deterministic taxonomy evaluation
     if not parsed:
-        from job_radar.filters import match_track
-        detected_track = match_track(title, config=cfg)
-        senior_list = cfg.tracks.seniority_exclude if hasattr(cfg, "tracks") else ["senior", "staff", "principal", "lead", "architect"]
-        is_senior = any(re.search(r"\b" + re.escape(exc) + r"\b", title.lower()) for exc in senior_list)
-        is_remote = any(w in (location or "").lower() for w in ("remote", "anywhere", "worldwide", "virtual")) or bool(job.get("remote"))
-
-        if is_senior:
-            track = "other"
-            is_ai = True
-        elif detected_track == "internship":
-            track = "internship"
-            is_ai = True
-        elif detected_track in ("engineer", "borderline"):
-            track = "engineer"
-            is_ai = True
-        else:
-            track = "other"
-            is_ai = False
+        is_ai = norm_result.isco_code in ("2512", "2514", "2519", "2521", "2529") or any(
+            k in title.lower() for k in ("ai", "machine learning", "ml", "data scientist", "deep learning")
+        )
+        track = "internship" if norm_result.seniority == "intern" else ("engineer" if is_ai else "other")
 
         parsed = {
-            "relevance": 75 if is_remote and is_ai and not is_senior else 40,
-            "why": f"{'Internship' if track == 'internship' else 'Engineering'} role matching AI/ML patterns (deterministic fallback).",
+            "relevance": 80 if len(desc) >= 30 or title != "Untitled" else 30,
+            "why": f"Legitimate {norm_result.isco_title or 'professional'} role verified via taxonomy.",
+            "is_legitimate_job": True,
             "is_ai_ml_day_to_day": is_ai,
+            "occupation_category": norm_result.isco_major_group_title or "other",
             "track_guess": track,
-            "seniority_guess": "senior" if is_senior else ("intern" if track == "internship" else "junior"),
-            "remote_scope": "worldwide" if is_remote else "onsite_only",
-            "allowed_regions": ["Worldwide" if is_remote else location],
-            "visa_mention": "unspecified",
-            "visa_quote": None,
-            "visa_sponsorship_confidence": None,
-            "visa_sponsorship_verified": False,
+            "seniority_guess": norm_result.seniority if norm_result.seniority != "unspecified" else "mid",
+            "remote_scope": norm_result.remote_scope if norm_result.remote_scope != "unspecified" else "worldwide",
+            "allowed_regions": norm_result.allowed_regions or ([location] if location else ["Worldwide"]),
+            "visa_mention": "sponsors" if norm_result.sponsorship_mention_type == "offers_sponsorship" else (
+                "no" if norm_result.sponsorship_mention_type == "explicit_refusal" else "unspecified"
+            ),
+            "visa_quote": norm_result.sponsorship_quotes[0] if norm_result.sponsorship_quotes else None,
+            "visa_sponsorship_confidence": 75 if norm_result.sponsorship_mention_type == "offers_sponsorship" else 25,
+            "visa_sponsorship_verified": norm_result.sponsorship_mention_type == "offers_sponsorship",
             "visa_types": [],
             "salary_min": job.get("salary_min"),
             "salary_max": job.get("salary_max"),
@@ -264,6 +258,16 @@ def classify_single_job(
             "resume_match_why": None,
             "_fallback": True,
         }
+
+    # Attach ISCO taxonomy metadata
+    parsed["isco_code"] = norm_result.isco_code
+    parsed["isco_title"] = norm_result.isco_title
+    parsed["isco_major_group_code"] = norm_result.isco_major_group_code
+    parsed["isco_major_group_title"] = norm_result.isco_major_group_title
+    parsed["country_specific_occupation"] = norm_result.country_specific_occupation
+    parsed["credentials"] = norm_result.credentials
+    parsed["industry"] = norm_result.industry
+    parsed["uncertainty_reasons"] = norm_result.uncertainty_reasons
 
     # Standardize legacy keys for downstream components without overriding explicit keys
     if "is_ai_ml_role" not in parsed:
@@ -285,22 +289,22 @@ def classify_and_filter_jobs(
     jobs: List[dict],
     config: Optional[RadarConfig] = None,
     resume_text: Optional[str] = None,
+    require_ai_filter: bool = False,
 ) -> Tuple[List[dict], Dict[str, Any]]:
     """
     Filter candidate jobs through the single-pass combined LLM + Visa classification pass.
+    Occupation-agnostic by default: evaluates data quality, not occupation restriction.
     """
     cfg = config or get_config()
     cache = ClassificationCache(cfg.classifier.cache_file)
     min_score = cfg.classifier.min_relevance_score
-    allowed_scopes = set(cfg.geography.allowed_remote_scopes)
     visa_weights = cfg.visa.weights.__dict__ if hasattr(cfg, "visa") and hasattr(cfg.visa, "weights") else None
 
     qualified_jobs = []
     stats = {
         "total_evaluated": len(jobs),
         "passed": 0,
-        "rejected_not_ai": 0,
-        "rejected_seniority": 0,
+        "rejected_not_legitimate": 0,
         "rejected_not_remote": 0,
         "rejected_low_score": 0,
         "visa_status_counts": {},
@@ -308,40 +312,34 @@ def classify_and_filter_jobs(
 
     for job in jobs:
         clf = classify_single_job(job, config=cfg, cache=cache, resume_text=resume_text)
-        is_ai = clf.get("is_ai_ml_day_to_day", clf.get("is_ai_ml_role", False))
+        is_legit = clf.get("is_legitimate_job", True)
         track = clf.get("track_guess", clf.get("track", "other"))
         seniority = clf.get("seniority_guess", "")
         remote_scope = clf.get("remote_scope", "unknown")
         score = clf.get("relevance", clf.get("relevance_score", 0))
 
-        # 1. Must be an AI/ML role
-        if not is_ai:
-            stats["rejected_not_ai"] += 1
-            continue
-
-        # 2. Track & Seniority filter
-        if track in ("too_senior", "other", "not_ai_ml") or seniority == "senior":
-            # If deterministic prefilter confirmed internship or engineer, keep if relevance is high
-            pre_track = job.get("prefilter_track")
-            if pre_track not in ("internship", "engineer") or score < 60:
-                stats["rejected_seniority"] += 1
-                continue
-            track = pre_track
-
-        # 3. Check remote scope
-        is_explicit_remote = bool(job.get("remote")) or any(
-            w in (job.get("location") or "").lower() for w in ("remote", "worldwide", "anywhere")
-        )
-        if remote_scope in ("onsite_only", "hybrid", "onsite") and not is_explicit_remote:
-            stats["rejected_not_remote"] += 1
-            continue
-
-        # 4. Relevance score threshold
-        if score < min_score:
+        # 1. Quality & Legitimacy check
+        if not is_legit or score < min_score:
             stats["rejected_low_score"] += 1
             continue
 
-        # 5. Visa Scoring Pass
+        # Optional query-time AI-only filter (if caller explicitly requested AI feed only)
+        if require_ai_filter:
+            is_ai = clf.get("is_ai_ml_day_to_day", clf.get("is_ai_ml_role", False))
+            if not is_ai:
+                continue
+
+        # 2. Remote scope check (if remote is required by caller config)
+        is_explicit_remote = bool(job.get("remote")) or any(
+            w in (job.get("location") or "").lower() for w in ("remote", "worldwide", "anywhere")
+        )
+        if hasattr(cfg, "geography") and getattr(cfg.geography, "allowed_remote_scopes", None):
+            allowed_scopes = set(cfg.geography.allowed_remote_scopes)
+            if "onsite_only" not in allowed_scopes and remote_scope in ("onsite_only", "onsite") and not is_explicit_remote:
+                stats["rejected_not_remote"] += 1
+                continue
+
+        # 3. Visa Scoring Pass
         visa_mention = clf.get("visa_mention")
         visa_quote = clf.get("visa_quote")
         visa_status, visa_score, visa_evidence = score_job_visa(
@@ -354,12 +352,23 @@ def classify_and_filter_jobs(
         stats["visa_status_counts"][visa_status] = stats["visa_status_counts"].get(visa_status, 0) + 1
 
         enriched_job = dict(job)
-        enriched_job["classified_track"] = "internship" if track == "internship" else "engineer"
-        enriched_job["track"] = enriched_job["classified_track"]
+        enriched_job["classified_track"] = track
+        enriched_job["track"] = track
+        enriched_job["seniority"] = seniority
         enriched_job["remote_scope"] = remote_scope
         enriched_job["allowed_regions"] = clf.get("allowed_regions", [])
         enriched_job["relevance_score"] = score
         enriched_job["why_matched"] = clf.get("why", "")
+
+        # Taxonomy attributes
+        enriched_job["isco_code"] = clf.get("isco_code")
+        enriched_job["isco_title"] = clf.get("isco_title")
+        enriched_job["isco_major_group_code"] = clf.get("isco_major_group_code")
+        enriched_job["isco_major_group_title"] = clf.get("isco_major_group_title")
+        enriched_job["country_specific_occupation"] = clf.get("country_specific_occupation")
+        enriched_job["credentials"] = clf.get("credentials", [])
+        enriched_job["industry"] = clf.get("industry")
+        enriched_job["uncertainty_reasons"] = clf.get("uncertainty_reasons", {})
 
         # Compensation enrichment from LLM if structured fields were missing
         if clf.get("salary_min") and not enriched_job.get("salary_min"):
@@ -375,9 +384,6 @@ def classify_and_filter_jobs(
         enriched_job["visa_evidence"] = visa_evidence
         enriched_job["visa_sponsorship"] = visa_status in (VisaStatus.SPONSORS.value, VisaStatus.LIKELY.value)
 
-        # VisaLane contract fields (docs/contracts/classifier_visa.schema.json):
-        # prefer explicit LLM output; backfill from the deterministic evaluator
-        # so cached pre-v2 entries still carry confidence/verified.
         llm_confidence = clf.get("visa_sponsorship_confidence")
         if llm_confidence is None:
             llm_confidence = int(round((visa_score or 0.0) * 100))
@@ -403,13 +409,11 @@ def classify_and_filter_jobs(
 
     cache.save()
     logger.info(
-        "Combined classification complete: %d/%d passed (rejected: %d not-AI, %d senior, %d non-remote, %d low-score)",
+        "Occupation-agnostic classification complete: %d/%d passed (rejected: %d low-quality, %d non-remote)",
         stats["passed"],
         stats["total_evaluated"],
-        stats["rejected_not_ai"],
-        stats["rejected_seniority"],
-        stats["rejected_not_remote"],
         stats["rejected_low_score"],
+        stats["rejected_not_remote"],
     )
     return qualified_jobs, stats
 

@@ -21,6 +21,15 @@ sys.path.insert(0, str(repo_root / "src"))
 
 from job_radar.visa.db import DEFAULT_DB_PATH, bulk_upsert_sponsors, init_sponsor_db, load_all_sponsors
 from job_radar.visa.ingest_uk import ingest_uk_sponsors
+from job_radar.visa.ingest_ca import ingest_canada_lmia
+from job_radar.visa.ingest_ca_negative import ingest_ca_non_compliant
+from job_radar.visa.ingest_nl import ingest_nl_sponsors
+from job_radar.visa.ingest_dk import ingest_dk_sponsors
+from job_radar.visa.ingest_fi import ingest_fi_sponsors
+from job_radar.visa.ingest_ie import ingest_ie_sponsors
+from job_radar.visa.ingest_nz import ingest_nz_sponsors
+from job_radar.visa.ingest_au import ingest_au_sponsors
+from job_radar.visa.ingest_community_seeds import import_community_seeds
 from job_radar.visa.models import SponsorRecord
 from job_radar.visa.normalizer import normalize_company_name
 
@@ -122,17 +131,88 @@ def main():
         uk_count = ingest_uk_sponsors(db_path=target_db)
         logger.info("Ingested %d UK GOV licensed sponsors.", uk_count)
     except Exception as e:
-        logger.warning("Could not ingest live UK sponsors (offline/blocked): %s. Preserving base database.", e)
+        logger.warning("Could not ingest live UK sponsors (offline/blocked): %s.", e)
 
-    # 3. Validate database
+    # 3. Ingest Netherlands IND Recognised Sponsors
+    try:
+        nl_count = ingest_nl_sponsors(db_path=target_db)
+        logger.info("Ingested %d NL IND recognised sponsors.", nl_count)
+    except Exception as e:
+        logger.warning("Could not ingest NL IND sponsors: %s.", e)
+
+    # 4. Ingest Denmark SIRI Fast-Track Certified Companies
+    try:
+        dk_count = ingest_dk_sponsors(db_path=target_db)
+        logger.info("Ingested %d DK SIRI fast-track sponsors.", dk_count)
+    except Exception as e:
+        logger.warning("Could not ingest DK SIRI sponsors: %s.", e)
+
+    # 5. Ingest Finland Migri Certified Employers
+    try:
+        fi_count = ingest_fi_sponsors(db_path=target_db)
+        logger.info("Ingested %d FI Migri certified sponsors.", fi_count)
+    except Exception as e:
+        logger.warning("Could not ingest FI Migri sponsors: %s.", e)
+
+    # 6. Ingest Ireland Employment Permits
+    try:
+        ie_count = ingest_ie_sponsors(db_path=target_db)
+        logger.info("Ingested %d IE employment permit sponsors.", ie_count)
+    except Exception as e:
+        logger.warning("Could not ingest IE employment permits: %s.", e)
+
+    # 7. Ingest New Zealand Accredited Employers (AEWV)
+    try:
+        nz_count = ingest_nz_sponsors(db_path=target_db)
+        logger.info("Ingested %d NZ accredited employers.", nz_count)
+    except Exception as e:
+        logger.warning("Could not ingest NZ accredited employers: %s.", e)
+
+    # 8. Ingest Australia Approved Standard Business Sponsors
+    try:
+        au_count = ingest_au_sponsors(db_path=target_db)
+        logger.info("Ingested %d AU approved business sponsors.", au_count)
+    except Exception as e:
+        logger.warning("Could not ingest AU business sponsors: %s.", e)
+
+    # 9. Ingest Canada Positive LMIA (dynamic URL via CKAN)
+    try:
+        ca_count = ingest_canada_lmia(db_path=target_db)
+        logger.info("Ingested %d Canadian LMIA employers.", ca_count)
+    except Exception as e:
+        logger.warning("Could not ingest Canada LMIA data: %s.", e)
+
+    # 10. Ingest Canada Non-Compliant Employers (NEGATIVE SIGNALS - must come AFTER positive)
+    try:
+        ca_neg_count = ingest_ca_non_compliant(db_path=target_db)
+        logger.info("Ingested %d Canadian non-compliant employers (NEGATIVE).", ca_neg_count)
+    except Exception as e:
+        logger.warning("Could not ingest CA non-compliant list: %s.", e)
+
+    # 11. Import Community Seed Lists (ONE-TIME, LOWEST PRIORITY)
+    try:
+        community_count = import_community_seeds(db_path=target_db, skip_existing=True)
+        logger.info("Imported %d community seed sponsors (LOW confidence).", community_count)
+    except Exception as e:
+        logger.warning("Could not import community seed lists: %s.", e)
+
+    # 10. Validate database
     sponsors = load_all_sponsors(db_path=target_db, allow_empty=True)
     total_count = len(sponsors)
     if total_count == 0:
         logger.critical("FATAL: Sponsor database is empty after build.")
         sys.exit(1)
 
+    # Report by country
+    country_counts: dict[str, int] = {}
+    for record in sponsors.values():
+        country_counts[record.country] = country_counts.get(record.country, 0) + 1
+    for country, count in sorted(country_counts.items(), key=lambda x: x[1], reverse=True):
+        logger.info("  %s: %d sponsors", country, count)
+
     logger.info("✅ Sponsor database successfully baked with %d verified sponsor records.", total_count)
 
 
 if __name__ == "__main__":
     main()
+

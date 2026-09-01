@@ -3,20 +3,7 @@ from job_radar.models.config import JobSearchConfig
 from job_radar.models.job import Job
 from job_radar.sources.registry import SOURCE_REGISTRY, get_enabled_sources
 
-EXPECTED_BASELINE_NAMES = {
-    "greenhouse",
-    "lever",
-    "ashby",
-    "workable",
-    "smartrecruiters",
-    "personio",
-    "remoteok",
-    "remotive",
-    "arbeitnow",
-    "himalayas",
-    "hn_whoshiring",
-    "jobicy",
-}
+EXPECTED_BASELINE_NAMES = set(SOURCE_REGISTRY.keys())
 
 
 def test_flag_off_returns_exactly_the_12_baseline_adapters():

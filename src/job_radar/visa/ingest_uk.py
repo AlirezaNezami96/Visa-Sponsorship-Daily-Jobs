@@ -83,6 +83,25 @@ def parse_uk_csv_stream(csv_content: str, as_of_date: Optional[str] = None) -> L
         elif "route" in c:
             col_route = idx
 
+    # Routes that represent genuine external-hiring sponsorship
+    EXTERNAL_HIRING_ROUTES = {
+        "skilled worker",
+        "health and care worker",
+        "scale-up",
+        "global business mobility - service supplier",
+        "global business mobility: service supplier",
+    }
+
+    # Routes that are intra-company transfers — not open-hiring
+    ICT_ROUTES = {
+        "global business mobility - senior or specialist worker",
+        "global business mobility: senior or specialist worker",
+        "global business mobility - uk expansion worker",
+        "global business mobility: uk expansion worker",
+        "global business mobility - graduate trainee",
+        "global business mobility: graduate trainee",
+    }
+
     for row in reader:
         if not row or len(row) <= col_name:
             continue
@@ -95,20 +114,43 @@ def parse_uk_csv_stream(csv_content: str, as_of_date: Optional[str] = None) -> L
         route_raw = row[col_route].strip() if len(row) > col_route else ""
         city_raw = row[col_city].strip() if len(row) > col_city else ""
 
-        # Check for Skilled Worker route (exclude Temporary Worker)
-        combined = f"{rating_raw} {route_raw}".lower()
-        if "temporary worker" in combined:
+        # Classify the route
+        route_lower = route_raw.lower().strip()
+
+        # Skip Temporary Worker routes entirely
+        if "temporary worker" in route_lower:
             continue
-        if "skilled worker" not in combined and not combined.startswith("worker"):
+
+        # Check if this is an ICT route — skip it
+        if route_lower in ICT_ROUTES:
+            continue
+
+        # Determine if this is a recognized external-hiring route
+        is_external = any(ext_route in route_lower for ext_route in EXTERNAL_HIRING_ROUTES)
+
+        # Also accept generic "Worker" type entries (the CSV sometimes uses just "Worker")
+        type_rating_lower = rating_raw.lower()
+        is_worker_type = "worker" in type_rating_lower and "temporary" not in type_rating_lower
+
+        if not is_external and not is_worker_type:
             continue
 
         rating = "A"
-        if "b rating" in rating_raw.lower() or "(b rating)" in combined:
+        if "b rating" in type_rating_lower or "(b rating)" in type_rating_lower:
             rating = "B (licence_warning)"
 
-        routes = ["Skilled Worker"]
-        if "global business mobility" in combined:
-            routes.append("Global Business Mobility")
+        # Build the route list from what we actually matched
+        routes = []
+        if "skilled worker" in route_lower:
+            routes.append("Skilled Worker")
+        if "health and care" in route_lower:
+            routes.append("Health and Care Worker")
+        if "scale-up" in route_lower:
+            routes.append("Scale-up")
+        if "service supplier" in route_lower:
+            routes.append("Global Business Mobility: Service Supplier")
+        if not routes:
+            routes = ["Skilled Worker"]  # Default for generic "Worker" entries
 
         norm = normalize_company_name(legal_name)
         if not norm:
@@ -123,7 +165,11 @@ def parse_uk_csv_stream(csv_content: str, as_of_date: Optional[str] = None) -> L
                 rating=rating,
                 source="govuk_register",
                 as_of=as_of,
-                extra={"city": city_raw, "raw_route": route_raw},
+                extra={
+                    "city": city_raw,
+                    "raw_route": route_raw,
+                    "route_category": "external_hiring",
+                },
             )
         )
 

@@ -45,6 +45,20 @@ def extract_slug_from_url(url: str, ats_name: str) -> Optional[str]:
                 return subdomain
             if path:
                 return path[0]
+    elif ats_name == "workday":
+        if "myworkdayjobs.com" in netloc:
+            tenant = netloc.split(".")[0]
+            site = path[0] if path else "External"
+            return f"{tenant}/{site}"
+    elif ats_name == "bamboohr":
+        if "bamboohr.com" in netloc:
+            return netloc.split(".")[0]
+    elif ats_name == "taleo":
+        if "taleo.net" in netloc:
+            return netloc.split(".")[0]
+    elif ats_name == "recruitee":
+        if "recruitee.com" in netloc:
+            return netloc.split(".")[0]
 
     # Fallback: if single word passed as URL, treat as slug
     if "/" not in url and "." not in url:

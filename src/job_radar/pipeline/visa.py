@@ -60,6 +60,24 @@ def evaluate_visa_for_job(job: Job) -> Job:
         job.visa_status = status
         job.visa_score = score
         job.visa_evidence = evidence
+
+        # Map to 5-tier explainable model
+        if conf in (VisaConfidence.ON_SPONSOR_LIST, VisaConfidence.KNOWN_SPONSOR):
+            job.visa_tier = "VERIFIED"
+        elif conf == VisaConfidence.STATED_IN_JD:
+            job.visa_tier = "HIGH"
+        elif conf in (VisaConfidence.HISTORICAL_FILINGS, VisaConfidence.EMPLOYER_SPONSORED_REGION):
+            job.visa_tier = "MEDIUM"
+        elif conf == VisaConfidence.EXPLICIT_NO:
+            job.visa_tier = "NEGATIVE"
+        elif score >= 0.75:
+            job.visa_tier = "HIGH"
+        elif score >= 0.50:
+            job.visa_tier = "MEDIUM"
+        elif score >= 0.20:
+            job.visa_tier = "LOW"
+        else:
+            job.visa_tier = "UNKNOWN"
     except Exception as e:
         logger.debug("Visa evaluation failed for %s (%s): %s", job.company, job.title, e)
         if not job.visa_confidence:

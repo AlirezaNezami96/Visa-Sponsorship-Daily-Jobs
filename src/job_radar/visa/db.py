@@ -16,9 +16,72 @@ from job_radar.visa.models import SponsorRecord
 logger = logging.getLogger(__name__)
 
 DEFAULT_DB_PATH = Path("data/sponsors/sponsors.db")
+DEFAULT_GZ_PATH = Path("data/sponsors/sponsors.db.gz")
+
+
+def ensure_db_extracted(db_path: Path = DEFAULT_DB_PATH) -> Path:
+    """
+    Ensure the SQLite database file exists on disk.
+    If the uncompressed .db does not exist, but .db.gz exists, automatically decompress it.
+    """
+    if db_path.exists():
+        return db_path
+
+    gz_path = Path(str(db_path) + ".gz") if not str(db_path).endswith(".gz") else None
+    if gz_path and gz_path.exists():
+        logger.info("Auto-decompressing sponsor database: %s -> %s...", gz_path, db_path)
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        import gzip
+        import shutil
+
+        temp_path = db_path.with_suffix(".tmp")
+        try:
+            with gzip.open(gz_path, "rb") as f_in, temp_path.open("wb") as f_out:
+                shutil.copyfileobj(f_in, f_out)
+            temp_path.replace(db_path)
+            logger.info(
+                "Sponsor database successfully extracted: %s (%.2f MB)",
+                db_path,
+                db_path.stat().st_size / (1024 * 1024),
+            )
+        except Exception as exc:
+            if temp_path.exists():
+                temp_path.unlink()
+            logger.error("Failed to auto-decompress sponsor database %s: %s", gz_path, exc)
+            raise
+
+    return db_path
+
+
+def compress_sponsor_db(db_path: Path = DEFAULT_DB_PATH, gz_path: Optional[Path] = None) -> Path:
+    """
+    Compress SQLite database into .db.gz for Git tracking and efficient CI distribution.
+    """
+    if not db_path.exists():
+        raise FileNotFoundError(f"Cannot compress non-existent database: {db_path}")
+
+    target_gz = gz_path or Path(str(db_path) + ".gz")
+    target_gz.parent.mkdir(parents=True, exist_ok=True)
+    import gzip
+    import shutil
+
+    temp_gz = target_gz.with_suffix(".tmp")
+    with db_path.open("rb") as f_in, gzip.open(temp_gz, "wb", compresslevel=9) as f_out:
+        shutil.copyfileobj(f_in, f_out)
+
+    temp_gz.replace(target_gz)
+    logger.info(
+        "Compressed sponsor database: %s -> %s (%.2f MB -> %.2f MB)",
+        db_path,
+        target_gz,
+        db_path.stat().st_size / (1024 * 1024),
+        target_gz.stat().st_size / (1024 * 1024),
+    )
+    return target_gz
 
 
 def get_connection(db_path: Path = DEFAULT_DB_PATH) -> sqlite3.Connection:
+    ensure_db_extracted(db_path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(db_path))
     conn.row_factory = sqlite3.Row
@@ -27,6 +90,7 @@ def get_connection(db_path: Path = DEFAULT_DB_PATH) -> sqlite3.Connection:
 
 def init_sponsor_db(db_path: Path = DEFAULT_DB_PATH) -> None:
     """Initialize sponsors schema and index structures."""
+    ensure_db_extracted(db_path)
     with get_connection(db_path) as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS sponsors (
@@ -76,9 +140,11 @@ def bulk_upsert_sponsors(records: List[SponsorRecord], db_path: Path = DEFAULT_D
             INSERT INTO sponsors (normalized_name, country, legal_name, routes_json, rating, source, as_of, extra_json)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(normalized_name) DO UPDATE SET
+                country=excluded.country,
                 legal_name=excluded.legal_name,
                 routes_json=excluded.routes_json,
                 rating=excluded.rating,
+                source=excluded.source,
                 as_of=excluded.as_of,
                 extra_json=excluded.extra_json;
         """, data)
@@ -93,6 +159,7 @@ def load_all_sponsors(
     allow_empty: bool = False,
 ) -> Dict[str, SponsorRecord]:
     """Load sponsor records from SQLite into a fast normalized-lookup dictionary."""
+    db_path = ensure_db_extracted(db_path)
     if not db_path.exists():
         if not allow_empty:
             logger.critical("Sponsor database missing at path: %s. Run scripts/build_sponsors_db.py to generate it.", db_path)
@@ -130,6 +197,7 @@ def load_all_sponsors(
 
 def load_all_aliases(db_path: Path = DEFAULT_DB_PATH) -> Dict[str, str]:
     """Load alias table into a dictionary mapping alias -> sponsor_normalized."""
+    db_path = ensure_db_extracted(db_path)
     if not db_path.exists():
         return {}
 

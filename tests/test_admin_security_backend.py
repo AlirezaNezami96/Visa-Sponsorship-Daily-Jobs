@@ -6,7 +6,7 @@ ROOT_DIR = Path(__file__).parent.parent
 
 
 def test_admin_migration_sql_structure():
-    migration_file = ROOT_DIR / "supabase" / "migrations" / "20260901_max_security_admin_crm.sql"
+    migration_file = ROOT_DIR / "supabase" / "migrations" / "2026090101_max_security_admin_crm.sql"
     assert migration_file.exists(), "Admin security migration missing"
 
     content = migration_file.read_text()

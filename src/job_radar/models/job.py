@@ -125,6 +125,15 @@ class Job(BaseModel):
     visa_score: Optional[float] = None
     visa_evidence: List[str] = Field(default_factory=list)
 
+    # Global Occupation Taxonomy & Industry
+    isco_code: Optional[str] = None
+    isco_title: Optional[str] = None
+    isco_major_group_code: Optional[str] = None
+    isco_major_group_title: Optional[str] = None
+    occupation_country_code: Optional[str] = None
+    credentials: List[str] = Field(default_factory=list)
+    industry: Optional[str] = None
+
     # AI Classification (Optional)
     relevance_score: Optional[float] = None
     classification_track: Optional[str] = None  # internship | engineer | borderline | other
@@ -238,6 +247,11 @@ class Job(BaseModel):
             "ats": self.ats or self.source,
             "sourceCategory": self.metadata.get("source_category"),
             "destinationCountry": self.country if self.metadata.get("overseas") else None,
+            "iscoCode": self.isco_code,
+            "iscoTitle": self.isco_title,
+            "iscoMajorGroup": self.isco_major_group_title,
+            "industry": self.industry,
+            "credentials": self.credentials,
             "technologies": self.technologies,
             "visaSignal": conf_str,
             "visaConfidence": round(float(VISA_CONFIDENCE_FLOAT_MAP.get(conf_str, 0.25)), 2),

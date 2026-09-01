@@ -44,3 +44,4 @@ class SponsorRecord(BaseModel):
     source: str = "govuk_register"
     as_of: str = ""
     extra: Dict[str, Any] = Field(default_factory=dict)
+    confidence_tier: Optional[str] = None  # Pre-tag: "verified", "low", "negative"

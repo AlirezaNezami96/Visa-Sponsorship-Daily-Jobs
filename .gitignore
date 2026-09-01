@@ -58,6 +58,7 @@ data/sponsors/*.db
 data/sponsors/*.parquet
 data/sponsors/*.csv
 data/sponsors/*.xlsx
+!data/sponsors/sponsors.db.gz
 !state/.gitkeep
 engine/data/
 engine/state/

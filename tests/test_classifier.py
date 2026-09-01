@@ -67,9 +67,10 @@ class TestClassifier(unittest.TestCase):
         ]
         passed, stats = classify_and_filter_jobs(jobs, config=cfg)
         self.assertEqual(stats["total_evaluated"], 3)
-        self.assertEqual(len(passed), 1)
+        self.assertEqual(len(passed), 2)
         self.assertEqual(passed[0]["company"], "Co A")
         self.assertEqual(passed[0]["classified_track"], "internship")
+        self.assertEqual(passed[1]["company"], "Co B")
 
 
 if __name__ == "__main__":

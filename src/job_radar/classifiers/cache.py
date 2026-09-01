@@ -48,13 +48,21 @@ def get_classifier_cache(path: str = "state/classifier_cache.json") -> Classific
     return ClassificationCache(path)
 
 
-def make_cache_key(company: str, title: str, description: str = "", resume_text: str = "", location: str = "", url: str = "") -> str:
+def make_cache_key(
+    company: str,
+    title: str,
+    description: str = "",
+    resume_text: str = "",
+    location: str = "",
+    url: str = "",
+    version: str = "v3-occupation-agnostic",
+) -> str:
     """
-    Generate deterministic hash key using full available text.
+    Generate deterministic hash key using full available text and prompt version.
     Two jobs sharing identical prefix but different tails will not collide.
     """
     import hashlib
     res_hash = hashlib.sha256(resume_text.strip().encode("utf-8")).hexdigest()[:16] if resume_text else ""
     full_desc = description.strip() or f"{location}|{url}"
-    raw = f"{company.strip().lower()}|{title.strip().lower()}|{full_desc}|{res_hash}"
+    raw = f"{version}|{company.strip().lower()}|{title.strip().lower()}|{full_desc}|{res_hash}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
