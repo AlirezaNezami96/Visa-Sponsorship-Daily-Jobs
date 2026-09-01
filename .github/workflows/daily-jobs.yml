@@ -77,29 +77,6 @@ jobs:
         # substantially smaller to download and is restored from cache later.
         run: python -m playwright install --only-shell chromium
 
-      - name: Run AI Job Radar
-        env:
-          EMAIL_PROVIDER: ${{ secrets.EMAIL_PROVIDER || 'resend' }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          EMAIL_TO: ${{ secrets.EMAIL_TO }}
-          EMAIL_FROM: ${{ secrets.EMAIL_FROM || 'onboarding@resend.dev' }}
-          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          GMAIL_USER: ${{ secrets.GMAIL_USER }}
-          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          VISALANE_SYNC: "1"
-        run: |
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            python run.py --dry-run
-          else
-            python run.py
-          fi
-
       - name: Run Multi-Source Scraper & Website Sync
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

@@ -9,9 +9,10 @@ concurrency:
   cancel-in-progress: false
 
 on:
-  schedule:
-    # 4 runs/day at 03:40, 09:40, 15:40, 21:40 UTC (40 min after remote scanner)
-    - cron: "40 3,9,15,21 * * *"
+  # Automated schedule disabled per project configuration (direct email disabled)
+  # schedule:
+  #   # 4 runs/day at 03:40, 09:40, 15:40, 21:40 UTC (40 min after remote scanner)
+  #   - cron: "40 3,9,15,21 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
