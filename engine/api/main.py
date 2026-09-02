@@ -112,14 +112,16 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins_list,
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type", "X-Session-ID"],
+    allow_methods=["GET", "POST", "PUT", "OPTIONS"],
+    allow_headers=["Content-Type", "X-Session-ID", "Authorization"],
 )
 
 # ── Internal document rendering (Edge Function callback) ─────────────────────
 from .document_render import router as document_render_router  # noqa: E402
+from .jobs_routes import router as jobs_router  # noqa: E402
 
 app.include_router(document_render_router)
+app.include_router(jobs_router)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
