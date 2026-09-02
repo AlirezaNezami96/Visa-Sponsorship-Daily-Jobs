@@ -94,6 +94,22 @@ def clear_all_caches() -> None:
             pass
 
 
+def clear_cache(key: Optional[str] = None) -> None:
+    """Clear specific cache key or all caches if key is None."""
+    if key is None:
+        clear_all_caches()
+        return
+    with _LOCK:
+        for c in _IN_MEMORY_CACHES.values():
+            c.pop(key, None)
+    r = _get_redis()
+    if r is not None:
+        try:
+            r.delete(key)
+        except Exception:
+            pass
+
+
 def make_cache_key(prefix: str, params: Dict[str, Any]) -> str:
     """Generate a deterministic cache key from parameters."""
     sorted_items = sorted((k, str(v)) for k, v in params.items() if v is not None)

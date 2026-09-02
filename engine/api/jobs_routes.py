@@ -137,6 +137,26 @@ from .alert_service import (
     run_scheduled_alert_digests,
     update_alert,
 )
+from .employer_models import (
+    DailyAnalyticsPoint,
+    EmployerJobCreateRequest,
+    EmployerJobListResponse,
+    EmployerJobResponse,
+    EmployerJobUpdateRequest,
+    JobAnalyticsResponse,
+    QuotaExceededErrorDetail,
+    SchemaValidationErrorDetail,
+)
+from .employer_service import (
+    clear_mock_employer_stores,
+    close_employer_job,
+    create_employer_job,
+    get_employer_job,
+    get_job_analytics,
+    list_employer_jobs,
+    update_employer_job,
+    validate_job_schema_completeness,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -190,6 +210,7 @@ def clear_mock_stores() -> None:
     _MOCK_MATCH_REPORTS = {}
     _MOCK_POSTS_STORE = {}
     _MOCK_POST_TRANSLATIONS_STORE = {}
+    clear_mock_employer_stores()
 
 
 def _get_supabase_client():
@@ -365,6 +386,7 @@ def _format_job_summary(row: Dict[str, Any]) -> JobSummary:
         job_status="Open" if is_active else "Closed",
         apply_url=str(row.get("apply_url") or row.get("source_url") or "#"),
         created_at=str(row.get("created_at")) if row.get("created_at") else None,
+        source=str(row.get("source", "scraped")),
     )
 
 
@@ -519,6 +541,7 @@ def _format_job_detail(row: Dict[str, Any]) -> JobDetail:
         apply_url=str(row.get("apply_url") or row.get("source_url") or "#"),
         source_url=row.get("source_url"),
         created_at=str(row.get("created_at")) if row.get("created_at") else None,
+        source=str(row.get("source", "scraped")),
     )
 
 
@@ -925,8 +948,8 @@ async def get_country_summary(country: str):
     employer_counts: Dict[str, Dict[str, Any]] = {}
     for j in c_jobs:
         comp = j.get("companies") or {}
-        c_name = comp.get("name") if isinstance(comp, dict) else j.get("company_name") or "Company"
-        logo_url = comp.get("logo_url") if isinstance(comp, dict) else j.get("company_logo_url")
+        c_name = (comp.get("name") if isinstance(comp, dict) else None) or j.get("company_name") or "Company"
+        logo_url = (comp.get("logo_url") if isinstance(comp, dict) else None) or j.get("company_logo_url")
         if c_name not in employer_counts:
             employer_counts[c_name] = {"name": c_name, "logo_url": logo_url, "count": 0}
         employer_counts[c_name]["count"] += 1
@@ -1017,8 +1040,8 @@ async def get_country_visa_summary(country: str, visa_type: str):
     employer_counts: Dict[str, Dict[str, Any]] = {}
     for j in pair_jobs:
         comp = j.get("companies") or {}
-        c_name = comp.get("name") if isinstance(comp, dict) else j.get("company_name") or "Company"
-        logo_url = comp.get("logo_url") if isinstance(comp, dict) else j.get("company_logo_url")
+        c_name = (comp.get("name") if isinstance(comp, dict) else None) or j.get("company_name") or "Company"
+        logo_url = (comp.get("logo_url") if isinstance(comp, dict) else None) or j.get("company_logo_url")
         if c_name not in employer_counts:
             employer_counts[c_name] = {"name": c_name, "logo_url": logo_url, "count": 0}
         employer_counts[c_name]["count"] += 1
@@ -2572,3 +2595,103 @@ async def admin_run_scheduled_digests(
     _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
     jobs = await _fetch_jobs_from_supabase_or_mock()
     return run_scheduled_alert_digests(cadence=cadence, all_jobs=jobs, dry_run=dry_run)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 14. Phase 8: B2B Self-Serve Employer Job CRUD, Quotas & Analytics
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.post(
+    "/employer/jobs",
+    response_model=EmployerJobResponse,
+    status_code=201,
+    summary="Publish a self-serve direct employer job posting",
+)
+async def post_employer_job(body: EmployerJobCreateRequest):
+    """
+    Submits a direct employer job listing.
+    Enforces strict Phase 2 schema completeness and Phase 6 active listing quota.
+    """
+    job_res, err = create_employer_job(body)
+    if err is not None:
+        status_code = err.get("status_code", 400)
+        raise HTTPException(status_code=status_code, detail=err)
+    return job_res
+
+
+@router.get(
+    "/employer/jobs",
+    response_model=EmployerJobListResponse,
+    summary="List direct listings for an employer",
+)
+async def get_employer_jobs(
+    employer_id: Optional[str] = Query(None, description="Employer / User ID"),
+    company_slug: Optional[str] = Query(None, description="Company directory slug"),
+    status: str = Query("all", description="Status filter: 'active', 'closed', or 'all'"),
+):
+    """Lists all self-serve listings for the requesting employer with plan quota context."""
+    return list_employer_jobs(
+        employer_id=employer_id,
+        company_slug=company_slug,
+        status_filter=status,
+    )
+
+
+@router.get(
+    "/employer/jobs/{job_id}",
+    response_model=EmployerJobResponse,
+    summary="Get single employer direct job detail",
+)
+async def get_single_employer_job(job_id: str):
+    """Retrieves a single direct employer listing."""
+    job = get_employer_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    return job
+
+
+@router.put(
+    "/employer/jobs/{job_id}",
+    response_model=EmployerJobResponse,
+    summary="Update an employer direct job listing",
+)
+async def put_employer_job(
+    job_id: str,
+    body: EmployerJobUpdateRequest,
+    employer_id: Optional[str] = Query(None, description="Employer / User ID"),
+):
+    """Updates an existing employer direct listing with schema validation."""
+    updated, err = update_employer_job(job_id, body, employer_id=employer_id)
+    if err is not None:
+        raise HTTPException(status_code=err.get("status_code", 400), detail=err)
+    return updated
+
+
+@router.post(
+    "/employer/jobs/{job_id}/close",
+    response_model=EmployerJobResponse,
+    summary="Close an employer direct job listing",
+)
+async def close_single_employer_job(
+    job_id: str,
+    employer_id: Optional[str] = Query(None, description="Employer / User ID"),
+):
+    """Closes an active employer listing, removing it from public search and reclaiming quota."""
+    closed, err = close_employer_job(job_id, employer_id=employer_id)
+    if err is not None:
+        raise HTTPException(status_code=err.get("status_code", 400), detail=err)
+    return closed
+
+
+@router.get(
+    "/employer/jobs/{job_id}/analytics",
+    response_model=JobAnalyticsResponse,
+    summary="Get view and application engagement analytics for an employer listing",
+)
+async def get_single_employer_job_analytics(
+    job_id: str,
+    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+):
+    """Aggregates first-party views, unique viewers, apply clicks, and CTR for an employer listing."""
+    return get_job_analytics(job_id=job_id, start_date=start_date, end_date=end_date)

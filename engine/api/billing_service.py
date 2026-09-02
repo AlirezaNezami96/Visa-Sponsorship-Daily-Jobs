@@ -118,6 +118,31 @@ def get_mock_company_billing(company_slug: str) -> Optional[Dict[str, Any]]:
     return _MOCK_COMPANY_BILLING.get(company_slug)
 
 
+def _get_supabase_client():
+    """Retrieve Supabase service client if configured."""
+    try:
+        from job_radar.visalane.db import get_service_client
+        return get_service_client()
+    except Exception:
+        return None
+
+
+def get_company_billing(company_slug: str) -> Dict[str, Any]:
+    """Retrieve company billing data from mock store or database."""
+    comp = _MOCK_COMPANY_BILLING.get(company_slug)
+    if comp:
+        return comp
+    client = _get_supabase_client()
+    if client is not None:
+        try:
+            res = client.from_("companies").select("billing_plan,employer_plan,featured_until").eq("slug", company_slug).maybe_single().execute()
+            if res and res.data:
+                return res.data
+        except Exception:
+            pass
+    return {}
+
+
 def get_mock_processed_webhooks() -> List[Dict[str, Any]]:
     """Retrieve list of processed webhook events."""
     return _MOCK_PROCESSED_WEBHOOKS

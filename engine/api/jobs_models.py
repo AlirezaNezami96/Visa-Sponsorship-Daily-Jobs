@@ -83,6 +83,7 @@ class JobSummary(BaseModel):
     apply_url: str
     job_status: str = "Open"  # "Open" | "Closed"
     created_at: Optional[str] = None
+    source: str = "scraped"  # "scraped" | "employer_direct"
 
 
 class JobSearchResponse(BaseModel):
@@ -140,6 +141,7 @@ class JobDetail(BaseModel):
     apply_url: str
     source_url: Optional[str] = None
     created_at: Optional[str] = None
+    source: str = "scraped"  # "scraped" | "employer_direct"
 
 
 def to_job_posting_json_ld(detail: JobDetail, base_url: str = "https://visalane.com") -> Dict[str, Any]:
