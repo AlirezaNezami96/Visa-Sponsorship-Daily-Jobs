@@ -1,12 +1,20 @@
 """
-Pydantic response and request models for VisaLane Phase 1 & Phase 2 API endpoints.
-Includes schema.org JobPosting compliance models and programmatic SEO summaries.
+Pydantic response and request models for VisaLane Phase 1, Phase 2, and Phase 3 API endpoints.
+Includes schema.org JobPosting compliance models, programmatic SEO summaries,
+employer aggregation directories, and shareable match reports.
 """
 from __future__ import annotations
 
 import re
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
+
+CENTRAL_LEGAL_DISCLAIMER = (
+    "VisaLane aggregates and analyzes publicly available job postings, employer filings, "
+    "and immigration registries as of the date indicated. Past sponsorship patterns and "
+    "hiring statistics do not guarantee future visa support or individual eligibility. "
+    "For official sponsorship verification or correction requests, contact verification@visalane.com."
+)
 
 
 def generate_job_slug(title: str, company_name: str, job_id: str) -> str:
@@ -18,6 +26,12 @@ def generate_job_slug(title: str, company_name: str, job_id: str) -> str:
     short_id = str(job_id).replace("-", "")[:8]
     parts = [p for p in [clean_title, clean_comp, short_id] if p]
     return "-".join(parts) or f"job-{short_id}"
+
+
+def generate_company_slug(name: str) -> str:
+    """Generate a clean URL slug for a company."""
+    clean = re.sub(r"[^\w\s-]", "", name.lower()).strip()
+    return re.sub(r"[-\s]+", "-", clean) or "company"
 
 
 class FacetItem(BaseModel):
@@ -35,6 +49,8 @@ class CompanySummary(BaseModel):
     name: str
     logo_url: Optional[str] = None
     website: Optional[str] = None
+    ats_type: Optional[str] = None
+    slug: Optional[str] = None
 
 
 class JobSummary(BaseModel):
@@ -211,7 +227,7 @@ def to_job_posting_json_ld(detail: JobDetail, base_url: str = "https://visalane.
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Reference & Summary Models (Phase 2)
+# Reference & Summary Models (Phase 2 & Phase 3)
 # ─────────────────────────────────────────────────────────────────────────────
 
 class CountryItem(BaseModel):
@@ -283,6 +299,83 @@ class CountryVisaSummaryResponse(BaseModel):
     sample_employers: List[EmployerSummaryItem] = Field(default_factory=list)
     last_updated: Optional[str] = None
     meta_description_suggestion: str
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase 3: Employer Aggregation & Match Report Models
+# ─────────────────────────────────────────────────────────────────────────────
+
+class CompanyCountryCount(BaseModel):
+    slug: str
+    code: str
+    name: str
+    count: int
+
+
+class CompanyDirectoryItem(BaseModel):
+    name: str
+    slug: str
+    logo_url: Optional[str] = None
+    website: Optional[str] = None
+    ats_type: Optional[str] = None
+    active_job_count: int = 0
+    total_job_count: int = 0
+    confidence_score: int = 0
+    verified_sponsorship_rate: float = 0.0
+    countries: List[str] = Field(default_factory=list)
+
+
+class CompanyDirectoryResponse(BaseModel):
+    results: List[CompanyDirectoryItem]
+    total_count: int
+    page: int
+    page_size: int
+
+
+class CompanyDetailSummary(BaseModel):
+    company: CompanySummary
+    total_active_jobs: int
+    total_historical_jobs: int
+    sponsorship_confidence_score: int
+    verified_sponsorship_rate: float
+    supported_visa_types: List[str] = Field(default_factory=list)
+    hiring_countries: List[CompanyCountryCount] = Field(default_factory=list)
+    top_roles: List[TopRoleItem] = Field(default_factory=list)
+    recent_jobs: List[JobSummary] = Field(default_factory=list)
+    last_verified: Optional[str] = None
+    disclaimer: str = CENTRAL_LEGAL_DISCLAIMER
+
+
+class MatchReportCreateRequest(BaseModel):
+    country: Optional[str] = None
+    visa_type: Optional[str] = None
+    role: Optional[str] = None
+    work_mode: Optional[str] = None
+    contract_type: Optional[str] = None
+    min_confidence: Optional[int] = None
+    posted_since: Optional[str] = None
+    title: Optional[str] = None
+    session_id: Optional[str] = None
+
+
+class MatchReportCreateResponse(BaseModel):
+    slug: str
+    share_url: str
+    original_match_count: int
+
+
+class MatchReportDetailResponse(BaseModel):
+    slug: str
+    title: Optional[str] = None
+    filters: Dict[str, Any]
+    original_match_count: int
+    current_match_count: int
+    human_summary: str
+    og_title: str
+    og_description: str
+    share_url: str
+    created_at: str
+    results_sample: List[JobSummary] = Field(default_factory=list)
 
 
 class EventLogRequest(BaseModel):

@@ -1,5 +1,5 @@
 """
-FastAPI route definitions for VisaLane Phase 1 & Phase 2.
+FastAPI route definitions for VisaLane Phase 1, Phase 2, and Phase 3.
 Includes:
 - GET /api/v1/jobs
 - GET /api/v1/jobs/{slug_or_id}
@@ -7,6 +7,10 @@ Includes:
 - GET /api/v1/countries/{country}/summary
 - GET /api/v1/countries/{country}/visa-types/{visa_type}/summary
 - GET /api/v1/visa-types
+- GET /api/v1/companies
+- GET /api/v1/companies/{slug}/summary
+- POST /api/v1/match-reports
+- GET /api/v1/match-reports/{slug}
 - GET /api/v1/sitemap-data
 - GET /api/v1/sitemap.xml
 - POST /api/v1/events
@@ -18,12 +22,16 @@ import datetime
 import html
 import logging
 import os
+import random
 import re
+import string
 import uuid
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, Request, Response
 from pydantic import ValidationError
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from .cache import get_cache, make_cache_key, set_cache
 from .canonical_data import (
@@ -35,7 +43,12 @@ from .canonical_data import (
 )
 from .indexing_service import get_indexing_service
 from .jobs_models import (
+    CENTRAL_LEGAL_DISCLAIMER,
     BaseSalary,
+    CompanyCountryCount,
+    CompanyDetailSummary,
+    CompanyDirectoryItem,
+    CompanyDirectoryResponse,
     CompanySummary,
     ConfidenceFactor,
     CountryItem,
@@ -51,18 +64,23 @@ from .jobs_models import (
     JobSearchResponse,
     JobSitemapItem,
     JobSummary,
+    MatchReportCreateRequest,
+    MatchReportCreateResponse,
+    MatchReportDetailResponse,
     SalaryValue,
     SitemapDataResponse,
     StructuredJobLocation,
     TopRoleItem,
     VisaAvailabilityItem,
     VisaTypeItem,
+    generate_company_slug,
     generate_job_slug,
     to_job_posting_json_ld,
 )
 
 logger = logging.getLogger(__name__)
 
+limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/api/v1", tags=["Jobs API"])
 
 # Cache TTLs in seconds
@@ -76,6 +94,7 @@ DEFAULT_SITE_URL = os.environ.get("SITE_URL", "https://visalane.com").rstrip("/"
 # In-memory test store for offline / mock testing when Supabase is not connected
 _MOCK_JOBS_STORE: List[Dict[str, Any]] = []
 _MOCK_EVENTS_STORE: List[Dict[str, Any]] = []
+_MOCK_MATCH_REPORTS: Dict[str, Dict[str, Any]] = []
 
 
 def set_mock_jobs_store(jobs: List[Dict[str, Any]]) -> None:
@@ -91,9 +110,10 @@ def get_mock_events_store() -> List[Dict[str, Any]]:
 
 def clear_mock_stores() -> None:
     """Helper to reset mock stores."""
-    global _MOCK_JOBS_STORE, _MOCK_EVENTS_STORE
+    global _MOCK_JOBS_STORE, _MOCK_EVENTS_STORE, _MOCK_MATCH_REPORTS
     _MOCK_JOBS_STORE = []
     _MOCK_EVENTS_STORE = []
+    _MOCK_MATCH_REPORTS = {}
 
 
 def _get_supabase_client():
@@ -110,7 +130,6 @@ def _is_job_active(job: Dict[str, Any]) -> bool:
     status = str(job.get("status", "active")).lower()
     if status in ("expired", "removed", "closed", "inactive"):
         return False
-    # Check expires_at if set
     expires_at = job.get("expires_at")
     if expires_at:
         try:
@@ -155,7 +174,6 @@ def _format_job_summary(row: Dict[str, Any]) -> JobSummary:
     job_id = str(row.get("id", ""))
     title = str(row.get("title", ""))
     
-    # Extract company info
     comp_raw = row.get("companies") or {}
     if isinstance(comp_raw, list) and len(comp_raw) > 0:
         comp_raw = comp_raw[0]
@@ -165,6 +183,7 @@ def _format_job_summary(row: Dict[str, Any]) -> JobSummary:
     company_name = comp_raw.get("name") or row.get("company_name") or row.get("company") or "Company"
     logo_url = comp_raw.get("logo_url") or row.get("company_logo_url")
     website = comp_raw.get("website")
+    company_slug = generate_company_slug(company_name)
 
     slug = row.get("slug") or generate_job_slug(title, company_name, job_id)
 
@@ -183,7 +202,7 @@ def _format_job_summary(row: Dict[str, Any]) -> JobSummary:
         id=job_id,
         slug=slug,
         title=title,
-        company=CompanySummary(name=company_name, logo_url=logo_url, website=website),
+        company=CompanySummary(name=company_name, logo_url=logo_url, website=website, slug=company_slug),
         location=row.get("location_raw") or row.get("location"),
         city=row.get("city"),
         country=row.get("country"),
@@ -218,17 +237,15 @@ def _format_job_detail(row: Dict[str, Any]) -> JobDetail:
     company_name = comp_raw.get("name") or row.get("company_name") or row.get("company") or "Company"
     logo_url = comp_raw.get("logo_url") or row.get("company_logo_url")
     website = comp_raw.get("website")
+    company_slug = generate_company_slug(company_name)
     slug = row.get("slug") or generate_job_slug(title, company_name, job_id)
 
-    # Description (full text, never a teaser)
     description = row.get("description_text") or row.get("description") or title
     description_html = row.get("description_html")
 
-    # Dates
     date_posted = row.get("posted_at") or row.get("date_posted") or row.get("created_at")
     valid_through = row.get("expires_at")
 
-    # Employment Type
     raw_type = str(row.get("contract_type") or row.get("work_type") or "FULL_TIME").upper()
     if "CONTRACT" in raw_type:
         employment_type = "CONTRACTOR"
@@ -239,7 +256,6 @@ def _format_job_detail(row: Dict[str, Any]) -> JobDetail:
     else:
         employment_type = "FULL_TIME"
 
-    # Location / Remote
     work_mode = str(row.get("work_mode", "")).lower()
     is_remote = "remote" in work_mode
     country = row.get("country")
@@ -265,7 +281,6 @@ def _format_job_detail(row: Dict[str, Any]) -> JobDetail:
             postal_code=None,
         )
 
-    # Base Salary: STRICT RULE — omit entirely if unknown, never fabricate
     base_salary = None
     sal_min = row.get("salary_min")
     sal_max = row.get("salary_max")
@@ -280,7 +295,6 @@ def _format_job_detail(row: Dict[str, Any]) -> JobDetail:
             ),
         )
 
-    # Visa sponsorship & confidence factors
     visa_types_raw = row.get("visa_types")
     if isinstance(visa_types_raw, str):
         visa_types = [v.strip() for v in visa_types_raw.split(",") if v.strip()]
@@ -294,7 +308,6 @@ def _format_job_detail(row: Dict[str, Any]) -> JobDetail:
     if verified and conf_score < 90:
         conf_score = 95
 
-    # Confidence factors breakdown (Phase 2 refined wording)
     factors: List[ConfidenceFactor] = []
     if verified:
         factors.append(
@@ -348,7 +361,7 @@ def _format_job_detail(row: Dict[str, Any]) -> JobDetail:
         date_posted=str(date_posted) if date_posted else None,
         valid_through=str(valid_through) if valid_through else None,
         employment_type=employment_type,
-        hiring_organization=CompanySummary(name=company_name, logo_url=logo_url, website=website),
+        hiring_organization=CompanySummary(name=company_name, logo_url=logo_url, website=website, slug=company_slug),
         job_location=job_location,
         remote=is_remote,
         applicant_location_requirements=applicant_location_req,
@@ -382,11 +395,9 @@ def _filter_jobs_in_memory(
     canon_visa = find_visa_type(visa_type) if visa_type else None
 
     for job in jobs:
-        # Status active check
         if active_only and not _is_job_active(job):
             continue
 
-        # Country filter
         if country:
             j_code = str(job.get("country_code", "")).upper()
             j_country = str(job.get("country", "")).lower()
@@ -398,14 +409,12 @@ def _filter_jobs_in_memory(
                 if c_clean != j_code.lower() and c_clean not in j_country:
                     continue
 
-        # Visa type filter
         if visa_type:
             j_visas = job.get("visa_types") or []
             if isinstance(j_visas, str):
                 j_visas = [j_visas]
             j_visas_str = " ".join(j_visas).lower()
             if canon_visa:
-                # Match against canonical aliases or name
                 matched = any(alias in j_visas_str for alias in canon_visa["aliases"])
                 if not matched and canon_visa["slug"] not in j_visas_str:
                     continue
@@ -413,7 +422,6 @@ def _filter_jobs_in_memory(
                 if visa_type.lower() not in j_visas_str:
                     continue
 
-        # Role / keyword filter (title or description)
         if role:
             r_clean = role.strip().lower()
             j_title = str(job.get("title", "")).lower()
@@ -421,25 +429,21 @@ def _filter_jobs_in_memory(
             if r_clean not in j_title and r_clean not in j_desc:
                 continue
 
-        # Work mode filter
         if work_mode:
             j_mode = str(job.get("work_mode", "")).lower()
             if work_mode.lower() not in j_mode:
                 continue
 
-        # Contract type filter
         if contract_type:
             j_ctype = str(job.get("contract_type", "") or job.get("work_type", "")).lower()
             if contract_type.lower() not in j_ctype:
                 continue
 
-        # Min confidence filter
         if min_confidence is not None:
             j_conf = int(job.get("visa_sponsorship_confidence") or 0)
             if j_conf < min_confidence:
                 continue
 
-        # Recency cutoff filter
         if posted_since_dt:
             posted_val = job.get("posted_at") or job.get("date_posted") or job.get("created_at")
             if posted_val:
@@ -457,7 +461,6 @@ def _filter_jobs_in_memory(
 
         filtered.append(job)
 
-    # Sorting
     if sort == "confidence":
         filtered.sort(
             key=lambda x: (
@@ -475,7 +478,6 @@ def _filter_jobs_in_memory(
             reverse=True,
         )
     else:
-        # Default: newest
         filtered.sort(
             key=lambda x: str(x.get("posted_at") or x.get("created_at") or ""),
             reverse=True,
@@ -499,7 +501,6 @@ def _calculate_facets(jobs: List[Dict[str, Any]]) -> JobFacets:
             c_slug = re.sub(r"[^\w-]", "", j_country.lower().replace(" ", "-"))
             country_counts[c_slug] = country_counts.get(c_slug, 0) + 1
 
-        # Visa types
         j_visas = job.get("visa_types") or []
         if isinstance(j_visas, str):
             j_visas = [j_visas]
@@ -564,10 +565,7 @@ async def list_jobs(
     page: int = Query(1, ge=1, description="Page number (1-indexed)"),
     page_size: int = Query(20, ge=1, le=100, description="Page size (max 100)"),
 ):
-    """
-    Open-access job search endpoint. Does NOT require authentication.
-    Returns paginated job summaries and faceted counts scoped to active filters.
-    """
+    """Open-access job search endpoint."""
     cache_key = make_cache_key(
         "jobs_search",
         {
@@ -636,10 +634,7 @@ async def list_jobs(
     summary="Job details (schema.org JobPosting compliant)",
 )
 async def get_job_detail(slug_or_id: str):
-    """
-    Fetch full job posting details by UUID or SEO URL slug.
-    Strictly omits salary field if unknown. Open-access, no authentication required.
-    """
+    """Fetch full job posting details by UUID or SEO URL slug."""
     cache_key = f"job_detail:{slug_or_id}"
     cached = get_cache(cache_key, ttl_seconds=JOBS_CACHE_TTL)
     if cached is not None:
@@ -652,13 +647,11 @@ async def get_job_detail(slug_or_id: str):
     matched = None
 
     target = slug_or_id.strip()
-    # 1. Try exact UUID match
     for j in all_jobs:
         if str(j.get("id")) == target:
             matched = j
             break
 
-    # 2. Try slug match
     if not matched:
         for j in all_jobs:
             title = str(j.get("title", ""))
@@ -693,7 +686,7 @@ async def get_job_detail(slug_or_id: str):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 3. Canonical Reference Endpoints & Summaries (Phase 2)
+# 3. Country & Visa Reference & Summary Routes
 # ─────────────────────────────────────────────────────────────────────────────
 
 @router.get(
@@ -745,10 +738,7 @@ async def list_countries():
     summary="Programmatic summary and SEO copy for country landing page",
 )
 async def get_country_summary(country: str):
-    """
-    Returns live count, top hiring roles, sample employers, available visa types,
-    and a generated unique meta description for the country landing page.
-    """
+    """Returns live metrics and meta description suggestion for country page."""
     canon_c = find_country(country)
     if not canon_c:
         raise HTTPException(status_code=404, detail=f"Country '{country}' not recognized.")
@@ -765,8 +755,6 @@ async def get_country_summary(country: str):
     c_jobs = _filter_jobs_in_memory(all_jobs, country=canon_c["slug"], active_only=True)
 
     job_count = len(c_jobs)
-    
-    # Aggregate top roles
     role_counts: Dict[str, int] = {}
     for j in c_jobs:
         t = str(j.get("title", "")).strip()
@@ -774,7 +762,6 @@ async def get_country_summary(country: str):
             role_counts[t] = role_counts.get(t, 0) + 1
     top_roles = [TopRoleItem(title=t, count=cnt) for t, cnt in sorted(role_counts.items(), key=lambda x: x[1], reverse=True)[:8]]
 
-    # Aggregate sample employers
     employer_counts: Dict[str, Dict[str, Any]] = {}
     for j in c_jobs:
         comp = j.get("companies") or {}
@@ -788,7 +775,6 @@ async def get_country_summary(country: str):
         for v in sorted(employer_counts.values(), key=lambda x: x["count"], reverse=True)[:6]
     ]
 
-    # Aggregate visa types available
     visa_counts: Dict[str, int] = {}
     for j in c_jobs:
         j_visas = j.get("visa_types") or []
@@ -803,14 +789,12 @@ async def get_country_summary(country: str):
         for name, cnt in sorted(visa_counts.items(), key=lambda x: x[1], reverse=True)
     ]
 
-    # Latest update
     latest_dt = None
     for j in c_jobs:
         p = j.get("posted_at") or j.get("created_at")
         if p and (latest_dt is None or str(p) > str(latest_dt)):
             latest_dt = p
 
-    # Dynamic meta description suggestion
     c_name = canon_c["name"]
     emp_names = [e.name for e in sample_employers[:3]]
     emp_str = f" from top companies including {', '.join(emp_names)}" if emp_names else ""
@@ -837,10 +821,7 @@ async def get_country_summary(country: str):
     summary="Programmatic summary and SEO copy for country×visa landing page",
 )
 async def get_country_visa_summary(country: str, visa_type: str):
-    """
-    Returns live count, top roles, sample employers, and tailored meta description
-    for a specific country×visa-type programmatic landing page.
-    """
+    """Returns live metrics and meta description for country×visa page."""
     canon_c = find_country(country)
     if not canon_c:
         raise HTTPException(status_code=404, detail=f"Country '{country}' not recognized.")
@@ -866,8 +847,6 @@ async def get_country_visa_summary(country: str, visa_type: str):
     )
 
     job_count = len(pair_jobs)
-
-    # Top roles
     role_counts: Dict[str, int] = {}
     for j in pair_jobs:
         t = str(j.get("title", "")).strip()
@@ -875,7 +854,6 @@ async def get_country_visa_summary(country: str, visa_type: str):
             role_counts[t] = role_counts.get(t, 0) + 1
     top_roles = [TopRoleItem(title=t, count=cnt) for t, cnt in sorted(role_counts.items(), key=lambda x: x[1], reverse=True)[:8]]
 
-    # Sample employers
     employer_counts: Dict[str, Dict[str, Any]] = {}
     for j in pair_jobs:
         comp = j.get("companies") or {}
@@ -961,7 +939,430 @@ async def list_visa_types():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 4. Sitemap Endpoints: GET /sitemap-data & GET /sitemap.xml
+# 4. Phase 3: Employer Aggregation Endpoints
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _aggregate_companies(jobs: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    """Aggregate company statistics from all active and historical jobs."""
+    companies_map: Dict[str, Dict[str, Any]] = {}
+
+    for j in jobs:
+        comp = j.get("companies") or {}
+        c_name = comp.get("name") if isinstance(comp, dict) else j.get("company_name") or "Company"
+        slug = generate_company_slug(c_name)
+        logo_url = comp.get("logo_url") if isinstance(comp, dict) else j.get("company_logo_url")
+        website = comp.get("website") if isinstance(comp, dict) else None
+        ats_type = comp.get("ats_type") if isinstance(comp, dict) else None
+
+        if slug not in companies_map:
+            companies_map[slug] = {
+                "name": c_name,
+                "slug": slug,
+                "logo_url": logo_url,
+                "website": website,
+                "ats_type": ats_type,
+                "active_jobs": [],
+                "historical_jobs": [],
+                "countries": set(),
+                "visa_types": set(),
+                "confidence_scores": [],
+                "verified_count": 0,
+                "latest_date": None,
+            }
+
+        entry = companies_map[slug]
+        entry["historical_jobs"].append(j)
+
+        if _is_job_active(j):
+            entry["active_jobs"].append(j)
+
+        # Country
+        j_country = str(j.get("country") or j.get("country_code") or "").strip()
+        if j_country:
+            canon = find_country(j_country)
+            entry["countries"].add(canon["name"] if canon else j_country)
+
+        # Visa types
+        j_visas = j.get("visa_types") or []
+        if isinstance(j_visas, str):
+            j_visas = [j_visas]
+        for v in j_visas:
+            entry["visa_types"].add(str(v))
+
+        # Confidence & verified rate
+        conf = j.get("visa_sponsorship_confidence")
+        if conf is not None:
+            entry["confidence_scores"].append(int(conf))
+        if j.get("visa_sponsorship_verified"):
+            entry["verified_count"] += 1
+
+        # Latest posting date
+        dt_val = j.get("posted_at") or j.get("created_at")
+        if dt_val and (entry["latest_date"] is None or str(dt_val) > str(entry["latest_date"])):
+            entry["latest_date"] = str(dt_val)
+
+    return companies_map
+
+
+@router.get(
+    "/companies",
+    response_model=CompanyDirectoryResponse,
+    summary="Paginated employer directory with listing count thresholds",
+)
+async def list_companies(
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=100, description="Page size (max 100)"),
+    min_jobs: int = Query(1, ge=0, description="Minimum active listings threshold (guard default: 3)"),
+    search: Optional[str] = Query(None, description="Search by employer name"),
+    sort: str = Query("job_count", description="Sort by 'job_count', 'confidence', or 'name'"),
+):
+    """
+    Returns paginated employer directory.
+    Use min_jobs=3 for the programmatic page generation guard.
+    """
+    cache_key = make_cache_key(
+        "companies_directory",
+        {"page": page, "page_size": page_size, "min_jobs": min_jobs, "search": search, "sort": sort},
+    )
+    cached = get_cache(cache_key, ttl_seconds=METADATA_CACHE_TTL)
+    if cached is not None:
+        try:
+            return CompanyDirectoryResponse(**cached)
+        except Exception:
+            pass
+
+    all_jobs = await _fetch_jobs_from_supabase_or_mock()
+    comp_map = _aggregate_companies(all_jobs)
+
+    items: List[CompanyDirectoryItem] = []
+    for slug, data in comp_map.items():
+        active_count = len(data["active_jobs"])
+        total_count = len(data["historical_jobs"])
+
+        if active_count < min_jobs:
+            continue
+
+        if search:
+            s_clean = search.strip().lower()
+            if s_clean not in data["name"].lower():
+                continue
+
+        avg_conf = (
+            int(sum(data["confidence_scores"]) / len(data["confidence_scores"]))
+            if data["confidence_scores"]
+            else 70
+        )
+        verified_rate = (
+            round((data["verified_count"] / total_count) * 100, 1)
+            if total_count > 0
+            else 0.0
+        )
+
+        items.append(
+            CompanyDirectoryItem(
+                name=data["name"],
+                slug=slug,
+                logo_url=data["logo_url"],
+                website=data["website"],
+                ats_type=data["ats_type"],
+                active_job_count=active_count,
+                total_job_count=total_count,
+                confidence_score=avg_conf,
+                verified_sponsorship_rate=verified_rate,
+                countries=sorted(list(data["countries"])),
+            )
+        )
+
+    # Sort
+    if sort == "name":
+        items.sort(key=lambda x: x.name.lower())
+    elif sort == "confidence":
+        items.sort(key=lambda x: (x.confidence_score, x.active_job_count), reverse=True)
+    else:
+        # Default: active job count descending
+        items.sort(key=lambda x: (x.active_job_count, x.total_job_count), reverse=True)
+
+    total_count = len(items)
+    start_idx = (page - 1) * page_size
+    end_idx = start_idx + page_size
+    page_items = items[start_idx:end_idx]
+
+    response = CompanyDirectoryResponse(
+        results=page_items,
+        total_count=total_count,
+        page=page,
+        page_size=page_size,
+    )
+    set_cache(cache_key, response.model_dump(), ttl_seconds=METADATA_CACHE_TTL)
+    return response
+
+
+@router.get(
+    "/companies/{slug}/summary",
+    response_model=CompanyDetailSummary,
+    summary="Employer sponsorship history, statistics, and legal disclaimer",
+)
+async def get_company_summary(slug: str):
+    """
+    Returns comprehensive sponsorship breakdown for an employer including
+    computed confidence score, hiring countries, top roles, and legal disclaimer.
+    """
+    cache_key = f"company_summary:{slug}"
+    cached = get_cache(cache_key, ttl_seconds=METADATA_CACHE_TTL)
+    if cached is not None:
+        try:
+            return CompanyDetailSummary(**cached)
+        except Exception:
+            pass
+
+    all_jobs = await _fetch_jobs_from_supabase_or_mock()
+    comp_map = _aggregate_companies(all_jobs)
+
+    target_slug = slug.strip().lower()
+    matched_data = comp_map.get(target_slug)
+
+    # Try case-insensitive name match if slug match failed
+    if not matched_data:
+        for s, d in comp_map.items():
+            if d["name"].lower() == target_slug.replace("-", " "):
+                matched_data = d
+                break
+
+    if not matched_data:
+        raise HTTPException(status_code=404, detail=f"Employer '{slug}' not found.")
+
+    active_jobs = matched_data["active_jobs"]
+    hist_jobs = matched_data["historical_jobs"]
+    total_active = len(active_jobs)
+    total_hist = len(hist_jobs)
+
+    avg_conf = (
+        int(sum(matched_data["confidence_scores"]) / len(matched_data["confidence_scores"]))
+        if matched_data["confidence_scores"]
+        else 75
+    )
+    verified_rate = (
+        round((matched_data["verified_count"] / total_hist) * 100, 1)
+        if total_hist > 0
+        else 0.0
+    )
+
+    # Hiring countries with counts
+    c_counts: Dict[str, Dict[str, Any]] = {}
+    for j in active_jobs + hist_jobs:
+        code = str(j.get("country_code", "")).upper()
+        c_name = str(j.get("country", ""))
+        canon = find_country(code) or find_country(c_name)
+        if canon:
+            c_slug = canon["slug"]
+            if c_slug not in c_counts:
+                c_counts[c_slug] = {"slug": c_slug, "code": canon["code"], "name": canon["name"], "count": 0}
+            c_counts[c_slug]["count"] += 1
+        elif c_name:
+            c_slug = generate_company_slug(c_name)
+            if c_slug not in c_counts:
+                c_counts[c_slug] = {"slug": c_slug, "code": code or "XX", "name": c_name, "count": 0}
+            c_counts[c_slug]["count"] += 1
+
+    hiring_countries = [
+        CompanyCountryCount(slug=v["slug"], code=v["code"], name=v["name"], count=v["count"])
+        for v in sorted(c_counts.values(), key=lambda x: x["count"], reverse=True)
+    ]
+
+    # Top roles
+    r_counts: Dict[str, int] = {}
+    for j in active_jobs + hist_jobs:
+        t = str(j.get("title", "")).strip()
+        if t:
+            r_counts[t] = r_counts.get(t, 0) + 1
+    top_roles = [TopRoleItem(title=t, count=cnt) for t, cnt in sorted(r_counts.items(), key=lambda x: x[1], reverse=True)[:10]]
+
+    # Recent active jobs
+    recent_jobs = [_format_job_summary(j) for j in active_jobs[:10]]
+
+    response = CompanyDetailSummary(
+        company=CompanySummary(
+            name=matched_data["name"],
+            logo_url=matched_data["logo_url"],
+            website=matched_data["website"],
+            ats_type=matched_data["ats_type"],
+            slug=matched_data["slug"],
+        ),
+        total_active_jobs=total_active,
+        total_historical_jobs=total_hist,
+        sponsorship_confidence_score=avg_conf,
+        verified_sponsorship_rate=verified_rate,
+        supported_visa_types=sorted(list(matched_data["visa_types"])),
+        hiring_countries=hiring_countries,
+        top_roles=top_roles,
+        recent_jobs=recent_jobs,
+        last_verified=matched_data["latest_date"],
+        disclaimer=CENTRAL_LEGAL_DISCLAIMER,
+    )
+    set_cache(cache_key, response.model_dump(), ttl_seconds=METADATA_CACHE_TTL)
+    return response
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 5. Phase 3: Shareable Match Reports
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _generate_report_slug() -> str:
+    """Generate a clean, collision-free base62 slug for match reports."""
+    chars = string.ascii_lowercase + string.digits
+    rand_str = "".join(random.choices(chars, k=8))
+    return f"mr_{rand_str}"
+
+
+@router.post(
+    "/match-reports",
+    response_model=MatchReportCreateResponse,
+    summary="Create a persistent shareable match report from search filters",
+)
+@limiter.limit("20/hour")
+async def create_match_report(request: Request, body: MatchReportCreateRequest):
+    """
+    Persists a search filter state and returns a short shareable link.
+    Rate-limited to 20/hour per IP/session.
+    """
+    filters_dict = {
+        "country": body.country,
+        "visa_type": body.visa_type,
+        "role": body.role,
+        "work_mode": body.work_mode,
+        "contract_type": body.contract_type,
+        "min_confidence": body.min_confidence,
+        "posted_since": body.posted_since,
+    }
+    # Remove None values
+    filters_clean = {k: v for k, v in filters_dict.items() if v is not None}
+
+    all_jobs = await _fetch_jobs_from_supabase_or_mock()
+    cutoff = _parse_recency_cutoff(body.posted_since)
+    matching = _filter_jobs_in_memory(
+        jobs=all_jobs,
+        country=body.country,
+        visa_type=body.visa_type,
+        role=body.role,
+        work_mode=body.work_mode,
+        contract_type=body.contract_type,
+        posted_since_dt=cutoff,
+        min_confidence=body.min_confidence,
+        active_only=True,
+    )
+    original_count = len(matching)
+    slug = _generate_report_slug()
+
+    report_record = {
+        "id": str(uuid.uuid4()),
+        "slug": slug,
+        "title": body.title or "Visa-Sponsored Jobs Match Report",
+        "filters": filters_clean,
+        "original_match_count": original_count,
+        "session_id": body.session_id,
+        "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    }
+
+    _MOCK_MATCH_REPORTS[slug] = report_record
+
+    client = _get_supabase_client()
+    if client is not None:
+        try:
+            client.from_("match_reports").insert(report_record).execute()
+        except Exception as exc:
+            logger.warning("Failed to persist match report to Supabase: %s", exc)
+
+    share_url = f"{DEFAULT_SITE_URL}/matches/{slug}"
+    return MatchReportCreateResponse(
+        slug=slug,
+        share_url=share_url,
+        original_match_count=original_count,
+    )
+
+
+@router.get(
+    "/match-reports/{slug}",
+    response_model=MatchReportDetailResponse,
+    summary="Retrieve match report with dynamic live re-counting",
+)
+async def get_match_report(slug: str):
+    """
+    Retrieves a shared match report, re-evaluating its filters against live active jobs
+    to return current_match_count alongside the original count.
+    """
+    target_slug = slug.strip()
+    record = _MOCK_MATCH_REPORTS.get(target_slug)
+
+    if not record:
+        client = _get_supabase_client()
+        if client is not None:
+            try:
+                res = client.from_("match_reports").select("*").eq("slug", target_slug).maybe_single().execute()
+                if res and res.data:
+                    record = res.data
+            except Exception as e:
+                logger.warning("Supabase match report fetch error: %s", e)
+
+    if not record:
+        raise HTTPException(status_code=404, detail="Match report not found.")
+
+    filters = record.get("filters") or {}
+    all_jobs = await _fetch_jobs_from_supabase_or_mock()
+    cutoff = _parse_recency_cutoff(filters.get("posted_since"))
+
+    live_matching = _filter_jobs_in_memory(
+        jobs=all_jobs,
+        country=filters.get("country"),
+        visa_type=filters.get("visa_type"),
+        role=filters.get("role"),
+        work_mode=filters.get("work_mode"),
+        contract_type=filters.get("contract_type"),
+        posted_since_dt=cutoff,
+        min_confidence=filters.get("min_confidence"),
+        active_only=True,
+    )
+    current_count = len(live_matching)
+    original_count = int(record.get("original_match_count", current_count))
+
+    # Construct Open Graph and Human summary
+    country_filter = filters.get("country")
+    role_filter = filters.get("role")
+    visa_filter = filters.get("visa_type")
+
+    parts = [f"{current_count} sponsorship-verified jobs"]
+    if role_filter:
+        parts.append(f"for '{role_filter}'")
+    if country_filter:
+        canon_c = find_country(country_filter)
+        parts.append(f"in {canon_c['name'] if canon_c else country_filter.title()}")
+    if visa_filter:
+        canon_v = find_visa_type(visa_filter)
+        parts.append(f"({canon_v['name'] if canon_v else visa_filter})")
+
+    human_summary = " ".join(parts)
+    og_title = f"{current_count} Visa-Sponsored Jobs Matching Your Search | VisaLane"
+    og_description = f"{human_summary}. View verified hiring employers and direct application links on VisaLane."
+
+    results_sample = [_format_job_summary(j) for j in live_matching[:10]]
+    share_url = f"{DEFAULT_SITE_URL}/matches/{target_slug}"
+
+    return MatchReportDetailResponse(
+        slug=target_slug,
+        title=record.get("title"),
+        filters=filters,
+        original_match_count=original_count,
+        current_match_count=current_count,
+        human_summary=human_summary,
+        og_title=og_title,
+        og_description=og_description,
+        share_url=share_url,
+        created_at=str(record.get("created_at")),
+        results_sample=results_sample,
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6. Sitemap Endpoints: GET /sitemap-data & GET /sitemap.xml
 # ─────────────────────────────────────────────────────────────────────────────
 
 @router.get(
@@ -1057,7 +1458,6 @@ async def get_sitemap_xml():
     all_jobs = await _fetch_jobs_from_supabase_or_mock()
     active_jobs = [j for j in all_jobs if _is_job_active(j)]
 
-    # Track latest timestamp per country and pair
     country_latest: Dict[str, str] = {}
     pair_latest: Dict[tuple, str] = {}
     site_latest = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
@@ -1097,7 +1497,7 @@ async def get_sitemap_xml():
     <priority>1.0</priority>
   </url>""")
 
-    # 2. Active Country Pages (Only those with >=1 active job)
+    # 2. Active Country Pages
     for c_slug, lastmod in sorted(country_latest.items()):
         xml_lines.append(f"""  <url>
     <loc>{DEFAULT_SITE_URL}/jobs/{html.escape(c_slug)}</loc>
@@ -1106,7 +1506,7 @@ async def get_sitemap_xml():
     <priority>0.8</priority>
   </url>""")
 
-    # 3. Active Country×Visa Pages (Only those with >=1 active job)
+    # 3. Active Country×Visa Pages
     for (c_slug, v_slug), lastmod in sorted(pair_latest.items()):
         xml_lines.append(f"""  <url>
     <loc>{DEFAULT_SITE_URL}/jobs/{html.escape(c_slug)}/{html.escape(v_slug)}</loc>
@@ -1140,7 +1540,7 @@ async def get_sitemap_xml():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 5. POST /api/v1/events
+# 7. POST /api/v1/events (Extended with share_clicked & match_report_viewed)
 # ─────────────────────────────────────────────────────────────────────────────
 
 async def _record_event_background(payload: Dict[str, Any]) -> None:
@@ -1167,8 +1567,8 @@ async def _record_event_background(payload: Dict[str, Any]) -> None:
 )
 async def log_event(body: EventLogRequest, background_tasks: BackgroundTasks):
     """
-    Fire-and-forget event logger for page views, searches, job clicks, and alert creations.
-    Returns 200 immediately without blocking user requests.
+    Fire-and-forget event logger for page_view, search_performed, job_viewed,
+    share_clicked, and match_report_viewed.
     """
     event_dict = body.model_dump()
     background_tasks.add_task(_record_event_background, event_dict)
