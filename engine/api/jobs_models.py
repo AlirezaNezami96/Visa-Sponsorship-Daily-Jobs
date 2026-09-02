@@ -28,8 +28,10 @@ def generate_job_slug(title: str, company_name: str, job_id: str) -> str:
     return "-".join(parts) or f"job-{short_id}"
 
 
-def generate_company_slug(name: str) -> str:
+def generate_company_slug(name: Optional[str]) -> str:
     """Generate a clean URL slug for a company."""
+    if not name or not isinstance(name, str):
+        return "company"
     clean = re.sub(r"[^\w\s-]", "", name.lower()).strip()
     return re.sub(r"[-\s]+", "-", clean) or "company"
 
@@ -474,3 +476,34 @@ class AdminPostUpdateRequest(BaseModel):
     status: Optional[str] = None
     featured_image_url: Optional[str] = None
     translations: Optional[List[PostTranslationItem]] = None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase 5: Chrome Extension Lookup Models
+# ─────────────────────────────────────────────────────────────────────────────
+
+class ExtensionCompanySummary(BaseModel):
+    name: str
+    slug: str
+    logo_url: Optional[str] = None
+    website: Optional[str] = None
+    ats_type: Optional[str] = None
+    active_job_count: int
+    total_job_count: int
+    sponsorship_confidence_score: int
+    verified_sponsorship_rate: float
+    supported_visa_types: List[str] = Field(default_factory=list)
+    hiring_countries: List[str] = Field(default_factory=list)
+    top_roles: List[str] = Field(default_factory=list)
+    profile_url: str
+    last_verified: Optional[str] = None
+    disclaimer: str = CENTRAL_LEGAL_DISCLAIMER
+
+
+class ExtensionLookupResponse(BaseModel):
+    match: bool
+    query: str
+    normalized_query: str
+    similarity_score: Optional[float] = None
+    company: Optional[ExtensionCompanySummary] = None
+    message: Optional[str] = None

@@ -89,11 +89,14 @@ from .jobs_models import (
     TopRoleItem,
     VisaAvailabilityItem,
     VisaTypeItem,
+    ExtensionCompanySummary,
+    ExtensionLookupResponse,
     generate_company_slug,
     generate_job_slug,
     generate_post_slug,
     to_job_posting_json_ld,
 )
+from .company_matcher import match_company_fuzzy, normalize_company_name
 
 logger = logging.getLogger(__name__)
 
@@ -101,9 +104,10 @@ limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/api/v1", tags=["Jobs API"])
 
 # Cache TTLs in seconds
-JOBS_CACHE_TTL = 300       # 5 minutes
-METADATA_CACHE_TTL = 600   # 10 minutes
-SITEMAP_CACHE_TTL = 900    # 15 minutes
+JOBS_CACHE_TTL = 300                 # 5 minutes
+METADATA_CACHE_TTL = 600             # 10 minutes
+SITEMAP_CACHE_TTL = 900              # 15 minutes
+EXTENSION_LOOKUP_CACHE_TTL = 1800    # 30 minutes
 
 # Base URL for sitemaps and JSON-LD
 DEFAULT_SITE_URL = os.environ.get("SITE_URL", "https://visalane.com").rstrip("/")
@@ -275,15 +279,15 @@ def _format_job_summary(row: Dict[str, Any]) -> JobSummary:
     job_id = str(row.get("id", ""))
     title = str(row.get("title", ""))
     
-    comp_raw = row.get("companies") or {}
+    comp_raw = row.get("companies")
     if isinstance(comp_raw, list) and len(comp_raw) > 0:
         comp_raw = comp_raw[0]
     elif not isinstance(comp_raw, dict):
         comp_raw = {}
     
-    company_name = comp_raw.get("name") or row.get("company_name") or row.get("company") or "Company"
-    logo_url = comp_raw.get("logo_url") or row.get("company_logo_url")
-    website = comp_raw.get("website")
+    company_name = (comp_raw.get("name") if isinstance(comp_raw, dict) else None) or row.get("company_name") or row.get("company") or "Company"
+    logo_url = (comp_raw.get("logo_url") if isinstance(comp_raw, dict) else None) or row.get("company_logo_url")
+    website = comp_raw.get("website") if isinstance(comp_raw, dict) else None
     company_slug = generate_company_slug(company_name)
 
     slug = row.get("slug") or generate_job_slug(title, company_name, job_id)
@@ -329,15 +333,15 @@ def _format_job_detail(row: Dict[str, Any]) -> JobDetail:
     job_id = str(row.get("id", ""))
     title = str(row.get("title", ""))
 
-    comp_raw = row.get("companies") or {}
+    comp_raw = row.get("companies")
     if isinstance(comp_raw, list) and len(comp_raw) > 0:
         comp_raw = comp_raw[0]
     elif not isinstance(comp_raw, dict):
         comp_raw = {}
     
-    company_name = comp_raw.get("name") or row.get("company_name") or row.get("company") or "Company"
-    logo_url = comp_raw.get("logo_url") or row.get("company_logo_url")
-    website = comp_raw.get("website")
+    company_name = (comp_raw.get("name") if isinstance(comp_raw, dict) else None) or row.get("company_name") or row.get("company") or "Company"
+    logo_url = (comp_raw.get("logo_url") if isinstance(comp_raw, dict) else None) or row.get("company_logo_url")
+    website = comp_raw.get("website") if isinstance(comp_raw, dict) else None
     company_slug = generate_company_slug(company_name)
     slug = row.get("slug") or generate_job_slug(title, company_name, job_id)
 
@@ -1068,10 +1072,10 @@ def _aggregate_companies(jobs: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]
     companies_map: Dict[str, Dict[str, Any]] = {}
 
     for j in jobs:
-        comp = j.get("companies") or {}
-        c_name = comp.get("name") if isinstance(comp, dict) else j.get("company_name") or "Company"
+        comp = j.get("companies")
+        c_name = (comp.get("name") if isinstance(comp, dict) else None) or j.get("company_name") or j.get("company") or "Company"
         slug = generate_company_slug(c_name)
-        logo_url = comp.get("logo_url") if isinstance(comp, dict) else j.get("company_logo_url")
+        logo_url = (comp.get("logo_url") if isinstance(comp, dict) else None) or j.get("company_logo_url")
         website = comp.get("website") if isinstance(comp, dict) else None
         ats_type = comp.get("ats_type") if isinstance(comp, dict) else None
 
@@ -2029,7 +2033,125 @@ async def get_sitemap_xml():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 9. POST /api/v1/events
+# 9. Phase 5: Extension Company Lookup Endpoint
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.get(
+    "/extension/lookup",
+    response_model=ExtensionLookupResponse,
+    summary="Fast fuzzy company lookup for VisaLane Chrome Extension",
+)
+@limiter.limit("120/minute")
+async def extension_lookup_company(
+    request: Request,
+    company: str = Query(..., min_length=1, max_length=200, description="Employer name from job posting"),
+):
+    """
+    Looks up employer sponsorship track record for Chrome extension overlays.
+    Uses normalized trigram fuzzy matching with a strict confidence boundary.
+    Cached for 30 minutes per normalized name. Rate limited to 120/min per client session.
+    """
+    norm_query = normalize_company_name(company)
+    if not norm_query:
+        return ExtensionLookupResponse(
+            match=False,
+            query=company,
+            normalized_query="",
+            similarity_score=0.0,
+            company=None,
+            message="Employer name could not be normalized.",
+        )
+
+    cache_key = f"extension_lookup:{norm_query}"
+    cached = get_cache(cache_key, ttl_seconds=EXTENSION_LOOKUP_CACHE_TTL)
+    if cached is not None:
+        try:
+            return ExtensionLookupResponse(**cached)
+        except Exception:
+            pass
+
+    all_jobs = await _fetch_jobs_from_supabase_or_mock()
+    comp_map = _aggregate_companies(all_jobs)
+
+    # Build candidates list
+    candidates: List[Dict[str, Any]] = []
+    for slug, data in comp_map.items():
+        candidates.append({
+            "name": data["name"],
+            "slug": slug,
+            "data": data,
+            "aliases": [slug.replace("-", " "), data["name"]],
+        })
+
+    best_match, score, _ = match_company_fuzzy(company, candidates, threshold=0.70)
+
+    if best_match and best_match.get("data"):
+        data = best_match["data"]
+        active_count = len(data["active_jobs"])
+        total_count = len(data["historical_jobs"])
+
+        avg_conf = (
+            int(sum(data["confidence_scores"]) / len(data["confidence_scores"]))
+            if data["confidence_scores"]
+            else 75
+        )
+        verified_rate = (
+            round((data["verified_count"] / total_count) * 100, 1)
+            if total_count > 0
+            else 0.0
+        )
+
+        # Top roles
+        r_counts: Dict[str, int] = {}
+        for j in data["active_jobs"] + data["historical_jobs"]:
+            t = str(j.get("title", "")).strip()
+            if t:
+                r_counts[t] = r_counts.get(t, 0) + 1
+        top_roles = [t for t, _ in sorted(r_counts.items(), key=lambda x: x[1], reverse=True)[:5]]
+
+        company_summary = ExtensionCompanySummary(
+            name=data["name"],
+            slug=data["slug"],
+            logo_url=data["logo_url"],
+            website=data["website"],
+            ats_type=data["ats_type"],
+            active_job_count=active_count,
+            total_job_count=total_count,
+            sponsorship_confidence_score=avg_conf,
+            verified_sponsorship_rate=verified_rate,
+            supported_visa_types=sorted(list(data["visa_types"])),
+            hiring_countries=sorted(list(data["countries"])),
+            top_roles=top_roles,
+            profile_url=f"{DEFAULT_SITE_URL}/companies/{data['slug']}",
+            last_verified=data["latest_date"],
+            disclaimer=CENTRAL_LEGAL_DISCLAIMER,
+        )
+
+        response = ExtensionLookupResponse(
+            match=True,
+            query=company,
+            normalized_query=norm_query,
+            similarity_score=score,
+            company=company_summary,
+            message="Verified employer sponsorship profile found.",
+        )
+        set_cache(cache_key, response.model_dump(), ttl_seconds=EXTENSION_LOOKUP_CACHE_TTL)
+        return response
+
+    response = ExtensionLookupResponse(
+        match=False,
+        query=company,
+        normalized_query=norm_query,
+        similarity_score=score if score > 0 else None,
+        company=None,
+        message="No verified visa sponsorship track record found for this employer.",
+    )
+    set_cache(cache_key, response.model_dump(), ttl_seconds=EXTENSION_LOOKUP_CACHE_TTL)
+    return response
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 10. POST /api/v1/events
 # ─────────────────────────────────────────────────────────────────────────────
 
 async def _record_event_background(payload: Dict[str, Any]) -> None:
@@ -2055,7 +2177,11 @@ async def _record_event_background(payload: Dict[str, Any]) -> None:
     summary="First-party server-side event tracking",
 )
 async def log_event(body: EventLogRequest, background_tasks: BackgroundTasks):
-    """Fire-and-forget event logger."""
+    """
+    Fire-and-forget event logger supporting core site and Chrome extension events:
+    - Core: 'page_view', 'search_executed', 'job_clicked', 'filter_applied', 'share_generated'
+    - Extension: 'extension_badge_shown', 'extension_badge_clicked' (with source_platform: linkedin|indeed)
+    """
     event_dict = body.model_dump()
     background_tasks.add_task(_record_event_background, event_dict)
     return EventLogResponse(success=True, message="Event logged successfully.")
