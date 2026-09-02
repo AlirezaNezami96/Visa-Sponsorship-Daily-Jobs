@@ -1,7 +1,7 @@
 """
-Pydantic response and request models for VisaLane Phase 1, Phase 2, and Phase 3 API endpoints.
+Pydantic response and request models for VisaLane Phase 1, Phase 2, Phase 3, and Phase 4 API endpoints.
 Includes schema.org JobPosting compliance models, programmatic SEO summaries,
-employer aggregation directories, and shareable match reports.
+employer aggregation directories, shareable match reports, and localized content/posts engine.
 """
 from __future__ import annotations
 
@@ -32,6 +32,12 @@ def generate_company_slug(name: str) -> str:
     """Generate a clean URL slug for a company."""
     clean = re.sub(r"[^\w\s-]", "", name.lower()).strip()
     return re.sub(r"[-\s]+", "-", clean) or "company"
+
+
+def generate_post_slug(title: str) -> str:
+    """Generate a clean URL slug for a blog/content post."""
+    clean = re.sub(r"[^\w\s-]", "", title.lower()).strip()
+    return re.sub(r"[-\s]+", "-", clean) or "post"
 
 
 class FacetItem(BaseModel):
@@ -234,15 +240,19 @@ class CountryItem(BaseModel):
     slug: str
     code: str
     name: str
+    label: Optional[str] = None
     count: int
+    is_fallback: bool = False
 
 
 class VisaTypeItem(BaseModel):
     slug: str
     name: str
+    label: Optional[str] = None
     country_code: str
     country_slug: str
     count: int
+    is_fallback: bool = False
 
 
 class CountryVisaPair(BaseModel):
@@ -293,7 +303,7 @@ class CountrySummaryResponse(BaseModel):
 
 class CountryVisaSummaryResponse(BaseModel):
     country: Dict[str, str]
-    visa_type: Dict[str, str]  # { "slug": "eu-blue-card", "name": "EU Blue Card", "country_code": "DE" }
+    visa_type: Dict[str, str]
     job_count: int
     top_roles: List[TopRoleItem] = Field(default_factory=list)
     sample_employers: List[EmployerSummaryItem] = Field(default_factory=list)
@@ -388,3 +398,79 @@ class EventLogRequest(BaseModel):
 class EventLogResponse(BaseModel):
     success: bool = True
     message: str = "Event logged successfully."
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase 4: Content/Blog Engine & i18n Models
+# ─────────────────────────────────────────────────────────────────────────────
+
+class LocaleItem(BaseModel):
+    code: str
+    label: str
+    native_label: str
+    is_rtl: bool
+    default: bool
+
+
+class PostTranslationItem(BaseModel):
+    locale: str
+    title: str
+    body_markdown: str
+    meta_description: Optional[str] = None
+
+
+class PostSummary(BaseModel):
+    id: str
+    slug: str
+    category: str
+    author: str
+    published_at: str
+    locale: str
+    is_fallback: bool = False
+    title: str
+    meta_description: Optional[str] = None
+    featured_image_url: Optional[str] = None
+
+
+class PostDetail(BaseModel):
+    id: str
+    slug: str
+    category: str
+    author: str
+    published_at: str
+    updated_at: str
+    canonical_locale: str
+    locale: str
+    is_fallback: bool = False
+    title: str
+    body_markdown: str
+    meta_description: Optional[str] = None
+    featured_image_url: Optional[str] = None
+    available_locales: List[str] = Field(default_factory=list)
+
+
+class PostListResponse(BaseModel):
+    results: List[PostSummary]
+    total_count: int
+    page: int
+    page_size: int
+    locale: str
+
+
+class AdminPostCreateRequest(BaseModel):
+    slug: Optional[str] = None
+    category: str = Field(..., description="'policy-radar', 'guide', or 'data-report'")
+    author: Optional[str] = "VisaLane Policy Team"
+    canonical_locale: str = "en"
+    status: str = "published"
+    featured_image_url: Optional[str] = None
+    translations: List[PostTranslationItem] = Field(..., min_length=1)
+
+
+class AdminPostUpdateRequest(BaseModel):
+    category: Optional[str] = None
+    author: Optional[str] = None
+    canonical_locale: Optional[str] = None
+    status: Optional[str] = None
+    featured_image_url: Optional[str] = None
+    translations: Optional[List[PostTranslationItem]] = None

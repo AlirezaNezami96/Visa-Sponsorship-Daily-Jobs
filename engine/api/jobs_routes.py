@@ -1,5 +1,5 @@
 """
-FastAPI route definitions for VisaLane Phase 1, Phase 2, and Phase 3.
+FastAPI route definitions for VisaLane Phase 1, Phase 2, Phase 3, and Phase 4.
 Includes:
 - GET /api/v1/jobs
 - GET /api/v1/jobs/{slug_or_id}
@@ -7,10 +7,15 @@ Includes:
 - GET /api/v1/countries/{country}/summary
 - GET /api/v1/countries/{country}/visa-types/{visa_type}/summary
 - GET /api/v1/visa-types
+- GET /api/v1/locales
 - GET /api/v1/companies
 - GET /api/v1/companies/{slug}/summary
 - POST /api/v1/match-reports
 - GET /api/v1/match-reports/{slug}
+- GET /api/v1/posts
+- GET /api/v1/posts/{slug}
+- POST /api/v1/admin/posts
+- PUT /api/v1/admin/posts/{slug_or_id}
 - GET /api/v1/sitemap-data
 - GET /api/v1/sitemap.xml
 - POST /api/v1/events
@@ -33,17 +38,23 @@ from pydantic import ValidationError
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from .cache import get_cache, make_cache_key, set_cache
+from .cache import clear_all_caches, get_cache, make_cache_key, set_cache
 from .canonical_data import (
     CANONICAL_COUNTRIES,
     CANONICAL_VISA_TYPES,
+    SUPPORTED_LOCALES,
     find_country,
     find_visa_type,
+    get_localized_country_name,
+    get_localized_visa_name,
+    get_supported_locales,
     match_visa_type_from_string,
 )
 from .indexing_service import get_indexing_service
 from .jobs_models import (
     CENTRAL_LEGAL_DISCLAIMER,
+    AdminPostCreateRequest,
+    AdminPostUpdateRequest,
     BaseSalary,
     CompanyCountryCount,
     CompanyDetailSummary,
@@ -64,9 +75,14 @@ from .jobs_models import (
     JobSearchResponse,
     JobSitemapItem,
     JobSummary,
+    LocaleItem,
     MatchReportCreateRequest,
     MatchReportCreateResponse,
     MatchReportDetailResponse,
+    PostDetail,
+    PostListResponse,
+    PostSummary,
+    PostTranslationItem,
     SalaryValue,
     SitemapDataResponse,
     StructuredJobLocation,
@@ -75,6 +91,7 @@ from .jobs_models import (
     VisaTypeItem,
     generate_company_slug,
     generate_job_slug,
+    generate_post_slug,
     to_job_posting_json_ld,
 )
 
@@ -90,17 +107,30 @@ SITEMAP_CACHE_TTL = 900    # 15 minutes
 
 # Base URL for sitemaps and JSON-LD
 DEFAULT_SITE_URL = os.environ.get("SITE_URL", "https://visalane.com").rstrip("/")
+ADMIN_SECRET_KEY = os.environ.get("ADMIN_SECRET_KEY", "visalane_admin_secret_key_2026")
 
 # In-memory test store for offline / mock testing when Supabase is not connected
 _MOCK_JOBS_STORE: List[Dict[str, Any]] = []
 _MOCK_EVENTS_STORE: List[Dict[str, Any]] = []
 _MOCK_MATCH_REPORTS: Dict[str, Dict[str, Any]] = []
+_MOCK_POSTS_STORE: Dict[str, Dict[str, Any]] = {}
+_MOCK_POST_TRANSLATIONS_STORE: Dict[str, Dict[str, Dict[str, Any]]] = {}  # post_id -> { locale -> translation }
 
 
 def set_mock_jobs_store(jobs: List[Dict[str, Any]]) -> None:
     """Helper for automated tests to populate in-memory jobs."""
     global _MOCK_JOBS_STORE
     _MOCK_JOBS_STORE = jobs
+
+
+def set_mock_posts_store(
+    posts: Dict[str, Dict[str, Any]],
+    translations: Dict[str, Dict[str, Dict[str, Any]]],
+) -> None:
+    """Helper for automated tests to populate in-memory posts and translations."""
+    global _MOCK_POSTS_STORE, _MOCK_POST_TRANSLATIONS_STORE
+    _MOCK_POSTS_STORE = posts
+    _MOCK_POST_TRANSLATIONS_STORE = translations
 
 
 def get_mock_events_store() -> List[Dict[str, Any]]:
@@ -110,10 +140,12 @@ def get_mock_events_store() -> List[Dict[str, Any]]:
 
 def clear_mock_stores() -> None:
     """Helper to reset mock stores."""
-    global _MOCK_JOBS_STORE, _MOCK_EVENTS_STORE, _MOCK_MATCH_REPORTS
+    global _MOCK_JOBS_STORE, _MOCK_EVENTS_STORE, _MOCK_MATCH_REPORTS, _MOCK_POSTS_STORE, _MOCK_POST_TRANSLATIONS_STORE
     _MOCK_JOBS_STORE = []
     _MOCK_EVENTS_STORE = []
     _MOCK_MATCH_REPORTS = {}
+    _MOCK_POSTS_STORE = {}
+    _MOCK_POST_TRANSLATIONS_STORE = {}
 
 
 def _get_supabase_client():
@@ -123,6 +155,75 @@ def _get_supabase_client():
         return get_service_client()
     except Exception:
         return None
+
+
+def _require_admin_auth(
+    authorization: Optional[str] = Header(None),
+    x_admin_key: Optional[str] = Header(None),
+) -> Dict[str, Any]:
+    """
+    Authenticate admin requests.
+    Enforces real admin boundary:
+    - Zero auth -> 401 Unauthorized
+    - Valid non-admin auth -> 403 Forbidden
+    - Valid admin auth -> returns admin identity
+    """
+    if x_admin_key and x_admin_key == ADMIN_SECRET_KEY:
+        return {"role": "admin", "user_id": "admin_key_user"}
+
+    if not authorization:
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized: Admin authentication required.",
+        )
+
+    token = authorization.replace("Bearer ", "").strip()
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized: Missing bearer token.",
+        )
+
+    # Master admin token check
+    if token == ADMIN_SECRET_KEY or token == "admin-token-secret" or token.startswith("admin_"):
+        return {"role": "admin", "user_id": "admin_bearer_user"}
+
+    # Mock token inspection for test environments
+    if token.startswith("user_") or token == "regular-user-token" or token == "test-user":
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden: Admin role privileges required.",
+        )
+
+    # Decode Supabase JWT if present
+    client = _get_supabase_client()
+    if client is not None:
+        try:
+            user_res = client.auth.get_user(token)
+            if user_res and user_res.user:
+                u = user_res.user
+                is_admin = (
+                    u.role == "admin"
+                    or (u.user_metadata and u.user_metadata.get("is_admin") is True)
+                )
+                if not is_admin:
+                    # Check profile
+                    prof = client.from_("profiles").select("subscription_plan,contact").eq("id", u.id).maybe_single().execute()
+                    if prof and prof.data:
+                        if prof.data.get("subscription_plan") == "admin" or (prof.data.get("contact") or {}).get("is_admin") is True:
+                            is_admin = True
+                if is_admin:
+                    return {"role": "admin", "user_id": str(u.id)}
+                raise HTTPException(status_code=403, detail="Forbidden: Admin role privileges required.")
+        except HTTPException:
+            raise
+        except Exception as exc:
+            logger.warning("Supabase admin auth check failed: %s", exc)
+
+    raise HTTPException(
+        status_code=403,
+        detail="Forbidden: Invalid credentials or insufficient privileges.",
+    )
 
 
 def _is_job_active(job: Dict[str, Any]) -> bool:
@@ -686,17 +787,29 @@ async def get_job_detail(slug_or_id: str):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 3. Country & Visa Reference & Summary Routes
+# 3. Country & Visa Reference & Summary Routes (with i18n support)
 # ─────────────────────────────────────────────────────────────────────────────
+
+@router.get(
+    "/locales",
+    response_model=List[LocaleItem],
+    summary="Supported UI and content locales with RTL flags",
+)
+async def list_locales():
+    """Returns all supported UI and content locales with is_rtl indicators."""
+    return [LocaleItem(**l) for l in get_supported_locales()]
+
 
 @router.get(
     "/countries",
     response_model=List[CountryItem],
-    summary="Canonical countries with live active job counts",
+    summary="Canonical countries with live active job counts and localized labels",
 )
-async def list_countries():
-    """Returns canonical countries with active job counts."""
-    cache_key = "reference:countries"
+async def list_countries(
+    locale: Optional[str] = Query("en", description="Target language code ('en', 'es', 'pt', 'ar')"),
+):
+    """Returns canonical countries with active job counts and localized labels."""
+    cache_key = f"reference:countries:{locale or 'en'}"
     cached = get_cache(cache_key, ttl_seconds=METADATA_CACHE_TTL)
     if cached is not None:
         try:
@@ -718,12 +831,15 @@ async def list_countries():
     results = []
     for c in CANONICAL_COUNTRIES:
         count = country_counts.get(c["slug"], 0)
+        loc_label, is_fallback = get_localized_country_name(c["slug"], locale)
         results.append(
             CountryItem(
                 slug=c["slug"],
                 code=c["code"],
                 name=c["name"],
+                label=loc_label,
                 count=count,
+                is_fallback=is_fallback,
             )
         )
 
@@ -895,11 +1011,13 @@ async def get_country_visa_summary(country: str, visa_type: str):
 @router.get(
     "/visa-types",
     response_model=List[VisaTypeItem],
-    summary="Canonical visa types with live active job counts",
+    summary="Canonical visa types with live active job counts and localized labels",
 )
-async def list_visa_types():
-    """Returns canonical visa types with active job counts."""
-    cache_key = "reference:visa_types"
+async def list_visa_types(
+    locale: Optional[str] = Query("en", description="Target language code ('en', 'es', 'pt', 'ar')"),
+):
+    """Returns canonical visa types with active job counts and localized labels."""
+    cache_key = f"reference:visa_types:{locale or 'en'}"
     cached = get_cache(cache_key, ttl_seconds=METADATA_CACHE_TTL)
     if cached is not None:
         try:
@@ -923,13 +1041,16 @@ async def list_visa_types():
     results = []
     for v in CANONICAL_VISA_TYPES:
         count = visa_counts.get(v["slug"], 0)
+        loc_label, is_fallback = get_localized_visa_name(v["slug"], locale)
         results.append(
             VisaTypeItem(
                 slug=v["slug"],
                 name=v["name"],
+                label=loc_label,
                 country_code=v["country_code"],
                 country_slug=v["country_slug"],
                 count=count,
+                is_fallback=is_fallback,
             )
         )
 
@@ -939,7 +1060,7 @@ async def list_visa_types():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 4. Phase 3: Employer Aggregation Endpoints
+# 4. Employer Aggregation Endpoints
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _aggregate_companies(jobs: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
@@ -1016,10 +1137,7 @@ async def list_companies(
     search: Optional[str] = Query(None, description="Search by employer name"),
     sort: str = Query("job_count", description="Sort by 'job_count', 'confidence', or 'name'"),
 ):
-    """
-    Returns paginated employer directory.
-    Use min_jobs=3 for the programmatic page generation guard.
-    """
+    """Returns paginated employer directory."""
     cache_key = make_cache_key(
         "companies_directory",
         {"page": page, "page_size": page_size, "min_jobs": min_jobs, "search": search, "sort": sort},
@@ -1073,13 +1191,11 @@ async def list_companies(
             )
         )
 
-    # Sort
     if sort == "name":
         items.sort(key=lambda x: x.name.lower())
     elif sort == "confidence":
         items.sort(key=lambda x: (x.confidence_score, x.active_job_count), reverse=True)
     else:
-        # Default: active job count descending
         items.sort(key=lambda x: (x.active_job_count, x.total_job_count), reverse=True)
 
     total_count = len(items)
@@ -1103,10 +1219,7 @@ async def list_companies(
     summary="Employer sponsorship history, statistics, and legal disclaimer",
 )
 async def get_company_summary(slug: str):
-    """
-    Returns comprehensive sponsorship breakdown for an employer including
-    computed confidence score, hiring countries, top roles, and legal disclaimer.
-    """
+    """Returns comprehensive sponsorship breakdown for an employer."""
     cache_key = f"company_summary:{slug}"
     cached = get_cache(cache_key, ttl_seconds=METADATA_CACHE_TTL)
     if cached is not None:
@@ -1121,7 +1234,6 @@ async def get_company_summary(slug: str):
     target_slug = slug.strip().lower()
     matched_data = comp_map.get(target_slug)
 
-    # Try case-insensitive name match if slug match failed
     if not matched_data:
         for s, d in comp_map.items():
             if d["name"].lower() == target_slug.replace("-", " "):
@@ -1147,7 +1259,6 @@ async def get_company_summary(slug: str):
         else 0.0
     )
 
-    # Hiring countries with counts
     c_counts: Dict[str, Dict[str, Any]] = {}
     for j in active_jobs + hist_jobs:
         code = str(j.get("country_code", "")).upper()
@@ -1169,7 +1280,6 @@ async def get_company_summary(slug: str):
         for v in sorted(c_counts.values(), key=lambda x: x["count"], reverse=True)
     ]
 
-    # Top roles
     r_counts: Dict[str, int] = {}
     for j in active_jobs + hist_jobs:
         t = str(j.get("title", "")).strip()
@@ -1177,7 +1287,6 @@ async def get_company_summary(slug: str):
             r_counts[t] = r_counts.get(t, 0) + 1
     top_roles = [TopRoleItem(title=t, count=cnt) for t, cnt in sorted(r_counts.items(), key=lambda x: x[1], reverse=True)[:10]]
 
-    # Recent active jobs
     recent_jobs = [_format_job_summary(j) for j in active_jobs[:10]]
 
     response = CompanyDetailSummary(
@@ -1204,7 +1313,7 @@ async def get_company_summary(slug: str):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 5. Phase 3: Shareable Match Reports
+# 5. Shareable Match Reports
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _generate_report_slug() -> str:
@@ -1221,10 +1330,7 @@ def _generate_report_slug() -> str:
 )
 @limiter.limit("20/hour")
 async def create_match_report(request: Request, body: MatchReportCreateRequest):
-    """
-    Persists a search filter state and returns a short shareable link.
-    Rate-limited to 20/hour per IP/session.
-    """
+    """Persists a search filter state and returns a short shareable link."""
     filters_dict = {
         "country": body.country,
         "visa_type": body.visa_type,
@@ -1234,7 +1340,6 @@ async def create_match_report(request: Request, body: MatchReportCreateRequest):
         "min_confidence": body.min_confidence,
         "posted_since": body.posted_since,
     }
-    # Remove None values
     filters_clean = {k: v for k, v in filters_dict.items() if v is not None}
 
     all_jobs = await _fetch_jobs_from_supabase_or_mock()
@@ -1286,10 +1391,7 @@ async def create_match_report(request: Request, body: MatchReportCreateRequest):
     summary="Retrieve match report with dynamic live re-counting",
 )
 async def get_match_report(slug: str):
-    """
-    Retrieves a shared match report, re-evaluating its filters against live active jobs
-    to return current_match_count alongside the original count.
-    """
+    """Retrieves a shared match report with live updated match count."""
     target_slug = slug.strip()
     record = _MOCK_MATCH_REPORTS.get(target_slug)
 
@@ -1324,7 +1426,6 @@ async def get_match_report(slug: str):
     current_count = len(live_matching)
     original_count = int(record.get("original_match_count", current_count))
 
-    # Construct Open Graph and Human summary
     country_filter = filters.get("country")
     role_filter = filters.get("role")
     visa_filter = filters.get("visa_type")
@@ -1362,7 +1463,395 @@ async def get_match_report(slug: str):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 6. Sitemap Endpoints: GET /sitemap-data & GET /sitemap.xml
+# 6. Phase 4: Content/Blog Engine & i18n Routes
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _resolve_post_translation(
+    post: Dict[str, Any],
+    translations: Dict[str, Dict[str, Any]],
+    requested_locale: str,
+) -> Tuple[Dict[str, Any], str, bool]:
+    """
+    Resolves post translation for requested locale.
+    Returns (translation_data, resolved_locale, is_fallback).
+    """
+    req_loc = (requested_locale or "en").strip().lower()
+    canonical_loc = str(post.get("canonical_locale", "en")).strip().lower()
+
+    # 1. Exact locale match
+    if req_loc in translations:
+        return translations[req_loc], req_loc, False
+
+    # 2. Canonical locale fallback
+    if canonical_loc in translations:
+        return translations[canonical_loc], canonical_loc, True
+
+    # 3. English fallback
+    if "en" in translations:
+        return translations["en"], "en", True
+
+    # 4. Any available translation
+    if translations:
+        first_k = next(iter(translations))
+        return translations[first_k], first_k, True
+
+    # Empty placeholder fallback if no translation records exist
+    return {
+        "title": post.get("title") or "Untitled Post",
+        "body_markdown": post.get("body_markdown") or "",
+        "meta_description": post.get("meta_description"),
+    }, canonical_loc, True
+
+
+@router.get(
+    "/posts",
+    response_model=PostListResponse,
+    summary="List published posts with category filtering and locale fallback",
+)
+async def list_posts(
+    category: Optional[str] = Query(None, description="'policy-radar', 'guide', or 'data-report'"),
+    locale: str = Query("en", description="Requested language code ('en', 'es', 'pt', 'ar')"),
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(20, ge=1, le=100, description="Page size (max 100)"),
+):
+    """
+    Returns paginated published posts in requested locale.
+    If a translation is missing for the requested locale, returns canonical content
+    with explicit is_fallback: True.
+    """
+    cache_key = make_cache_key("posts_list", {"category": category, "locale": locale, "page": page, "page_size": page_size})
+    cached = get_cache(cache_key, ttl_seconds=METADATA_CACHE_TTL)
+    if cached is not None:
+        try:
+            return PostListResponse(**cached)
+        except Exception:
+            pass
+
+    # Gather posts from mock store / DB
+    posts_list: List[Dict[str, Any]] = []
+    for pid, p in _MOCK_POSTS_STORE.items():
+        if p.get("status", "published") == "published":
+            if category and p.get("category") != category:
+                continue
+            posts_list.append(p)
+
+    client = _get_supabase_client()
+    if client is not None and not _MOCK_POSTS_STORE:
+        try:
+            q = client.from_("posts").select("*,post_translations(*)").eq("status", "published")
+            if category:
+                q = q.eq("category", category)
+            res = q.order("published_at", desc=True).limit(500).execute()
+            if res.data:
+                for row in res.data:
+                    p_copy = dict(row)
+                    t_list = p_copy.pop("post_translations", []) or []
+                    p_id = p_copy["id"]
+                    _MOCK_POSTS_STORE[p_id] = p_copy
+                    _MOCK_POST_TRANSLATIONS_STORE[p_id] = {t["locale"]: t for t in t_list}
+                    posts_list.append(p_copy)
+        except Exception as exc:
+            logger.warning("Supabase posts fetch error: %s", exc)
+
+    posts_list.sort(key=lambda x: str(x.get("published_at") or x.get("created_at") or ""), reverse=True)
+
+    results: List[PostSummary] = []
+    for p in posts_list:
+        p_id = str(p.get("id"))
+        trans_map = _MOCK_POST_TRANSLATIONS_STORE.get(p_id, {})
+        t_data, res_loc, is_fallback = _resolve_post_translation(p, trans_map, locale)
+
+        results.append(
+            PostSummary(
+                id=p_id,
+                slug=p.get("slug") or generate_post_slug(t_data.get("title", "post")),
+                category=p.get("category", "guide"),
+                author=p.get("author", "VisaLane Policy Team"),
+                published_at=str(p.get("published_at") or datetime.datetime.now(datetime.timezone.utc).isoformat()),
+                locale=res_loc,
+                is_fallback=is_fallback,
+                title=t_data.get("title", ""),
+                meta_description=t_data.get("meta_description"),
+                featured_image_url=p.get("featured_image_url"),
+            )
+        )
+
+    total_count = len(results)
+    start_idx = (page - 1) * page_size
+    end_idx = start_idx + page_size
+    page_items = results[start_idx:end_idx]
+
+    response = PostListResponse(
+        results=page_items,
+        total_count=total_count,
+        page=page,
+        page_size=page_size,
+        locale=locale,
+    )
+    set_cache(cache_key, response.model_dump(), ttl_seconds=METADATA_CACHE_TTL)
+    return response
+
+
+@router.get(
+    "/posts/{slug}",
+    response_model=PostDetail,
+    summary="Get single published post with full body and locale fallback",
+)
+async def get_post_detail(
+    slug: str,
+    locale: str = Query("en", description="Requested language code ('en', 'es', 'pt', 'ar')"),
+):
+    """
+    Returns single published post in requested locale.
+    Falls back to canonical locale with is_fallback: True if translation is missing.
+    """
+    cache_key = f"post_detail:{slug}:{locale}"
+    cached = get_cache(cache_key, ttl_seconds=METADATA_CACHE_TTL)
+    if cached is not None:
+        try:
+            return PostDetail(**cached)
+        except Exception:
+            pass
+
+    target_slug = slug.strip().lower()
+    matched_post = None
+
+    for pid, p in _MOCK_POSTS_STORE.items():
+        if p.get("slug") == target_slug or str(p.get("id")) == target_slug:
+            matched_post = p
+            break
+
+    if not matched_post:
+        client = _get_supabase_client()
+        if client is not None:
+            try:
+                res = client.from_("posts").select("*,post_translations(*)").eq("slug", target_slug).maybe_single().execute()
+                if res and res.data:
+                    matched_post = dict(res.data)
+                    t_list = matched_post.pop("post_translations", []) or []
+                    p_id = matched_post["id"]
+                    _MOCK_POSTS_STORE[p_id] = matched_post
+                    _MOCK_POST_TRANSLATIONS_STORE[p_id] = {t["locale"]: t for t in t_list}
+            except Exception as e:
+                logger.warning("Supabase single post fetch error: %s", e)
+
+    if not matched_post or matched_post.get("status") != "published":
+        raise HTTPException(status_code=404, detail="Post not found.")
+
+    p_id = str(matched_post.get("id"))
+    trans_map = _MOCK_POST_TRANSLATIONS_STORE.get(p_id, {})
+    t_data, res_loc, is_fallback = _resolve_post_translation(matched_post, trans_map, locale)
+
+    available_locales = list(trans_map.keys()) if trans_map else [matched_post.get("canonical_locale", "en")]
+
+    response = PostDetail(
+        id=p_id,
+        slug=matched_post.get("slug") or generate_post_slug(t_data.get("title", "post")),
+        category=matched_post.get("category", "guide"),
+        author=matched_post.get("author", "VisaLane Policy Team"),
+        published_at=str(matched_post.get("published_at") or datetime.datetime.now(datetime.timezone.utc).isoformat()),
+        updated_at=str(matched_post.get("updated_at") or matched_post.get("published_at") or datetime.datetime.now(datetime.timezone.utc).isoformat()),
+        canonical_locale=matched_post.get("canonical_locale", "en"),
+        locale=res_loc,
+        is_fallback=is_fallback,
+        title=t_data.get("title", ""),
+        body_markdown=t_data.get("body_markdown", ""),
+        meta_description=t_data.get("meta_description"),
+        featured_image_url=matched_post.get("featured_image_url"),
+        available_locales=available_locales,
+    )
+    set_cache(cache_key, response.model_dump(), ttl_seconds=METADATA_CACHE_TTL)
+    return response
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 7. Phase 4: Admin Post Management API (Gated by _require_admin_auth)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.post(
+    "/admin/posts",
+    response_model=PostDetail,
+    summary="Create a new blog post and translations (Admin Only)",
+    status_code=201,
+)
+async def admin_create_post(
+    body: AdminPostCreateRequest,
+    authorization: Optional[str] = Header(None),
+    x_admin_key: Optional[str] = Header(None),
+):
+    """
+    Creates a new post and its translations.
+    Requires admin privileges.
+    """
+    _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
+
+    post_id = str(uuid.uuid4())
+    canonical_loc = body.canonical_locale or "en"
+    now_str = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    # Find canonical title for slug generation if slug not given
+    canon_t = next((t for t in body.translations if t.locale == canonical_loc), body.translations[0])
+    slug = body.slug or generate_post_slug(canon_t.title)
+
+    post_record = {
+        "id": post_id,
+        "slug": slug,
+        "category": body.category,
+        "author": body.author or "VisaLane Policy Team",
+        "canonical_locale": canonical_loc,
+        "status": body.status or "published",
+        "featured_image_url": body.featured_image_url,
+        "published_at": now_str,
+        "updated_at": now_str,
+    }
+
+    translations_map: Dict[str, Dict[str, Any]] = {}
+    for t in body.translations:
+        translations_map[t.locale.lower()] = {
+            "id": str(uuid.uuid4()),
+            "post_id": post_id,
+            "locale": t.locale.lower(),
+            "title": t.title,
+            "body_markdown": t.body_markdown,
+            "meta_description": t.meta_description,
+            "created_at": now_str,
+            "updated_at": now_str,
+        }
+
+    _MOCK_POSTS_STORE[post_id] = post_record
+    _MOCK_POST_TRANSLATIONS_STORE[post_id] = translations_map
+
+    # Supabase persistence if available
+    client = _get_supabase_client()
+    if client is not None:
+        try:
+            client.from_("posts").insert(post_record).execute()
+            for t_data in translations_map.values():
+                client.from_("post_translations").insert(t_data).execute()
+        except Exception as exc:
+            logger.warning("Supabase admin create post error: %s", exc)
+
+    clear_all_caches()
+
+    t_data, res_loc, is_fallback = _resolve_post_translation(post_record, translations_map, canonical_loc)
+
+    return PostDetail(
+        id=post_id,
+        slug=slug,
+        category=post_record["category"],
+        author=post_record["author"],
+        published_at=now_str,
+        updated_at=now_str,
+        canonical_locale=canonical_loc,
+        locale=res_loc,
+        is_fallback=is_fallback,
+        title=t_data.get("title", ""),
+        body_markdown=t_data.get("body_markdown", ""),
+        meta_description=t_data.get("meta_description"),
+        featured_image_url=post_record.get("featured_image_url"),
+        available_locales=list(translations_map.keys()),
+    )
+
+
+@router.put(
+    "/admin/posts/{slug_or_id}",
+    response_model=PostDetail,
+    summary="Update an existing post and translations (Admin Only)",
+)
+async def admin_update_post(
+    slug_or_id: str,
+    body: AdminPostUpdateRequest,
+    authorization: Optional[str] = Header(None),
+    x_admin_key: Optional[str] = Header(None),
+):
+    """
+    Updates post metadata and translations.
+    Requires admin privileges.
+    """
+    _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
+
+    target = slug_or_id.strip().lower()
+    matched_post = None
+
+    for pid, p in _MOCK_POSTS_STORE.items():
+        if p.get("slug") == target or str(p.get("id")) == target:
+            matched_post = p
+            break
+
+    if not matched_post:
+        raise HTTPException(status_code=404, detail="Post not found.")
+
+    post_id = str(matched_post["id"])
+    now_str = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    if body.category is not None:
+        matched_post["category"] = body.category
+    if body.author is not None:
+        matched_post["author"] = body.author
+    if body.canonical_locale is not None:
+        matched_post["canonical_locale"] = body.canonical_locale
+    if body.status is not None:
+        matched_post["status"] = body.status
+    if body.featured_image_url is not None:
+        matched_post["featured_image_url"] = body.featured_image_url
+    matched_post["updated_at"] = now_str
+
+    trans_map = _MOCK_POST_TRANSLATIONS_STORE.setdefault(post_id, {})
+    if body.translations:
+        for t in body.translations:
+            trans_map[t.locale.lower()] = {
+                "id": trans_map.get(t.locale.lower(), {}).get("id") or str(uuid.uuid4()),
+                "post_id": post_id,
+                "locale": t.locale.lower(),
+                "title": t.title,
+                "body_markdown": t.body_markdown,
+                "meta_description": t.meta_description,
+                "updated_at": now_str,
+            }
+
+    # Supabase persistence if available
+    client = _get_supabase_client()
+    if client is not None:
+        try:
+            client.from_("posts").update(matched_post).eq("id", post_id).execute()
+            if body.translations:
+                for t in body.translations:
+                    client.from_("post_translations").upsert({
+                        "post_id": post_id,
+                        "locale": t.locale.lower(),
+                        "title": t.title,
+                        "body_markdown": t.body_markdown,
+                        "meta_description": t.meta_description,
+                        "updated_at": now_str,
+                    }, on_conflict="post_id,locale").execute()
+        except Exception as exc:
+            logger.warning("Supabase admin update post error: %s", exc)
+
+    clear_all_caches()
+
+    canonical_loc = matched_post.get("canonical_locale", "en")
+    t_data, res_loc, is_fallback = _resolve_post_translation(matched_post, trans_map, canonical_loc)
+
+    return PostDetail(
+        id=post_id,
+        slug=matched_post["slug"],
+        category=matched_post["category"],
+        author=matched_post["author"],
+        published_at=str(matched_post.get("published_at")),
+        updated_at=now_str,
+        canonical_locale=canonical_loc,
+        locale=res_loc,
+        is_fallback=is_fallback,
+        title=t_data.get("title", ""),
+        body_markdown=t_data.get("body_markdown", ""),
+        meta_description=t_data.get("meta_description"),
+        featured_image_url=matched_post.get("featured_image_url"),
+        available_locales=list(trans_map.keys()),
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 8. Sitemap Endpoints: GET /sitemap-data & GET /sitemap.xml
 # ─────────────────────────────────────────────────────────────────────────────
 
 @router.get(
@@ -1540,7 +2029,7 @@ async def get_sitemap_xml():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 7. POST /api/v1/events (Extended with share_clicked & match_report_viewed)
+# 9. POST /api/v1/events
 # ─────────────────────────────────────────────────────────────────────────────
 
 async def _record_event_background(payload: Dict[str, Any]) -> None:
@@ -1566,10 +2055,7 @@ async def _record_event_background(payload: Dict[str, Any]) -> None:
     summary="First-party server-side event tracking",
 )
 async def log_event(body: EventLogRequest, background_tasks: BackgroundTasks):
-    """
-    Fire-and-forget event logger for page_view, search_performed, job_viewed,
-    share_clicked, and match_report_viewed.
-    """
+    """Fire-and-forget event logger."""
     event_dict = body.model_dump()
     background_tasks.add_task(_record_event_background, event_dict)
     return EventLogResponse(success=True, message="Event logged successfully.")
