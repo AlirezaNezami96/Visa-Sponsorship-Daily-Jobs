@@ -1,24 +1,28 @@
 """
-FastAPI route definitions for VisaLane Phase 1 Open Access & SSR Foundation.
+FastAPI route definitions for VisaLane Phase 1 & Phase 2.
 Includes:
 - GET /api/v1/jobs
 - GET /api/v1/jobs/{slug_or_id}
 - GET /api/v1/countries
+- GET /api/v1/countries/{country}/summary
+- GET /api/v1/countries/{country}/visa-types/{visa_type}/summary
 - GET /api/v1/visa-types
 - GET /api/v1/sitemap-data
+- GET /api/v1/sitemap.xml
 - POST /api/v1/events
 """
 from __future__ import annotations
 
 import asyncio
 import datetime
+import html
 import logging
 import os
 import re
 import uuid
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, Request
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, Request, Response
 from pydantic import ValidationError
 
 from .cache import get_cache, make_cache_key, set_cache
@@ -29,12 +33,16 @@ from .canonical_data import (
     find_visa_type,
     match_visa_type_from_string,
 )
+from .indexing_service import get_indexing_service
 from .jobs_models import (
     BaseSalary,
     CompanySummary,
     ConfidenceFactor,
     CountryItem,
+    CountrySummaryResponse,
     CountryVisaPair,
+    CountryVisaSummaryResponse,
+    EmployerSummaryItem,
     EventLogRequest,
     EventLogResponse,
     FacetItem,
@@ -46,8 +54,11 @@ from .jobs_models import (
     SalaryValue,
     SitemapDataResponse,
     StructuredJobLocation,
+    TopRoleItem,
+    VisaAvailabilityItem,
     VisaTypeItem,
     generate_job_slug,
+    to_job_posting_json_ld,
 )
 
 logger = logging.getLogger(__name__)
@@ -58,6 +69,9 @@ router = APIRouter(prefix="/api/v1", tags=["Jobs API"])
 JOBS_CACHE_TTL = 300       # 5 minutes
 METADATA_CACHE_TTL = 600   # 10 minutes
 SITEMAP_CACHE_TTL = 900    # 15 minutes
+
+# Base URL for sitemaps and JSON-LD
+DEFAULT_SITE_URL = os.environ.get("SITE_URL", "https://visalane.com").rstrip("/")
 
 # In-memory test store for offline / mock testing when Supabase is not connected
 _MOCK_JOBS_STORE: List[Dict[str, Any]] = []
@@ -89,6 +103,28 @@ def _get_supabase_client():
         return get_service_client()
     except Exception:
         return None
+
+
+def _is_job_active(job: Dict[str, Any]) -> bool:
+    """Check if a job record is actively open."""
+    status = str(job.get("status", "active")).lower()
+    if status in ("expired", "removed", "closed", "inactive"):
+        return False
+    # Check expires_at if set
+    expires_at = job.get("expires_at")
+    if expires_at:
+        try:
+            if isinstance(expires_at, str):
+                dt = datetime.datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+            else:
+                dt = expires_at
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=datetime.timezone.utc)
+            if dt < datetime.datetime.now(datetime.timezone.utc):
+                return False
+        except Exception:
+            pass
+    return True
 
 
 def _parse_recency_cutoff(recency: Optional[str]) -> Optional[datetime.datetime]:
@@ -141,6 +177,7 @@ def _format_job_summary(row: Dict[str, Any]) -> JobSummary:
         visa_types = []
 
     posted_at = row.get("posted_at") or row.get("date_posted") or row.get("created_at")
+    is_active = _is_job_active(row)
 
     return JobSummary(
         id=job_id,
@@ -161,6 +198,7 @@ def _format_job_summary(row: Dict[str, Any]) -> JobSummary:
         visa_sponsorship_confidence=row.get("visa_sponsorship_confidence"),
         visa_types=visa_types,
         posted_at=str(posted_at) if posted_at else None,
+        job_status="Open" if is_active else "Closed",
         apply_url=str(row.get("apply_url") or row.get("source_url") or "#"),
         created_at=str(row.get("created_at")) if row.get("created_at") else None,
     )
@@ -256,27 +294,27 @@ def _format_job_detail(row: Dict[str, Any]) -> JobDetail:
     if verified and conf_score < 90:
         conf_score = 95
 
-    # Confidence factors breakdown
+    # Confidence factors breakdown (Phase 2 refined wording)
     factors: List[ConfidenceFactor] = []
     if verified:
         factors.append(
             ConfidenceFactor(
                 label="Direct Sponsorship Verified",
-                detail="Sponsorship explicitly verified in job announcement or official immigration sponsor register.",
+                detail="Sponsorship explicitly confirmed in the official employer announcement or cross-referenced with official national immigration sponsor registries.",
             )
         )
-    elif conf_score >= 80:
+    elif conf_score >= 75:
         factors.append(
             ConfidenceFactor(
-                label="High Confidence Profile",
-                detail="Employer has high historical sponsorship activity and matches verified hiring patterns.",
+                label="Established Sponsor Track Record",
+                detail="Employer actively sponsors international hires for this role tier based on multi-year hiring and petition history.",
             )
         )
     elif conf_score >= 50:
         factors.append(
             ConfidenceFactor(
-                label="Likely Eligible",
-                detail="Role and employer meet eligibility criteria for international applicant sponsorship.",
+                label="Eligible International Category",
+                detail="Role qualifications, minimum salary, and employer profile align with national skilled worker visa criteria.",
             )
         )
 
@@ -293,9 +331,13 @@ def _format_job_detail(row: Dict[str, Any]) -> JobDetail:
         factors.append(
             ConfidenceFactor(
                 label="Direct ATS Source",
-                detail=f"Parsed directly from official {ats_type.capitalize()} career portal.",
+                detail=f"Verified directly from the employer's official career portal ({ats_type.capitalize()}).",
             )
         )
+
+    is_active = _is_job_active(row)
+    job_status = "Open" if is_active else "Closed"
+    event_status = "https://schema.org/EventScheduled" if is_active else "Closed"
 
     return JobDetail(
         id=job_id,
@@ -314,6 +356,8 @@ def _format_job_detail(row: Dict[str, Any]) -> JobDetail:
         visa_types_supported=visa_types,
         confidence_score=conf_score,
         confidence_factors=factors,
+        job_status=job_status,
+        event_status=event_status,
         apply_url=str(row.get("apply_url") or row.get("source_url") or "#"),
         source_url=row.get("source_url"),
         created_at=str(row.get("created_at")) if row.get("created_at") else None,
@@ -330,6 +374,7 @@ def _filter_jobs_in_memory(
     posted_since_dt: Optional[datetime.datetime] = None,
     min_confidence: Optional[int] = None,
     sort: str = "newest",
+    active_only: bool = True,
 ) -> List[Dict[str, Any]]:
     """Filter in-memory job records based on query parameters."""
     filtered = []
@@ -338,7 +383,7 @@ def _filter_jobs_in_memory(
 
     for job in jobs:
         # Status active check
-        if job.get("status") and job.get("status") != "active":
+        if active_only and not _is_job_active(job):
             continue
 
         # Country filter
@@ -484,14 +529,13 @@ def _calculate_facets(jobs: List[Dict[str, Any]]) -> JobFacets:
 
 
 async def _fetch_jobs_from_supabase_or_mock() -> List[Dict[str, Any]]:
-    """Retrieve all active jobs from Supabase or fallback mock store."""
+    """Retrieve all jobs from Supabase or fallback mock store."""
     client = _get_supabase_client()
     if client is not None and not _MOCK_JOBS_STORE:
         try:
-            # Query active jobs from Supabase with company relation
             res = client.from_("jobs").select(
                 "*,companies(name,logo_url,website,ats_type)"
-            ).eq("status", "active").order("posted_at", desc=True).limit(1000).execute()
+            ).order("posted_at", desc=True).limit(2000).execute()
             if res.data:
                 return res.data
         except Exception as exc:
@@ -559,6 +603,7 @@ async def list_jobs(
         posted_since_dt=cutoff,
         min_confidence=min_confidence,
         sort=sort,
+        active_only=True,
     )
 
     total_count = len(filtered)
@@ -625,12 +670,10 @@ async def get_job_detail(slug_or_id: str):
                 break
 
     if not matched:
-        # Check direct Supabase query if not found in cache/mock
         client = _get_supabase_client()
         if client is not None:
             try:
                 query = client.from_("jobs").select("*,companies(name,logo_url,website,ats_type)")
-                # If target is a valid UUID, filter by id
                 try:
                     uuid.UUID(target)
                     res = query.eq("id", target).maybe_single().execute()
@@ -650,7 +693,7 @@ async def get_job_detail(slug_or_id: str):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 3. Reference Endpoints: GET /api/v1/countries & GET /api/v1/visa-types
+# 3. Canonical Reference Endpoints & Summaries (Phase 2)
 # ─────────────────────────────────────────────────────────────────────────────
 
 @router.get(
@@ -659,10 +702,7 @@ async def get_job_detail(slug_or_id: str):
     summary="Canonical countries with live active job counts",
 )
 async def list_countries():
-    """
-    Returns canonical countries with active job counts.
-    Used by frontend SSR to determine which country landing pages to generate.
-    """
+    """Returns canonical countries with active job counts."""
     cache_key = "reference:countries"
     cached = get_cache(cache_key, ttl_seconds=METADATA_CACHE_TTL)
     if cached is not None:
@@ -672,7 +712,7 @@ async def list_countries():
             pass
 
     all_jobs = await _fetch_jobs_from_supabase_or_mock()
-    active_jobs = [j for j in all_jobs if not j.get("status") or j.get("status") == "active"]
+    active_jobs = [j for j in all_jobs if _is_job_active(j)]
 
     country_counts: Dict[str, int] = {}
     for j in active_jobs:
@@ -700,15 +740,187 @@ async def list_countries():
 
 
 @router.get(
+    "/countries/{country}/summary",
+    response_model=CountrySummaryResponse,
+    summary="Programmatic summary and SEO copy for country landing page",
+)
+async def get_country_summary(country: str):
+    """
+    Returns live count, top hiring roles, sample employers, available visa types,
+    and a generated unique meta description for the country landing page.
+    """
+    canon_c = find_country(country)
+    if not canon_c:
+        raise HTTPException(status_code=404, detail=f"Country '{country}' not recognized.")
+
+    cache_key = f"summary:country:{canon_c['slug']}"
+    cached = get_cache(cache_key, ttl_seconds=METADATA_CACHE_TTL)
+    if cached is not None:
+        try:
+            return CountrySummaryResponse(**cached)
+        except Exception:
+            pass
+
+    all_jobs = await _fetch_jobs_from_supabase_or_mock()
+    c_jobs = _filter_jobs_in_memory(all_jobs, country=canon_c["slug"], active_only=True)
+
+    job_count = len(c_jobs)
+    
+    # Aggregate top roles
+    role_counts: Dict[str, int] = {}
+    for j in c_jobs:
+        t = str(j.get("title", "")).strip()
+        if t:
+            role_counts[t] = role_counts.get(t, 0) + 1
+    top_roles = [TopRoleItem(title=t, count=cnt) for t, cnt in sorted(role_counts.items(), key=lambda x: x[1], reverse=True)[:8]]
+
+    # Aggregate sample employers
+    employer_counts: Dict[str, Dict[str, Any]] = {}
+    for j in c_jobs:
+        comp = j.get("companies") or {}
+        c_name = comp.get("name") if isinstance(comp, dict) else j.get("company_name") or "Company"
+        logo_url = comp.get("logo_url") if isinstance(comp, dict) else j.get("company_logo_url")
+        if c_name not in employer_counts:
+            employer_counts[c_name] = {"name": c_name, "logo_url": logo_url, "count": 0}
+        employer_counts[c_name]["count"] += 1
+    sample_employers = [
+        EmployerSummaryItem(name=v["name"], logo_url=v["logo_url"], job_count=v["count"])
+        for v in sorted(employer_counts.values(), key=lambda x: x["count"], reverse=True)[:6]
+    ]
+
+    # Aggregate visa types available
+    visa_counts: Dict[str, int] = {}
+    for j in c_jobs:
+        j_visas = j.get("visa_types") or []
+        if isinstance(j_visas, str):
+            j_visas = [j_visas]
+        for v in j_visas:
+            canon_v = find_visa_type(v) or match_visa_type_from_string(v)
+            if canon_v:
+                visa_counts[canon_v["name"]] = visa_counts.get(canon_v["name"], 0) + 1
+    visa_types_available = [
+        VisaAvailabilityItem(slug=re.sub(r"[^\w-]", "", name.lower().replace(" ", "-")), name=name, count=cnt)
+        for name, cnt in sorted(visa_counts.items(), key=lambda x: x[1], reverse=True)
+    ]
+
+    # Latest update
+    latest_dt = None
+    for j in c_jobs:
+        p = j.get("posted_at") or j.get("created_at")
+        if p and (latest_dt is None or str(p) > str(latest_dt)):
+            latest_dt = p
+
+    # Dynamic meta description suggestion
+    c_name = canon_c["name"]
+    emp_names = [e.name for e in sample_employers[:3]]
+    emp_str = f" from top companies including {', '.join(emp_names)}" if emp_names else ""
+    visa_names = [v.name for v in visa_types_available[:2]]
+    visa_str = f" offering {', '.join(visa_names)}" if visa_names else ""
+    meta_desc = f"Browse {job_count} visa-sponsored jobs in {c_name}{emp_str}{visa_str}. Verified sponsorship opportunities updated daily on VisaLane."
+
+    response = CountrySummaryResponse(
+        country={"slug": canon_c["slug"], "code": canon_c["code"], "name": canon_c["name"]},
+        job_count=job_count,
+        top_roles=top_roles,
+        sample_employers=sample_employers,
+        visa_types_available=visa_types_available,
+        last_updated=str(latest_dt) if latest_dt else None,
+        meta_description_suggestion=meta_desc,
+    )
+    set_cache(cache_key, response.model_dump(), ttl_seconds=METADATA_CACHE_TTL)
+    return response
+
+
+@router.get(
+    "/countries/{country}/visa-types/{visa_type}/summary",
+    response_model=CountryVisaSummaryResponse,
+    summary="Programmatic summary and SEO copy for country×visa landing page",
+)
+async def get_country_visa_summary(country: str, visa_type: str):
+    """
+    Returns live count, top roles, sample employers, and tailored meta description
+    for a specific country×visa-type programmatic landing page.
+    """
+    canon_c = find_country(country)
+    if not canon_c:
+        raise HTTPException(status_code=404, detail=f"Country '{country}' not recognized.")
+
+    canon_v = find_visa_type(visa_type)
+    if not canon_v:
+        raise HTTPException(status_code=404, detail=f"Visa type '{visa_type}' not recognized.")
+
+    cache_key = f"summary:country_visa:{canon_c['slug']}:{canon_v['slug']}"
+    cached = get_cache(cache_key, ttl_seconds=METADATA_CACHE_TTL)
+    if cached is not None:
+        try:
+            return CountryVisaSummaryResponse(**cached)
+        except Exception:
+            pass
+
+    all_jobs = await _fetch_jobs_from_supabase_or_mock()
+    pair_jobs = _filter_jobs_in_memory(
+        all_jobs,
+        country=canon_c["slug"],
+        visa_type=canon_v["slug"],
+        active_only=True,
+    )
+
+    job_count = len(pair_jobs)
+
+    # Top roles
+    role_counts: Dict[str, int] = {}
+    for j in pair_jobs:
+        t = str(j.get("title", "")).strip()
+        if t:
+            role_counts[t] = role_counts.get(t, 0) + 1
+    top_roles = [TopRoleItem(title=t, count=cnt) for t, cnt in sorted(role_counts.items(), key=lambda x: x[1], reverse=True)[:8]]
+
+    # Sample employers
+    employer_counts: Dict[str, Dict[str, Any]] = {}
+    for j in pair_jobs:
+        comp = j.get("companies") or {}
+        c_name = comp.get("name") if isinstance(comp, dict) else j.get("company_name") or "Company"
+        logo_url = comp.get("logo_url") if isinstance(comp, dict) else j.get("company_logo_url")
+        if c_name not in employer_counts:
+            employer_counts[c_name] = {"name": c_name, "logo_url": logo_url, "count": 0}
+        employer_counts[c_name]["count"] += 1
+    sample_employers = [
+        EmployerSummaryItem(name=v["name"], logo_url=v["logo_url"], job_count=v["count"])
+        for v in sorted(employer_counts.values(), key=lambda x: x["count"], reverse=True)[:6]
+    ]
+
+    latest_dt = None
+    for j in pair_jobs:
+        p = j.get("posted_at") or j.get("created_at")
+        if p and (latest_dt is None or str(p) > str(latest_dt)):
+            latest_dt = p
+
+    c_name = canon_c["name"]
+    v_name = canon_v["name"]
+    emp_names = [e.name for e in sample_employers[:3]]
+    emp_str = f" at companies like {', '.join(emp_names)}" if emp_names else ""
+    meta_desc = f"Discover {job_count} {v_name} visa sponsorship jobs in {c_name}{emp_str}. Verified work authorization and visa support on VisaLane."
+
+    response = CountryVisaSummaryResponse(
+        country={"slug": canon_c["slug"], "code": canon_c["code"], "name": canon_c["name"]},
+        visa_type={"slug": canon_v["slug"], "name": canon_v["name"], "country_code": canon_v["country_code"]},
+        job_count=job_count,
+        top_roles=top_roles,
+        sample_employers=sample_employers,
+        last_updated=str(latest_dt) if latest_dt else None,
+        meta_description_suggestion=meta_desc,
+    )
+    set_cache(cache_key, response.model_dump(), ttl_seconds=METADATA_CACHE_TTL)
+    return response
+
+
+@router.get(
     "/visa-types",
     response_model=List[VisaTypeItem],
     summary="Canonical visa types with live active job counts",
 )
 async def list_visa_types():
-    """
-    Returns canonical visa types with active job counts.
-    Used by frontend SSR to determine which visa landing pages to generate.
-    """
+    """Returns canonical visa types with active job counts."""
     cache_key = "reference:visa_types"
     cached = get_cache(cache_key, ttl_seconds=METADATA_CACHE_TTL)
     if cached is not None:
@@ -718,7 +930,7 @@ async def list_visa_types():
             pass
 
     all_jobs = await _fetch_jobs_from_supabase_or_mock()
-    active_jobs = [j for j in all_jobs if not j.get("status") or j.get("status") == "active"]
+    active_jobs = [j for j in all_jobs if _is_job_active(j)]
 
     visa_counts: Dict[str, int] = {}
     for j in active_jobs:
@@ -749,7 +961,7 @@ async def list_visa_types():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 4. GET /api/v1/sitemap-data
+# 4. Sitemap Endpoints: GET /sitemap-data & GET /sitemap.xml
 # ─────────────────────────────────────────────────────────────────────────────
 
 @router.get(
@@ -771,7 +983,7 @@ async def get_sitemap_data():
             pass
 
     all_jobs = await _fetch_jobs_from_supabase_or_mock()
-    active_jobs = [j for j in all_jobs if not j.get("status") or j.get("status") == "active"]
+    active_jobs = [j for j in all_jobs if _is_job_active(j)]
 
     active_countries_set = set()
     active_visa_set = set()
@@ -825,6 +1037,106 @@ async def get_sitemap_data():
     )
     set_cache(cache_key, response.model_dump(), ttl_seconds=SITEMAP_CACHE_TTL)
     return response
+
+
+@router.get(
+    "/sitemap.xml",
+    summary="Standard XML sitemap strictly omitting thin/empty pages and expired jobs",
+)
+async def get_sitemap_xml():
+    """
+    Returns standard XML sitemap for search engines.
+    Covers root homepage, active country pages, active country×visa pages,
+    and active job detail pages with lastmod timestamps.
+    """
+    cache_key = "sitemap:xml"
+    cached = get_cache(cache_key, ttl_seconds=SITEMAP_CACHE_TTL)
+    if cached is not None and isinstance(cached, str):
+        return Response(content=cached, media_type="application/xml")
+
+    all_jobs = await _fetch_jobs_from_supabase_or_mock()
+    active_jobs = [j for j in all_jobs if _is_job_active(j)]
+
+    # Track latest timestamp per country and pair
+    country_latest: Dict[str, str] = {}
+    pair_latest: Dict[tuple, str] = {}
+    site_latest = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+
+    for j in active_jobs:
+        p = str(j.get("posted_at") or j.get("created_at") or "")
+        dt_str = p[:10] if len(p) >= 10 else site_latest
+
+        j_code = str(j.get("country_code", "")).upper()
+        j_name = str(j.get("country", ""))
+        canon_c = find_country(j_code) or find_country(j_name)
+        if canon_c:
+            c_slug = canon_c["slug"]
+            if c_slug not in country_latest or dt_str > country_latest[c_slug]:
+                country_latest[c_slug] = dt_str
+
+            j_visas = j.get("visa_types") or []
+            if isinstance(j_visas, str):
+                j_visas = [j_visas]
+            for v in j_visas:
+                canon_v = find_visa_type(v) or match_visa_type_from_string(v)
+                if canon_v:
+                    pair_key = (c_slug, canon_v["slug"])
+                    if pair_key not in pair_latest or dt_str > pair_latest[pair_key]:
+                        pair_latest[pair_key] = dt_str
+
+    xml_lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ]
+
+    # 1. Homepage
+    xml_lines.append(f"""  <url>
+    <loc>{DEFAULT_SITE_URL}/</loc>
+    <lastmod>{site_latest}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>""")
+
+    # 2. Active Country Pages (Only those with >=1 active job)
+    for c_slug, lastmod in sorted(country_latest.items()):
+        xml_lines.append(f"""  <url>
+    <loc>{DEFAULT_SITE_URL}/jobs/{html.escape(c_slug)}</loc>
+    <lastmod>{lastmod}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>""")
+
+    # 3. Active Country×Visa Pages (Only those with >=1 active job)
+    for (c_slug, v_slug), lastmod in sorted(pair_latest.items()):
+        xml_lines.append(f"""  <url>
+    <loc>{DEFAULT_SITE_URL}/jobs/{html.escape(c_slug)}/{html.escape(v_slug)}</loc>
+    <lastmod>{lastmod}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>""")
+
+    # 4. Active Job Detail Pages
+    for j in active_jobs:
+        job_id = str(j.get("id", ""))
+        title = str(j.get("title", ""))
+        comp = j.get("companies") or {}
+        comp_name = comp.get("name") if isinstance(comp, dict) else j.get("company_name") or "company"
+        slug = j.get("slug") or generate_job_slug(title, str(comp_name), job_id)
+        p = str(j.get("posted_at") or j.get("created_at") or "")
+        dt_str = p[:10] if len(p) >= 10 else site_latest
+
+        xml_lines.append(f"""  <url>
+    <loc>{DEFAULT_SITE_URL}/jobs/{html.escape(slug)}</loc>
+    <lastmod>{dt_str}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>""")
+
+    xml_lines.append("</urlset>")
+    xml_content = "\n".join(xml_lines)
+
+    set_cache(cache_key, xml_content, ttl_seconds=SITEMAP_CACHE_TTL)
+    return Response(content=xml_content, media_type="application/xml")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

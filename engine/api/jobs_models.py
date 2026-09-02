@@ -1,5 +1,6 @@
 """
-Pydantic response and request models for VisaLane Phase 1 API endpoints.
+Pydantic response and request models for VisaLane Phase 1 & Phase 2 API endpoints.
+Includes schema.org JobPosting compliance models and programmatic SEO summaries.
 """
 from __future__ import annotations
 
@@ -56,6 +57,7 @@ class JobSummary(BaseModel):
     visa_types: List[str] = Field(default_factory=list)
     posted_at: Optional[str] = None
     apply_url: str
+    job_status: str = "Open"  # "Open" | "Closed"
     created_at: Optional[str] = None
 
 
@@ -109,10 +111,108 @@ class JobDetail(BaseModel):
     visa_types_supported: List[str] = Field(default_factory=list)
     confidence_score: int = 0
     confidence_factors: List[ConfidenceFactor] = Field(default_factory=list)
+    job_status: str = "Open"  # "Open" | "Closed"
+    event_status: str = "https://schema.org/EventScheduled"  # For schema.org
     apply_url: str
     source_url: Optional[str] = None
     created_at: Optional[str] = None
 
+
+def to_job_posting_json_ld(detail: JobDetail, base_url: str = "https://visalane.com") -> Dict[str, Any]:
+    """
+    Generate valid schema.org/JobPosting JSON-LD object.
+    Guarantees the 5 required Google JobPosting fields:
+    - title
+    - description
+    - datePosted
+    - hiringOrganization
+    - jobLocation (or jobLocationType: TELECOMMUTE + applicantLocationRequirements)
+    """
+    job_url = f"{base_url.rstrip('/')}/jobs/{detail.slug}"
+    
+    json_ld: Dict[str, Any] = {
+        "@context": "https://schema.org",
+        "@type": "JobPosting",
+        "title": detail.title,
+        "description": detail.description_html or detail.description,
+        "identifier": {
+            "@type": "PropertyValue",
+            "name": detail.hiring_organization.name,
+            "value": detail.id,
+        },
+        "datePosted": detail.date_posted or detail.created_at,
+        "hiringOrganization": {
+            "@type": "Organization",
+            "name": detail.hiring_organization.name,
+            "sameAs": detail.hiring_organization.website,
+            "logo": detail.hiring_organization.logo_url,
+        },
+        "url": job_url,
+        "directApply": True,
+    }
+
+    # Job status / Expiration
+    if detail.job_status == "Closed":
+        json_ld["validThrough"] = detail.valid_through or detail.date_posted
+    elif detail.valid_through:
+        json_ld["validThrough"] = detail.valid_through
+
+    # Employment Type
+    if detail.employment_type:
+        json_ld["employmentType"] = detail.employment_type
+
+    # Remote vs Physical Location
+    if detail.remote:
+        json_ld["jobLocationType"] = "TELECOMMUTE"
+        json_ld["applicantLocationRequirements"] = {
+            "@type": "Country",
+            "name": detail.applicant_location_requirements or "Worldwide",
+        }
+        if detail.job_location and detail.job_location.country:
+            json_ld["jobLocation"] = {
+                "@type": "Place",
+                "address": {
+                    "@type": "PostalAddress",
+                    "addressLocality": detail.job_location.city,
+                    "addressCountry": detail.job_location.country_code or detail.job_location.country,
+                }
+            }
+    elif detail.job_location:
+        json_ld["jobLocation"] = {
+            "@type": "Place",
+            "address": {
+                "@type": "PostalAddress",
+                "addressLocality": detail.job_location.city,
+                "addressCountry": detail.job_location.country_code or detail.job_location.country,
+                "streetAddress": detail.job_location.street_address,
+                "postalCode": detail.job_location.postal_code,
+            }
+        }
+
+    # Base Salary: Strictly omit if unknown — never fabricate
+    if detail.base_salary and detail.base_salary.value:
+        salary_obj: Dict[str, Any] = {
+            "@type": "MonetaryAmount",
+            "currency": detail.base_salary.currency,
+            "value": {
+                "@type": "QuantitativeValue",
+                "unitText": detail.base_salary.value.unit_text,
+            }
+        }
+        if detail.base_salary.value.min is not None:
+            salary_obj["value"]["minValue"] = detail.base_salary.value.min
+        if detail.base_salary.value.max is not None:
+            salary_obj["value"]["maxValue"] = detail.base_salary.value.max
+        if detail.base_salary.value.min == detail.base_salary.value.max:
+            salary_obj["value"]["value"] = detail.base_salary.value.min
+        json_ld["baseSalary"] = salary_obj
+
+    return json_ld
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Reference & Summary Models (Phase 2)
+# ─────────────────────────────────────────────────────────────────────────────
 
 class CountryItem(BaseModel):
     slug: str
@@ -146,6 +246,43 @@ class SitemapDataResponse(BaseModel):
     visa_types: List[str]
     country_visa_pairs: List[CountryVisaPair]
     job_slugs: List[JobSitemapItem]
+
+
+class TopRoleItem(BaseModel):
+    title: str
+    count: int
+
+
+class EmployerSummaryItem(BaseModel):
+    name: str
+    logo_url: Optional[str] = None
+    job_count: int
+
+
+class VisaAvailabilityItem(BaseModel):
+    slug: str
+    name: str
+    count: int
+
+
+class CountrySummaryResponse(BaseModel):
+    country: Dict[str, str]  # { "slug": "germany", "code": "DE", "name": "Germany" }
+    job_count: int
+    top_roles: List[TopRoleItem] = Field(default_factory=list)
+    sample_employers: List[EmployerSummaryItem] = Field(default_factory=list)
+    visa_types_available: List[VisaAvailabilityItem] = Field(default_factory=list)
+    last_updated: Optional[str] = None
+    meta_description_suggestion: str
+
+
+class CountryVisaSummaryResponse(BaseModel):
+    country: Dict[str, str]
+    visa_type: Dict[str, str]  # { "slug": "eu-blue-card", "name": "EU Blue Card", "country_code": "DE" }
+    job_count: int
+    top_roles: List[TopRoleItem] = Field(default_factory=list)
+    sample_employers: List[EmployerSummaryItem] = Field(default_factory=list)
+    last_updated: Optional[str] = None
+    meta_description_suggestion: str
 
 
 class EventLogRequest(BaseModel):
