@@ -91,12 +91,25 @@ from .jobs_models import (
     VisaTypeItem,
     ExtensionCompanySummary,
     ExtensionLookupResponse,
+    CheckoutSessionRequest,
+    CheckoutSessionResponse,
+    PortalSessionRequest,
+    PortalSessionResponse,
+    EntitlementStatusResponse,
+    WebhookResponse,
     generate_company_slug,
     generate_job_slug,
     generate_post_slug,
     to_job_posting_json_ld,
 )
 from .company_matcher import match_company_fuzzy, normalize_company_name
+from .billing_service import (
+    create_checkout_session,
+    create_customer_portal_session,
+    get_user_entitlement,
+    process_webhook_event,
+    verify_webhook_signature,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -2151,7 +2164,107 @@ async def extension_lookup_company(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 10. POST /api/v1/events
+# 10. Phase 6: Stripe Billing, Webhooks & Entitlements Endpoints
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.post(
+    "/billing/checkout-session",
+    response_model=CheckoutSessionResponse,
+    summary="Create Stripe Checkout Session for Candidate Plus or Employer Products",
+)
+@limiter.limit("20/minute")
+async def create_billing_checkout_session(request: Request, body: CheckoutSessionRequest):
+    """
+    Initiates Stripe Checkout for candidate subscriptions (monthly/annual) or employer
+    monetization (featured listing, verified badge, pro subscription).
+    """
+    try:
+        session_id, checkout_url = create_checkout_session(
+            plan=body.plan,
+            user_id=body.user_id,
+            customer_email=body.customer_email,
+            company_slug=body.company_slug,
+            success_url=body.success_url,
+            cancel_url=body.cancel_url,
+        )
+        return CheckoutSessionResponse(
+            session_id=session_id,
+            checkout_url=checkout_url,
+            plan=body.plan,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as exc:
+        logger.error("Checkout session creation error: %s", exc)
+        raise HTTPException(status_code=500, detail="Failed to initialize checkout session.")
+
+
+@router.post(
+    "/billing/webhook",
+    response_model=WebhookResponse,
+    summary="Handle incoming Stripe webhook events with strict signature verification",
+)
+async def handle_billing_webhook(request: Request):
+    """
+    Verifies Stripe signature header and processes lifecycle events:
+    - checkout.session.completed (Plus / Badge / Featured / Pro)
+    - customer.subscription.updated
+    - customer.subscription.deleted (Revocation)
+    - invoice.payment_failed (Past-due marking)
+    Rejects forged or unsigned requests with 400.
+    """
+    payload_bytes = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+
+    try:
+        event = verify_webhook_signature(payload_bytes, sig_header)
+    except ValueError as val_err:
+        logger.warning("Stripe webhook verification rejected: %s", val_err)
+        raise HTTPException(status_code=400, detail=f"Invalid webhook signature: {val_err}")
+
+    result = process_webhook_event(event)
+    event_type = event.get("type", "unknown")
+    return WebhookResponse(received=True, event_type=event_type, status=result.get("status", "processed"))
+
+
+@router.get(
+    "/billing/portal-session",
+    response_model=PortalSessionResponse,
+    summary="Generate Stripe Customer Portal session URL for self-service management",
+)
+async def get_billing_portal_session(
+    user_id: Optional[str] = Query(None, description="Authenticated User ID"),
+    customer_id: Optional[str] = Query(None, description="Stripe Customer ID"),
+    return_url: Optional[str] = Query(None, description="Post-management return URL"),
+):
+    """Returns Stripe self-service billing portal URL."""
+    try:
+        portal_url = create_customer_portal_session(
+            customer_id=customer_id,
+            user_id=user_id,
+            return_url=return_url,
+        )
+        return PortalSessionResponse(portal_url=portal_url)
+    except Exception as exc:
+        logger.error("Customer Portal session creation error: %s", exc)
+        raise HTTPException(status_code=500, detail="Failed to create customer portal session.")
+
+
+@router.get(
+    "/billing/entitlements",
+    response_model=EntitlementStatusResponse,
+    summary="Get user entitlement status and feature quotas",
+)
+async def get_billing_entitlements(
+    user_id: Optional[str] = Query(None, description="User ID or session identifier"),
+):
+    """Returns real-time feature entitlements, AI generation quota, and alert tier."""
+    ent = get_user_entitlement(user_id)
+    return EntitlementStatusResponse(**ent)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 11. POST /api/v1/events
 # ─────────────────────────────────────────────────────────────────────────────
 
 async def _record_event_background(payload: Dict[str, Any]) -> None:

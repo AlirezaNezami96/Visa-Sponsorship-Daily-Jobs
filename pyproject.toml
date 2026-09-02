@@ -44,6 +44,7 @@ dependencies = [
     "selectolax>=0.3.21",
     "requests-oauthlib>=2.0.0",
     "grapheme>=0.6.0",
+    "stripe>=15.0.0",
 ]
 
 [project.optional-dependencies]

@@ -30,6 +30,7 @@ class ResumeOptions(BaseModel):
 class ResumeTailorRequest(BaseModel):
     """Tailor the master resume to a specific job description."""
     session_id: str = Field(..., description="Session ID returned from /session/init.")
+    user_id: Optional[str] = None
     job_description: str = Field(
         ..., min_length=100, max_length=16000,
         description="Full text of the job description.",
@@ -43,6 +44,7 @@ class ResumeTailorRequest(BaseModel):
 class CoverLetterRequest(BaseModel):
     """Generate a human-toned cover letter for a specific job."""
     session_id: str = Field(..., description="Session ID returned from /session/init.")
+    user_id: Optional[str] = None
     job_description: str = Field(..., min_length=1, max_length=50000)
     job_url: Optional[str] = None
     company_name: Optional[str] = "Company"

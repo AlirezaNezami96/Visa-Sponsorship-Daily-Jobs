@@ -507,3 +507,53 @@ class ExtensionLookupResponse(BaseModel):
     similarity_score: Optional[float] = None
     company: Optional[ExtensionCompanySummary] = None
     message: Optional[str] = None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase 6: Stripe Billing, Webhook & Entitlement Models
+# ─────────────────────────────────────────────────────────────────────────────
+
+class CheckoutSessionRequest(BaseModel):
+    plan: str = Field(..., description="'candidate_plus_monthly', 'candidate_plus_annual', 'employer_featured', 'employer_badge', 'employer_pro'")
+    user_id: Optional[str] = None
+    customer_email: Optional[str] = None
+    company_slug: Optional[str] = None
+    success_url: Optional[str] = None
+    cancel_url: Optional[str] = None
+
+
+class CheckoutSessionResponse(BaseModel):
+    session_id: str
+    checkout_url: str
+    plan: str
+
+
+class PortalSessionRequest(BaseModel):
+    user_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    return_url: Optional[str] = None
+
+
+class PortalSessionResponse(BaseModel):
+    portal_url: str
+
+
+class EntitlementStatusResponse(BaseModel):
+    user_id: Optional[str] = None
+    plan: str
+    status: str
+    is_plus: bool
+    ai_generation_quota_limit: int
+    ai_generation_usage_this_week: int
+    ai_generation_quota_remaining: int
+    can_use_ai_generation: bool
+    alert_delivery_mode: str
+    early_access_unlocked: bool
+    full_confidence_depth: bool
+    quota_resets_at: Optional[str] = None
+
+
+class WebhookResponse(BaseModel):
+    received: bool = True
+    event_type: str
+    status: str

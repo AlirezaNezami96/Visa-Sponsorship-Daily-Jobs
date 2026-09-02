@@ -55,6 +55,7 @@ from .pdf_service import (
     save_raw_pdf_bytes,
 )
 from .session_store import get_session_store
+from .billing_service import check_ai_generation_entitlement, record_ai_generation_usage
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 settings = get_settings()
@@ -302,6 +303,11 @@ async def tailor_resume_endpoint(request: Request, body: ResumeTailorRequest):
     Clones into Google Drive with in-place text replacement if configured,
     and returns a direct Google Doc URL + downloadable PDF.
     """
+    user_id = body.user_id or body.session_id
+    can_generate, prompt_payload = check_ai_generation_entitlement(user_id)
+    if not can_generate:
+        raise HTTPException(status_code=403, detail=prompt_payload)
+
     session = _require_session(body.session_id)
     t0 = time.perf_counter()
 
@@ -385,6 +391,9 @@ async def tailor_resume_endpoint(request: Request, body: ResumeTailorRequest):
     except Exception as db_err:
         logger.warning("Failed to save to jobs database: %s", db_err)
 
+    # Record metered entitlement usage
+    record_ai_generation_usage(user_id)
+
     return DocumentResponse(
         success=True,
         doc_id=doc_id,
@@ -408,6 +417,11 @@ async def generate_cover_letter_endpoint(request: Request, body: CoverLetterRequ
     Generate a human-toned, pain-point-driven cover letter using Gemini 3.7 Flash.
     Returns a download URL for the generated PDF.
     """
+    user_id = body.user_id or body.session_id
+    can_generate, prompt_payload = check_ai_generation_entitlement(user_id)
+    if not can_generate:
+        raise HTTPException(status_code=403, detail=prompt_payload)
+
     session = _require_session(body.session_id)
     t0 = time.perf_counter()
 
@@ -457,6 +471,9 @@ async def generate_cover_letter_endpoint(request: Request, body: CoverLetterRequ
         )
     except Exception as db_err:
         logger.warning("Failed to save cover letter to jobs database: %s", db_err)
+
+    # Record metered entitlement usage
+    record_ai_generation_usage(user_id)
 
     return DocumentResponse(
         success=True,
