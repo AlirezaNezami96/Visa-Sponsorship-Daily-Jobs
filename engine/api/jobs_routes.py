@@ -34,6 +34,7 @@ import uuid
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, Request, Response
+from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -110,6 +111,31 @@ from .billing_service import (
     get_user_entitlement,
     process_webhook_event,
     verify_webhook_signature,
+)
+from .alert_models import (
+    AlertCreateRequest,
+    AlertListResponse,
+    AlertResponse,
+    AlertUpdateRequest,
+    ScheduledDigestRunResponse,
+    TelegramLinkTokenResponse,
+    TelegramWebhookUpdate,
+    UnsubscribeRequest,
+    UnsubscribeResponse,
+    UserPreferencesResponse,
+    UserPreferencesUpdateRequest,
+)
+from .alert_service import (
+    consume_telegram_link_token,
+    create_alert,
+    create_telegram_link_token,
+    delete_alert,
+    get_alert,
+    get_user_preferences,
+    list_alerts,
+    process_unsubscribe,
+    run_scheduled_alert_digests,
+    update_alert,
 )
 
 logger = logging.getLogger(__name__)
@@ -2304,3 +2330,245 @@ async def log_event(body: EventLogRequest, background_tasks: BackgroundTasks):
     event_dict = body.model_dump()
     background_tasks.add_task(_record_event_background, event_dict)
     return EventLogResponse(success=True, message="Event logged successfully.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 12. Alert & Lifecycle Notification Engine Endpoints (Phase 7)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.post(
+    "/alerts",
+    response_model=AlertResponse,
+    status_code=201,
+    summary="Create a new job alert with entitlement verification",
+)
+async def create_user_alert(body: AlertCreateRequest):
+    """
+    Creates a new job alert with filter criteria.
+    Enforces subscription cadence entitlement:
+    - Free accounts support 'daily' and 'weekly' digests.
+    - 'instant' cadence requires an active VisaLane Plus membership.
+    - If free user requests 'instant', returns HTTP 403 unless downgrade_to_daily=True is passed.
+    """
+    alert, err = create_alert(body)
+    if err:
+        raise HTTPException(status_code=403, detail=err)
+    return alert
+
+
+@router.get(
+    "/alerts",
+    response_model=AlertListResponse,
+    summary="List saved job alerts for user or email",
+)
+async def list_user_alerts(
+    user_id: Optional[str] = Query(None, description="Authenticated User ID"),
+    email: Optional[str] = Query(None, description="Recipient email address"),
+):
+    """Returns saved job alerts for the caller."""
+    alerts = list_alerts(user_id=user_id, email=email)
+    return AlertListResponse(alerts=alerts, total_count=len(alerts))
+
+
+@router.patch(
+    "/alerts/{alert_id}",
+    response_model=AlertResponse,
+    summary="Update filter criteria, cadence, or active status of an alert",
+)
+async def patch_user_alert(
+    alert_id: str,
+    body: AlertUpdateRequest,
+    user_id: Optional[str] = Query(None, description="Authenticated User ID"),
+):
+    """Updates an existing alert with cadence entitlement validation."""
+    alert, err = update_alert(alert_id, body, user_id=user_id)
+    if err:
+        status_code = 404 if err.get("error") == "ALERT_NOT_FOUND" else 403
+        raise HTTPException(status_code=status_code, detail=err)
+    return alert
+
+
+@router.delete(
+    "/alerts/{alert_id}",
+    summary="Delete or deactivate an alert",
+)
+async def delete_user_alert(
+    alert_id: str,
+    user_id: Optional[str] = Query(None, description="Authenticated User ID"),
+):
+    """Deactivates and removes an alert."""
+    success = delete_alert(alert_id, user_id=user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Alert not found or unauthorized.")
+    return {"success": True, "message": f"Alert {alert_id} deactivated successfully."}
+
+
+@router.post(
+    "/alerts/telegram/link-token",
+    response_model=TelegramLinkTokenResponse,
+    summary="Generate temporary link token to bind Telegram chat with VisaLane",
+)
+async def generate_telegram_link_token(
+    email: str = Query(..., description="User email address"),
+    user_id: Optional[str] = Query(None, description="User ID"),
+):
+    """Generates 15-minute temporary link token for Telegram bot /link command."""
+    return create_telegram_link_token(user_id=user_id, email=email)
+
+
+@router.post(
+    "/alerts/telegram/webhook",
+    summary="Telegram Bot Webhook endpoint for /link and interactive commands",
+)
+async def handle_telegram_bot_webhook(update: TelegramWebhookUpdate):
+    """
+    Handles Telegram bot webhook interactions:
+    - /link <token> : Connects candidate's Telegram chat_id to their account & alerts
+    - /start <token> : Handles deep link start from t.me/VisaLaneBot?start=token
+    """
+    msg = update.message or {}
+    chat = msg.get("chat") or {}
+    chat_id = str(chat.get("id", ""))
+    text = (msg.get("text") or "").strip()
+
+    if text.startswith("/link") or text.startswith("/start"):
+        parts = text.split()
+        if len(parts) >= 2:
+            token = parts[1].strip()
+            link_res = consume_telegram_link_token(token, chat_id)
+            if link_res:
+                reply_text = (
+                    f"✅ <b>Successfully linked your VisaLane account!</b>\n"
+                    f"Email: <code>{link_res['email']}</code>\n"
+                    f"Active Alerts: <b>{link_res['linked_alerts_count']}</b>\n\n"
+                    f"You will now receive instant alerts and verified job digests directly in this chat."
+                )
+                return {"handled": True, "action": "linked", "email": link_res["email"]}
+
+        return {
+            "handled": True,
+            "action": "invalid_token",
+            "message": "To link your account, use /link <your-token> from your VisaLane Alert settings.",
+        }
+
+    return {"handled": True, "action": "ignored"}
+
+
+@router.get(
+    "/alerts/unsubscribe",
+    response_class=HTMLResponse,
+    summary="One-click token-based unsubscription landing page",
+)
+async def get_unsubscribe_page(
+    token: str = Query(..., description="Signed unsubscribe token"),
+    alert_id: Optional[str] = Query(None, description="Optional alert ID"),
+    scope: str = Query("alert_only", description="Scope: alert_only, all_marketing, all_notifications"),
+):
+    """One-click browser unsubscribe handling without login required."""
+    success, message, email = process_unsubscribe(token, alert_id=alert_id, scope=scope)
+    title = "Unsubscribe Successful" if success else "Unsubscribe Error"
+    status_icon = "✅" if success else "❌"
+
+    return HTMLResponse(
+        content=f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>{title} — VisaLane</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+                body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }}
+                .card {{ background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; max-width: 480px; width: 100%; padding: 32px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }}
+                .icon {{ font-size: 40px; margin-bottom: 16px; }}
+                h1 {{ font-size: 22px; color: #0f172a; margin: 0 0 12px 0; }}
+                p {{ color: #475569; font-size: 15px; line-height: 1.5; margin: 0 0 24px 0; }}
+                a.btn {{ display: inline-block; background: #0284c7; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 14px; }}
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <div class="icon">{status_icon}</div>
+                <h1>{title}</h1>
+                <p>{html.escape(message)}</p>
+                <a class="btn" href="{DEFAULT_SITE_URL}/jobs">Return to VisaLane Jobs</a>
+            </div>
+        </body>
+        </html>
+        """
+    )
+
+
+@router.post(
+    "/alerts/unsubscribe",
+    response_model=UnsubscribeResponse,
+    summary="Programmatic one-click unsubscription",
+)
+async def post_unsubscribe(body: UnsubscribeRequest):
+    """Programmatic token-based unsubscribe API."""
+    success, message, email = process_unsubscribe(token=body.token, alert_id=body.alert_id, scope=body.scope)
+    if not success:
+        raise HTTPException(status_code=400, detail=message)
+    return UnsubscribeResponse(
+        success=True,
+        scope=body.scope,
+        message=message,
+        unsubscribed_email=email or "unknown",
+        alert_id=body.alert_id,
+    )
+
+
+@router.get(
+    "/alerts/preferences",
+    response_model=UserPreferencesResponse,
+    summary="Get user notification preferences center state",
+)
+async def get_preferences(
+    token: Optional[str] = Query(None, description="Signed unsubscribe/preferences token"),
+    email: Optional[str] = Query(None, description="User email"),
+):
+    """Returns granular notification preferences."""
+    ident = token or email
+    if not ident:
+        raise HTTPException(status_code=400, detail="Must provide either token or email query parameter.")
+    pref = get_user_preferences(ident)
+    if not pref:
+        raise HTTPException(status_code=404, detail="Preferences not found.")
+    return pref
+
+
+@router.put(
+    "/alerts/preferences",
+    response_model=UserPreferencesResponse,
+    summary="Update user notification preferences",
+)
+async def update_preferences(body: UserPreferencesUpdateRequest):
+    """Updates marketing opt-out status and Telegram chat connection."""
+    if not body.email:
+        raise HTTPException(status_code=400, detail="Email is required.")
+    email_norm = body.email.strip().lower()
+    from .alert_service import _MOCK_PREFERENCES_STORE
+    pref = _MOCK_PREFERENCES_STORE.get(email_norm) or {"email": email_norm}
+    if body.marketing_opt_out is not None:
+        pref["marketing_opt_out"] = body.marketing_opt_out
+    if body.telegram_chat_id is not None:
+        pref["telegram_chat_id"] = body.telegram_chat_id
+    _MOCK_PREFERENCES_STORE[email_norm] = pref
+    return get_user_preferences(email_norm)
+
+
+@router.post(
+    "/admin/alerts/run-digest",
+    response_model=ScheduledDigestRunResponse,
+    summary="Admin trigger for scheduled alert digests",
+)
+async def admin_run_scheduled_digests(
+    cadence: str = Query("daily", description="'daily' or 'weekly'"),
+    dry_run: bool = Query(False, description="Simulate without real delivery"),
+    x_admin_key: Optional[str] = Header(None, alias="X-Admin-Key"),
+    authorization: Optional[str] = Header(None),
+):
+    """Manually invokes the scheduled alert digest runner (Admin restricted)."""
+    _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
+    jobs = await _fetch_jobs_from_supabase_or_mock()
+    return run_scheduled_alert_digests(cadence=cadence, all_jobs=jobs, dry_run=dry_run)
