@@ -20,6 +20,11 @@ from engine.api.jobs_routes import (
 @pytest.fixture(autouse=True)
 def setup_phase3_jobs():
     """Seed sample jobs with multiple companies and listing counts."""
+    from engine.api.jobs_routes import limiter
+    try:
+        limiter.reset()
+    except Exception:
+        pass
     clear_all_caches()
     clear_mock_stores()
 
