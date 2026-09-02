@@ -472,21 +472,49 @@ def match_visa_type_from_string(text: Optional[str]) -> Optional[CanonicalVisaTy
     return None
 
 
+def normalize_locale_code(locale: Optional[str]) -> Tuple[str, bool]:
+    """
+    Normalizes a requested locale code (e.g. 'es-MX' -> 'es', 'pt_BR' -> 'pt').
+    Returns (normalized_locale, is_fallback_needed).
+    If the base language is supported, returns (base_language, False).
+    If entirely unsupported or malformed, returns ('en', True).
+    """
+    if not locale:
+        return "en", False
+    loc = str(locale).strip().lower().replace("_", "-")
+    # Sanitize invalid characters
+    loc = "".join(c for c in loc if c.isalnum() or c == "-")
+    if not loc:
+        return "en", True
+
+    if loc in _SUPPORTED_LOCALE_CODES:
+        return loc, False
+
+    # Extract base language prefix before hyphen (e.g. 'es-mx' -> 'es')
+    base_lang = loc.split("-")[0]
+    if base_lang in _SUPPORTED_LOCALE_CODES:
+        return base_lang, False
+
+    # Entirely unsupported
+    return "en", True
+
+
 def get_localized_country_name(country_slug_or_code: str, locale: Optional[str] = "en") -> Tuple[str, bool]:
     """
     Returns (localized_name, is_fallback).
     If locale translation doesn't exist or is unsupported, falls back to English with is_fallback=True.
+    Supports region variants (e.g. 'es-MX' -> 'es').
     """
     canon = find_country(country_slug_or_code)
     if not canon:
         return country_slug_or_code, True
 
     slug = canon["slug"]
-    loc = (locale or "en").strip().lower()
+    norm_loc, is_fallback = normalize_locale_code(locale)
 
     trans_map = COUNTRY_TRANSLATIONS.get(slug, {})
-    if loc in trans_map:
-        return trans_map[loc], False
+    if not is_fallback and norm_loc in trans_map:
+        return trans_map[norm_loc], False
 
     # English fallback
     return trans_map.get("en", canon["name"]), True
@@ -496,17 +524,18 @@ def get_localized_visa_name(visa_slug_or_name: str, locale: Optional[str] = "en"
     """
     Returns (localized_name, is_fallback).
     If locale translation doesn't exist or is unsupported, falls back to English with is_fallback=True.
+    Supports region variants (e.g. 'es-MX' -> 'es').
     """
     canon = find_visa_type(visa_slug_or_name)
     if not canon:
         return visa_slug_or_name, True
 
     slug = canon["slug"]
-    loc = (locale or "en").strip().lower()
+    norm_loc, is_fallback = normalize_locale_code(locale)
 
     trans_map = VISA_TRANSLATIONS.get(slug, {})
-    if loc in trans_map:
-        return trans_map[loc], False
+    if not is_fallback and norm_loc in trans_map:
+        return trans_map[norm_loc], False
 
     # English fallback
     return trans_map.get("en", canon["name"]), True

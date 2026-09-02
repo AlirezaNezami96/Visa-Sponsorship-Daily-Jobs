@@ -49,6 +49,7 @@ from .canonical_data import (
     get_localized_visa_name,
     get_supported_locales,
     match_visa_type_from_string,
+    normalize_locale_code,
 )
 from .indexing_service import get_indexing_service
 from .jobs_models import (
@@ -1486,28 +1487,33 @@ async def get_match_report(slug: str):
 def _resolve_post_translation(
     post: Dict[str, Any],
     translations: Dict[str, Dict[str, Any]],
-    requested_locale: str,
+    requested_locale: Optional[str],
 ) -> Tuple[Dict[str, Any], str, bool]:
     """
-    Resolves post translation for requested locale.
+    Resolves post translation for requested locale with region-variant resolution.
     Returns (translation_data, resolved_locale, is_fallback).
     """
-    req_loc = (requested_locale or "en").strip().lower()
+    req_loc = str(requested_locale or "en").strip().lower()
     canonical_loc = str(post.get("canonical_locale", "en")).strip().lower()
+    norm_loc, is_unsupported = normalize_locale_code(requested_locale)
 
-    # 1. Exact locale match
+    # 1. Exact requested locale match (e.g. 'es-mx' if explicitly seeded)
     if req_loc in translations:
         return translations[req_loc], req_loc, False
 
-    # 2. Canonical locale fallback
+    # 2. Normalized base language match (e.g. 'es-MX' -> 'es')
+    if not is_unsupported and norm_loc in translations:
+        return translations[norm_loc], norm_loc, False
+
+    # 3. Canonical locale fallback
     if canonical_loc in translations:
         return translations[canonical_loc], canonical_loc, True
 
-    # 3. English fallback
+    # 4. English fallback
     if "en" in translations:
         return translations["en"], "en", True
 
-    # 4. Any available translation
+    # 5. Any available translation
     if translations:
         first_k = next(iter(translations))
         return translations[first_k], first_k, True

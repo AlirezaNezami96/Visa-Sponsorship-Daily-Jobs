@@ -85,15 +85,17 @@ _MOCK_USER_PROFILES: Dict[str, Dict[str, Any]] = {}
 _MOCK_COMPANY_BILLING: Dict[str, Dict[str, Any]] = {}
 _MOCK_USAGE_TRACKING: Dict[str, Dict[str, Any]] = {}  # f"{user_id}:{week_str}" -> count
 _MOCK_PROCESSED_WEBHOOKS: List[Dict[str, Any]] = []
+_PROCESSED_EVENT_IDS: set[str] = set()
 
 
 def clear_mock_billing_stores() -> None:
     """Reset mock stores between test executions."""
-    global _MOCK_USER_PROFILES, _MOCK_COMPANY_BILLING, _MOCK_USAGE_TRACKING, _MOCK_PROCESSED_WEBHOOKS
+    global _MOCK_USER_PROFILES, _MOCK_COMPANY_BILLING, _MOCK_USAGE_TRACKING, _MOCK_PROCESSED_WEBHOOKS, _PROCESSED_EVENT_IDS
     _MOCK_USER_PROFILES = {}
     _MOCK_COMPANY_BILLING = {}
     _MOCK_USAGE_TRACKING = {}
     _MOCK_PROCESSED_WEBHOOKS = []
+    _PROCESSED_EVENT_IDS = set()
 
 
 def set_mock_user_profile(user_id: str, profile_data: Dict[str, Any]) -> None:
@@ -231,8 +233,9 @@ def verify_webhook_signature(
         try:
             sig_dict = {}
             for item in signature_header.split(","):
-                k, v = item.strip().split("=", 1)
-                sig_dict[k] = v
+                if "=" in item:
+                    k, v = item.strip().split("=", 1)
+                    sig_dict[k] = v
             timestamp = sig_dict.get("t")
             v1_sig = sig_dict.get("v1")
 
@@ -273,17 +276,32 @@ def verify_webhook_signature(
 def process_webhook_event(event: Dict[str, Any]) -> Dict[str, Any]:
     """
     Processes verified Stripe webhook event across the full subscription & payment lifecycle.
+    Implements idempotency checking to prevent duplicate side effects on at-least-once deliveries.
     Handles:
     - checkout.session.completed
     - customer.subscription.updated
     - customer.subscription.deleted
     - invoice.payment_failed
+    - charge.refunded (Gap closed: revokes entitlement and resets employer status)
     """
-    event_type = event.get("type", "")
+    event_id = str(event.get("id", ""))
+    event_type = str(event.get("type", ""))
     event_data = event.get("data", {}).get("object", {})
 
+    # 1. Idempotency Check: Ignore already processed event IDs
+    if event_id:
+        if event_id in _PROCESSED_EVENT_IDS:
+            logger.info("Ignoring duplicate Stripe webhook event ID: %s", event_id)
+            return {
+                "handled": True,
+                "event_type": event_type,
+                "status": "duplicate_ignored",
+                "idempotent": True,
+            }
+        _PROCESSED_EVENT_IDS.add(event_id)
+
     _MOCK_PROCESSED_WEBHOOKS.append({
-        "event_id": event.get("id"),
+        "event_id": event_id,
         "event_type": event_type,
         "processed_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "object": event_data,
@@ -297,6 +315,8 @@ def process_webhook_event(event: Dict[str, Any]) -> Dict[str, Any]:
         return _handle_subscription_deleted(event_data)
     elif event_type == "invoice.payment_failed":
         return _handle_invoice_payment_failed(event_data)
+    elif event_type == "charge.refunded":
+        return _handle_charge_refunded(event_data)
     else:
         logger.info("Unhandled Stripe event type: %s", event_type)
         return {"handled": True, "event_type": event_type, "action": "ignored"}
@@ -420,6 +440,34 @@ def _handle_invoice_payment_failed(data: Dict[str, Any]) -> Dict[str, Any]:
     return {"handled": True, "action": "invoice_failure_recorded"}
 
 
+def _handle_charge_refunded(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Revoke entitlements upon charge refund (Candidate Plus, Employer Badge, Featured Listing)."""
+    customer_id = data.get("customer")
+    metadata = data.get("metadata") or {}
+    user_id = metadata.get("user_id")
+    company_slug = metadata.get("company_slug")
+
+    # 1. Candidate Plus Refund -> Revoke to free
+    for uid, prof in _MOCK_USER_PROFILES.items():
+        if (user_id and uid == user_id) or prof.get("stripe_customer_id") == customer_id:
+            prof["subscription_plan"] = "free"
+            prof["subscription_status"] = "refunded"
+            logger.info("Revoked Plus entitlement due to refund for user %s", uid)
+            return {"handled": True, "user_id": uid, "status": "refunded", "plan": "free"}
+
+    # 2. Employer Product Refund -> Reset badge and featured status
+    for c_slug, comp_billing in _MOCK_COMPANY_BILLING.items():
+        if (company_slug and c_slug == company_slug) or comp_billing.get("stripe_customer_id") == customer_id:
+            comp_billing["badge_payment_status"] = "refunded"
+            comp_billing["badge_status"] = "rejected"
+            comp_billing["featured_until"] = None
+            comp_billing["employer_plan"] = "free"
+            logger.info("Revoked employer privileges due to refund for company %s", c_slug)
+            return {"handled": True, "company_slug": c_slug, "status": "refunded"}
+
+    return {"handled": True, "action": "refund_recorded"}
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. Customer Portal Session
 # ─────────────────────────────────────────────────────────────────────────────
@@ -465,6 +513,7 @@ def get_user_entitlement(user_id: Optional[str]) -> Dict[str, Any]:
     Calculates comprehensive user entitlement status:
     - Free tier: 1 AI generation / week quota, daily alerts, standard confidence depth
     - Plus tier: Unlimited AI generations, real-time alert delivery, 24h early access window, full confidence depth
+    - Past-Due (Grace Period): Read-only daily alerts, AI generation suspended with payment update prompt
     - Admin tier: Full unlimited access
     """
     if not user_id:
@@ -508,6 +557,25 @@ def get_user_entitlement(user_id: Optional[str]) -> Dict[str, Any]:
             "alert_delivery_mode": "realtime",
             "early_access_unlocked": True,
             "full_confidence_depth": True,
+            "quota_resets_at": _get_next_week_reset_iso(),
+        }
+
+    # Explicit past_due grace period state
+    if status == "past_due":
+        return {
+            "user_id": user_id,
+            "plan": "plus_past_due",
+            "status": "past_due",
+            "is_plus": False,
+            "ai_generation_quota_limit": 0,
+            "ai_generation_usage_this_week": usage_count,
+            "ai_generation_quota_remaining": 0,
+            "can_use_ai_generation": False,
+            "alert_delivery_mode": "daily",
+            "early_access_unlocked": False,
+            "full_confidence_depth": False,
+            "grace_period_active": True,
+            "message": "Payment past due. AI generation is suspended. Please update your payment method.",
             "quota_resets_at": _get_next_week_reset_iso(),
         }
 

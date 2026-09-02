@@ -550,6 +550,8 @@ class EntitlementStatusResponse(BaseModel):
     alert_delivery_mode: str
     early_access_unlocked: bool
     full_confidence_depth: bool
+    grace_period_active: Optional[bool] = False
+    message: Optional[str] = None
     quota_resets_at: Optional[str] = None
 
 
