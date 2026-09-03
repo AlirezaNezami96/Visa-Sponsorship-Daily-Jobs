@@ -366,6 +366,8 @@ class CompanyDetailSummary(BaseModel):
     is_verified_sponsor: bool = False
     badge_verified_at: Optional[str] = None
     badge_expires_at: Optional[str] = None
+    confidence_factors: List[ConfidenceFactor] = Field(default_factory=list)
+    policy_shock_active: bool = False
 
 
 class MatchReportCreateRequest(BaseModel):

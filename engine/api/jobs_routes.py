@@ -1427,6 +1427,21 @@ async def get_company_summary(slug: str):
     b_verified_at = badge_app.verified_at if badge_app else comp_billing.get("verified_at")
     b_expires_at = badge_app.expires_at if badge_app else comp_billing.get("expires_at")
 
+    from engine.api.policy_service import run_company_policy_shock_check
+    policy_shock = run_company_policy_shock_check(
+        company_slug=matched_data["slug"],
+        company_name=matched_data["name"],
+        base_confidence_score=avg_conf,
+        jobs_history=active_jobs + hist_jobs,
+        trigger_alerts=False,
+    )
+    final_conf = policy_shock.adjusted_confidence_score
+    policy_factors = [
+        ConfidenceFactor(label=f["label"], detail=f["detail"])
+        for f in policy_shock.confidence_factors
+    ]
+    has_policy_shock = any(s.flagged for s in policy_shock.signals)
+
     response = CompanyDetailSummary(
         company=CompanySummary(
             name=matched_data["name"],
@@ -1441,7 +1456,7 @@ async def get_company_summary(slug: str):
         ),
         total_active_jobs=total_active,
         total_historical_jobs=total_hist,
-        sponsorship_confidence_score=avg_conf,
+        sponsorship_confidence_score=final_conf,
         verified_sponsorship_rate=verified_rate,
         supported_visa_types=sorted(list(matched_data["visa_types"])),
         hiring_countries=hiring_countries,
@@ -1453,6 +1468,8 @@ async def get_company_summary(slug: str):
         is_verified_sponsor=is_verified,
         badge_verified_at=b_verified_at,
         badge_expires_at=b_expires_at,
+        confidence_factors=policy_factors,
+        policy_shock_active=has_policy_shock,
     )
     set_cache(cache_key, response.model_dump(), ttl_seconds=METADATA_CACHE_TTL)
     return response
@@ -3132,3 +3149,58 @@ async def admin_run_analytics_rollups(
     """Admin-only trigger to compute and persist pre-aggregated rollup tables."""
     _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
     return run_analytics_rollups(target_date=target_date, full_rebuild=full_rebuild)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 14. Phase 11: AI Policy-Shock Detection & Warm Outreach Drafting
+# ─────────────────────────────────────────────────────────────────────────────
+
+from engine.api.policy_models import (
+    OutreachDraftRequest,
+    OutreachDraftResponse,
+    CompanyPolicyShockStatus,
+)
+from engine.api.policy_service import (
+    generate_outreach_draft,
+    run_company_policy_shock_check,
+)
+
+
+@router.post(
+    "/outreach/draft",
+    response_model=OutreachDraftResponse,
+    summary="Generate personalized warm outreach message with zero contact persistence",
+)
+async def draft_warm_outreach(body: OutreachDraftRequest):
+    """
+    Candidate outreach drafting tool.
+    Entitlement-gated via Phase 6 AI quota mechanism (1/week Free, Unlimited Plus).
+    Zero persistence: candidate-provided contact details are strictly ephemeral and never stored.
+    """
+    return generate_outreach_draft(body)
+
+
+@router.get(
+    "/companies/{slug}/policy-status",
+    response_model=CompanyPolicyShockStatus,
+    summary="Get real-time policy-shock assessment and confidence factors for an employer",
+)
+async def get_company_policy_status(slug: str):
+    """Evaluates posting-velocity drop and filing-recency staleness for a specific company."""
+    return run_company_policy_shock_check(company_slug=slug, trigger_alerts=False)
+
+
+@router.post(
+    "/admin/policy-shock/evaluate",
+    response_model=CompanyPolicyShockStatus,
+    summary="Admin trigger to evaluate company policy-shock posture and trigger alerts",
+)
+async def admin_evaluate_policy_shock(
+    company_slug: str = Query(..., description="Target company slug"),
+    trigger_alerts: bool = Query(True, description="Whether to dispatch Phase 7 policy alerts"),
+    authorization: Optional[str] = Header(None),
+    x_admin_key: Optional[str] = Header(None),
+):
+    """Admin-only evaluation of company sponsorship posture and email alert dispatch."""
+    _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
+    return run_company_policy_shock_check(company_slug=company_slug, trigger_alerts=trigger_alerts)
