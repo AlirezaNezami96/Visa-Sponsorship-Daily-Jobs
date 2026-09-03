@@ -12,6 +12,7 @@ import os
 import uuid
 import logging
 import datetime
+import threading
 from typing import Dict, Any, List, Optional, Tuple
 
 from engine.api.badge_models import (
@@ -27,6 +28,9 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_SITE_URL = os.environ.get("SITE_URL", "https://visalane.com").rstrip("/")
 ADMIN_NOTIFICATION_EMAIL = os.environ.get("ADMIN_NOTIFICATION_EMAIL", "admin@visalane.com")
+
+# Concurrency mutex for review decision processing and audit logging
+_BADGE_REVIEW_MUTEX = threading.Lock()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # In-Memory Mock Stores for Testing and Offline Operation
@@ -354,32 +358,33 @@ def approve_badge_application(
     expires_dt = now_dt + datetime.timedelta(days=365)  # 12-month validity period
     expires_at = expires_dt.isoformat()
 
-    # 1. Unconditional Audit Logging
-    _write_audit_log(
-        application_id=app_dict.get("id"),
-        employer_id=employer_id,
-        company_slug=app_dict.get("company_slug"),
-        reviewer_id=reviewer_id,
-        decision="approved",
-        notes=notes,
-    )
+    with _BADGE_REVIEW_MUTEX:
+        # 1. Unconditional Audit Logging
+        _write_audit_log(
+            application_id=app_dict.get("id"),
+            employer_id=employer_id,
+            company_slug=app_dict.get("company_slug"),
+            reviewer_id=reviewer_id,
+            decision="approved",
+            notes=notes,
+        )
 
-    # 2. Transition State
-    app_dict["badge_status"] = "verified"
-    app_dict["verified_at"] = now
-    app_dict["expires_at"] = expires_at
-    app_dict["updated_at"] = now
-    app_dict["renewal_notified_at"] = None
+        # 2. Transition State
+        app_dict["badge_status"] = "verified"
+        app_dict["verified_at"] = now
+        app_dict["expires_at"] = expires_at
+        app_dict["updated_at"] = now
+        app_dict["renewal_notified_at"] = None
 
-    _MOCK_BADGE_APPLICATIONS[employer_id] = app_dict
+        _MOCK_BADGE_APPLICATIONS[employer_id] = app_dict
 
-    # 3. Update Company Profile & Billing Store
-    company_slug = app_dict["company_slug"]
-    from engine.api.billing_service import _MOCK_COMPANY_BILLING
-    cb = _MOCK_COMPANY_BILLING.setdefault(company_slug, {})
-    cb["badge_status"] = "verified"
-    cb["verified_at"] = now
-    cb["expires_at"] = expires_at
+        # 3. Update Company Profile & Billing Store
+        company_slug = app_dict["company_slug"]
+        from engine.api.billing_service import _MOCK_COMPANY_BILLING
+        cb = _MOCK_COMPANY_BILLING.setdefault(company_slug, {})
+        cb["badge_status"] = "verified"
+        cb["verified_at"] = now
+        cb["expires_at"] = expires_at
 
     # Update in Supabase
     client = _get_supabase_client()
@@ -475,27 +480,28 @@ def reject_badge_application(
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
     clean_notes = notes.strip()
 
-    # 1. Unconditional Audit Logging
-    _write_audit_log(
-        application_id=app_dict.get("id"),
-        employer_id=employer_id,
-        company_slug=app_dict.get("company_slug"),
-        reviewer_id=reviewer_id,
-        decision="rejected",
-        notes=clean_notes,
-    )
+    with _BADGE_REVIEW_MUTEX:
+        # 1. Unconditional Audit Logging
+        _write_audit_log(
+            application_id=app_dict.get("id"),
+            employer_id=employer_id,
+            company_slug=app_dict.get("company_slug"),
+            reviewer_id=reviewer_id,
+            decision="rejected",
+            notes=clean_notes,
+        )
 
-    # 2. Transition State
-    app_dict["badge_status"] = "rejected"
-    app_dict["updated_at"] = now
+        # 2. Transition State
+        app_dict["badge_status"] = "rejected"
+        app_dict["updated_at"] = now
 
-    _MOCK_BADGE_APPLICATIONS[employer_id] = app_dict
+        _MOCK_BADGE_APPLICATIONS[employer_id] = app_dict
 
-    # 3. Update Company Billing Store
-    company_slug = app_dict["company_slug"]
-    from engine.api.billing_service import _MOCK_COMPANY_BILLING
-    cb = _MOCK_COMPANY_BILLING.setdefault(company_slug, {})
-    cb["badge_status"] = "rejected"
+        # 3. Update Company Billing Store
+        company_slug = app_dict["company_slug"]
+        from engine.api.billing_service import _MOCK_COMPANY_BILLING
+        cb = _MOCK_COMPANY_BILLING.setdefault(company_slug, {})
+        cb["badge_status"] = "rejected"
 
     # Update in Supabase
     client = _get_supabase_client()
@@ -604,6 +610,13 @@ def run_badge_renewal_check(dry_run: bool = False) -> BadgeRenewalCheckResult:
             continue
 
         days_remaining = (exp_dt - now_dt).days
+
+        if days_remaining < 0:
+            if not dry_run:
+                app["badge_status"] = "expired"
+                _MOCK_BADGE_APPLICATIONS[employer_id] = app
+            continue
+
         # Flag if expiring within 30 days and not already notified
         if 0 <= days_remaining <= 30 and not app.get("renewal_notified_at"):
             flagged_item = {

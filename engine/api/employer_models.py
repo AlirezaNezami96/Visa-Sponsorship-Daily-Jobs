@@ -48,6 +48,8 @@ class EmployerJobUpdateRequest(BaseModel):
     salary_min: Optional[int] = None
     salary_max: Optional[int] = None
     salary_currency: Optional[str] = None
+    job_status: Optional[str] = None
+    is_active: Optional[bool] = None
 
 
 class EmployerJobResponse(BaseModel):

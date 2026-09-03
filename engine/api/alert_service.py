@@ -12,6 +12,7 @@ import hmac
 import html
 import logging
 import os
+import threading
 import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -36,6 +37,9 @@ DEFAULT_SITE_URL = os.environ.get("NEXT_PUBLIC_SITE_URL", "https://visalane.com"
 UNSUBSCRIBE_SECRET = os.environ.get("UNSUBSCRIBE_SECRET_KEY", "visalane_unsub_secret_key_2026")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "mock_telegram_bot_token")
 TELEGRAM_BOT_USERNAME = os.environ.get("TELEGRAM_BOT_USERNAME", "VisaLaneBot")
+
+# Concurrency mutex to prevent duplicate runs from overlapping cron workers
+_DIGEST_MUTEX = threading.Lock()
 
 # In-Memory Stores for local dev and testing
 _MOCK_ALERTS_STORE: Dict[str, Dict[str, Any]] = {}
@@ -750,113 +754,116 @@ def run_scheduled_alert_digests(
     """
     Executes scheduled alert digest cycle for 'daily' or 'weekly' alerts.
     CRITICAL RULE: An alert with 0 new matching jobs sends NOTHING (zero-match suppression).
+    Guaranteed idempotent via _DIGEST_MUTEX and monotonic last_notified_at progression.
     """
-    start_time = datetime.datetime.now(datetime.timezone.utc)
-    target_cad = cadence.lower()
+    with _DIGEST_MUTEX:
+        start_time = datetime.datetime.now(datetime.timezone.utc)
+        target_cad = cadence.lower()
 
-    if all_jobs is None:
-        from engine.api.jobs_routes import _MOCK_JOBS_STORE
-        all_jobs = list(_MOCK_JOBS_STORE)
+        if all_jobs is None:
+            from engine.api.jobs_routes import _MOCK_JOBS_STORE
+            all_jobs = list(_MOCK_JOBS_STORE)
 
-    active_jobs = [j for j in all_jobs if str(j.get("status", "active")).lower() in ("active", "published")]
+        active_jobs = [j for j in all_jobs if str(j.get("status", "active")).lower() in ("active", "published")]
 
-    alerts_evaluated = 0
-    digests_sent = 0
-    zero_suppressed = 0
-    marketing_suppressed = 0
-    errors = 0
+        alerts_evaluated = 0
+        digests_sent = 0
+        zero_suppressed = 0
+        marketing_suppressed = 0
+        errors = 0
 
-    now = datetime.datetime.now(datetime.timezone.utc)
-    cutoff_hours = 24 if target_cad == "daily" else 168
+        now = datetime.datetime.now(datetime.timezone.utc)
 
-    for alert_id, alert in list(_MOCK_ALERTS_STORE.items()):
-        if not alert.get("is_active"):
-            continue
-        if alert.get("cadence") != target_cad:
-            continue
+        for alert_id, alert in list(_MOCK_ALERTS_STORE.items()):
+            if not alert.get("is_active"):
+                continue
+            if alert.get("cadence") != target_cad:
+                continue
 
-        alerts_evaluated += 1
-        last_notified = alert.get("last_notified_at")
-        criteria = AlertFilterCriteria(**(alert.get("filter_criteria") or {}))
+            alerts_evaluated += 1
+            last_notified = alert.get("last_notified_at")
+            criteria = AlertFilterCriteria(**(alert.get("filter_criteria") or {}))
 
-        # Filter jobs created since last notification
-        matching_new_jobs = []
-        for j in active_jobs:
-            if match_job_against_criteria(j, criteria):
-                # Filter by creation time if available
-                created_str = j.get("created_at") or j.get("date_posted")
-                if created_str and last_notified:
-                    try:
-                        dt_created = datetime.datetime.fromisoformat(created_str.replace("Z", "+00:00"))
-                        dt_last = datetime.datetime.fromisoformat(last_notified.replace("Z", "+00:00"))
-                        if dt_created <= dt_last:
-                            continue
-                    except Exception:
-                        pass
-                matching_new_jobs.append(j)
+            # Filter jobs created since last notification
+            matching_new_jobs = []
+            for j in active_jobs:
+                if match_job_against_criteria(j, criteria):
+                    # Filter by creation time if available
+                    created_str = j.get("created_at") or j.get("date_posted")
+                    if created_str and last_notified:
+                        try:
+                            dt_created = datetime.datetime.fromisoformat(created_str.replace("Z", "+00:00"))
+                            dt_last = datetime.datetime.fromisoformat(last_notified.replace("Z", "+00:00"))
+                            if dt_created <= dt_last:
+                                continue
+                        except Exception:
+                            pass
+                    matching_new_jobs.append(j)
 
-        # Zero-Match Rule: An alert with 0 new matches sends NOTHING
-        if not matching_new_jobs:
-            zero_suppressed += 1
-            _MOCK_NOTIFICATION_LOGS.append({
-                "id": f"log_{uuid.uuid4().hex[:12]}",
-                "alert_id": alert_id,
-                "recipient_email": alert["email"],
-                "status": "suppressed",
-                "job_count": 0,
-                "sent_at": now.isoformat(),
-                "reason": "zero_matches",
-            })
-            continue
+            # Zero-Match Rule: An alert with 0 new matches sends NOTHING
+            if not matching_new_jobs:
+                zero_suppressed += 1
+                # Advance last_notified_at consistently so subsequent cycles do not re-notify old intervals
+                alert["last_notified_at"] = now.isoformat()
+                _MOCK_NOTIFICATION_LOGS.append({
+                    "id": f"log_{uuid.uuid4().hex[:12]}",
+                    "alert_id": alert_id,
+                    "recipient_email": alert["email"],
+                    "status": "suppressed",
+                    "job_count": 0,
+                    "sent_at": now.isoformat(),
+                    "reason": "zero_matches",
+                })
+                continue
 
-        # Render and dispatch
-        channels = alert.get("channels", ["email"])
-        sent_any = False
+            # Render and dispatch
+            channels = alert.get("channels", ["email"])
+            sent_any = False
 
-        if "email" in channels:
-            sub, body = _render_alert_digest_email(alert, matching_new_jobs)
-            email_ok = dispatch_email_notification(
-                to_email=alert["email"],
-                subject=sub,
-                html_content=body,
-                consent_classification="transactional",
-                dry_run=dry_run,
-            )
-            if email_ok:
-                sent_any = True
+            if "email" in channels:
+                sub, body = _render_alert_digest_email(alert, matching_new_jobs)
+                email_ok = dispatch_email_notification(
+                    to_email=alert["email"],
+                    subject=sub,
+                    html_content=body,
+                    consent_classification="transactional",
+                    dry_run=dry_run,
+                )
+                if email_ok:
+                    sent_any = True
 
-        if "telegram" in channels and alert.get("telegram_chat_id"):
-            tg_ok = dispatch_telegram_alert(
-                chat_id=alert["telegram_chat_id"],
-                jobs=matching_new_jobs,
-                dry_run=dry_run,
-            )
-            if tg_ok:
-                sent_any = True
+            if "telegram" in channels and alert.get("telegram_chat_id"):
+                tg_ok = dispatch_telegram_alert(
+                    chat_id=alert["telegram_chat_id"],
+                    jobs=matching_new_jobs,
+                    dry_run=dry_run,
+                )
+                if tg_ok:
+                    sent_any = True
 
-        if sent_any:
-            digests_sent += 1
-            alert["last_notified_at"] = now.isoformat()
-            _MOCK_NOTIFICATION_LOGS.append({
-                "id": f"log_{uuid.uuid4().hex[:12]}",
-                "alert_id": alert_id,
-                "recipient_email": alert["email"],
-                "status": "sent",
-                "job_count": len(matching_new_jobs),
-                "job_ids": [str(j.get("id")) for j in matching_new_jobs[:10]],
-                "sent_at": now.isoformat(),
-            })
+            if sent_any:
+                digests_sent += 1
+                alert["last_notified_at"] = now.isoformat()
+                _MOCK_NOTIFICATION_LOGS.append({
+                    "id": f"log_{uuid.uuid4().hex[:12]}",
+                    "alert_id": alert_id,
+                    "recipient_email": alert["email"],
+                    "status": "sent",
+                    "job_count": len(matching_new_jobs),
+                    "job_ids": [str(j.get("id")) for j in matching_new_jobs[:10]],
+                    "sent_at": now.isoformat(),
+                })
 
-    elapsed_ms = (datetime.datetime.now(datetime.timezone.utc) - start_time).total_seconds() * 1000
-    return ScheduledDigestRunResponse(
-        cadence=target_cad,
-        alerts_evaluated=alerts_evaluated,
-        digests_sent=digests_sent,
-        alerts_suppressed_zero_matches=zero_suppressed,
-        marketing_suppressed=marketing_suppressed,
-        errors=errors,
-        execution_time_ms=round(elapsed_ms, 2),
-    )
+        elapsed_ms = (datetime.datetime.now(datetime.timezone.utc) - start_time).total_seconds() * 1000
+        return ScheduledDigestRunResponse(
+            cadence=target_cad,
+            alerts_evaluated=alerts_evaluated,
+            digests_sent=digests_sent,
+            alerts_suppressed_zero_matches=zero_suppressed,
+            marketing_suppressed=marketing_suppressed,
+            errors=errors,
+            execution_time_ms=round(elapsed_ms, 2),
+        )
 
 
 # ─────────────────────────────────────────────────────────────────────────────

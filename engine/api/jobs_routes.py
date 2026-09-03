@@ -2716,16 +2716,39 @@ async def get_employer_jobs(
     )
 
 
+def _resolve_employer_id(
+    employer_id: Optional[str] = None,
+    authorization: Optional[str] = None,
+    x_employer_id: Optional[str] = None,
+) -> Optional[str]:
+    """Resolves authenticated or explicit tenant ID from headers or query params."""
+    if employer_id and str(employer_id).strip():
+        return str(employer_id).strip()
+    if x_employer_id and str(x_employer_id).strip():
+        return str(x_employer_id).strip()
+    if authorization:
+        tok = authorization.replace("Bearer ", "").strip()
+        if tok:
+            return tok
+    return None
+
+
 @router.get(
     "/employer/jobs/{job_id}",
     response_model=EmployerJobResponse,
     summary="Get single employer direct job detail",
 )
-async def get_single_employer_job(job_id: str):
-    """Retrieves a single direct employer listing."""
-    job = get_employer_job(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found.")
+async def get_single_employer_job(
+    job_id: str,
+    employer_id: Optional[str] = Query(None, description="Employer / User ID"),
+    authorization: Optional[str] = Header(None),
+    x_employer_id: Optional[str] = Header(None, alias="X-Employer-Id"),
+):
+    """Retrieves a single direct employer listing with tenant isolation."""
+    req_emp = _resolve_employer_id(employer_id, authorization, x_employer_id)
+    job, err = get_employer_job(job_id, employer_id=req_emp)
+    if err is not None:
+        raise HTTPException(status_code=err.get("status_code", 400), detail=err)
     return job
 
 
@@ -2738,9 +2761,12 @@ async def put_employer_job(
     job_id: str,
     body: EmployerJobUpdateRequest,
     employer_id: Optional[str] = Query(None, description="Employer / User ID"),
+    authorization: Optional[str] = Header(None),
+    x_employer_id: Optional[str] = Header(None, alias="X-Employer-Id"),
 ):
-    """Updates an existing employer direct listing with schema validation."""
-    updated, err = update_employer_job(job_id, body, employer_id=employer_id)
+    """Updates an existing employer direct listing with schema validation and tenant isolation."""
+    req_emp = _resolve_employer_id(employer_id, authorization, x_employer_id)
+    updated, err = update_employer_job(job_id, body, employer_id=req_emp)
     if err is not None:
         raise HTTPException(status_code=err.get("status_code", 400), detail=err)
     return updated
@@ -2754,9 +2780,12 @@ async def put_employer_job(
 async def close_single_employer_job(
     job_id: str,
     employer_id: Optional[str] = Query(None, description="Employer / User ID"),
+    authorization: Optional[str] = Header(None),
+    x_employer_id: Optional[str] = Header(None, alias="X-Employer-Id"),
 ):
-    """Closes an active employer listing, removing it from public search and reclaiming quota."""
-    closed, err = close_employer_job(job_id, employer_id=employer_id)
+    """Closes an active employer listing, removing it from public search, reclaiming quota, and enforcing tenant isolation."""
+    req_emp = _resolve_employer_id(employer_id, authorization, x_employer_id)
+    closed, err = close_employer_job(job_id, employer_id=req_emp)
     if err is not None:
         raise HTTPException(status_code=err.get("status_code", 400), detail=err)
     return closed
@@ -2771,9 +2800,16 @@ async def get_single_employer_job_analytics(
     job_id: str,
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    employer_id: Optional[str] = Query(None, description="Employer / User ID"),
+    authorization: Optional[str] = Header(None),
+    x_employer_id: Optional[str] = Header(None, alias="X-Employer-Id"),
 ):
-    """Aggregates first-party views, unique viewers, apply clicks, and CTR for an employer listing."""
-    return get_job_analytics(job_id=job_id, start_date=start_date, end_date=end_date)
+    """Aggregates first-party views, unique viewers, apply clicks, and CTR for an employer listing with tenant isolation."""
+    req_emp = _resolve_employer_id(employer_id, authorization, x_employer_id)
+    analytics, err = get_job_analytics(job_id=job_id, start_date=start_date, end_date=end_date, employer_id=req_emp)
+    if err is not None:
+        raise HTTPException(status_code=err.get("status_code", 400), detail=err)
+    return analytics
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2786,6 +2822,11 @@ async def get_single_employer_job_analytics(
     "/admin/badge-applications",
     response_model=List[BadgeApplicationResponse],
     summary="List employer verified sponsor badge applications in review queue",
+)
+@router.get(
+    "/admin/badge-applications/queue",
+    response_model=List[BadgeApplicationResponse],
+    include_in_schema=False,
 )
 async def list_admin_badge_applications(
     status: Optional[str] = Query(None, description="Filter: 'pending_review', 'verified', 'rejected', or 'all'"),
@@ -2867,6 +2908,11 @@ async def admin_reject_badge_application(
     response_model=List[BadgeReviewLogEntry],
     summary="Retrieve immutable audit review trail for an employer",
 )
+@router.get(
+    "/admin/badge-applications/{employer_id}/audit-log",
+    response_model=List[BadgeReviewLogEntry],
+    include_in_schema=False,
+)
 async def get_admin_badge_review_logs(
     employer_id: str,
     authorization: Optional[str] = Header(None),
@@ -2938,3 +2984,16 @@ async def get_verified_sponsor_badge_status(
             return app
 
     raise HTTPException(status_code=404, detail="No badge application found for given employer_id or company_slug.")
+
+
+@router.get(
+    "/employer/badge/{company_slug}",
+    response_model=BadgeApplicationResponse,
+    include_in_schema=False,
+)
+async def get_badge_by_slug(company_slug: str):
+    """Retrieves verified sponsor badge state directly by company slug."""
+    app = get_badge_application_by_company(company_slug)
+    if app:
+        return app
+    raise HTTPException(status_code=404, detail=f"No badge application found for {company_slug}.")

@@ -11,6 +11,7 @@ from __future__ import annotations
 import datetime
 import logging
 import re
+import threading
 import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -38,6 +39,9 @@ EMPLOYER_PLAN_QUOTAS: Dict[str, int] = {
     "employer_pro": -1,
     "pro": -1,
 }
+
+# Concurrency mutex to prevent quota race conditions across simultaneous requests
+_QUOTA_MUTEX = threading.Lock()
 
 # In-memory employer direct listings store (keyed by job_id)
 _MOCK_EMPLOYER_JOBS: Dict[str, Dict[str, Any]] = {}
@@ -258,74 +262,75 @@ def create_employer_job(
             "validation_errors": validation_errors,
         }
 
-    # 2. Evaluate Quota
+    # 2. Evaluate Quota & Construct Record inside concurrency mutex
     company_slug = req.company_slug or generate_company_slug(req.company_name)
-    can_post, quota_err = evaluate_employer_listing_quota(
-        employer_id=req.employer_id,
-        company_slug=company_slug,
-    )
-    if not can_post and quota_err is not None:
-        return None, {
-            "status_code": 403,
-            **quota_err.model_dump(),
+    with _QUOTA_MUTEX:
+        can_post, quota_err = evaluate_employer_listing_quota(
+            employer_id=req.employer_id,
+            company_slug=company_slug,
+        )
+        if not can_post and quota_err is not None:
+            return None, {
+                "status_code": 403,
+                **quota_err.model_dump(),
+            }
+
+        # 3. Construct Record
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        job_id = f"job_direct_{uuid.uuid4().hex[:12]}"
+        slug = generate_job_slug(req.title, req.company_name, job_id)
+        date_posted = req.date_posted or now
+
+        work_mode = "remote" if req.is_remote else "on_site"
+
+        job_dict: Dict[str, Any] = {
+            "id": job_id,
+            "slug": slug,
+            "title": req.title.strip(),
+            "description": req.description.strip(),
+            "description_html": req.description_html or f"<p>{req.description.strip()}</p>",
+            "company_name": req.company_name.strip(),
+            "company_slug": company_slug,
+            "company_website": req.company_website,
+            "company_logo_url": req.company_logo_url,
+            "companies": {
+                "name": req.company_name.strip(),
+                "slug": company_slug,
+                "logo_url": req.company_logo_url,
+                "website": req.company_website,
+            },
+            "location": req.location,
+            "location_raw": req.location,
+            "city": req.city,
+            "country": req.country,
+            "country_code": req.country_code.upper() if req.country_code else None,
+            "is_remote": req.is_remote,
+            "work_mode": work_mode,
+            "employment_type": req.employment_type or "FULL_TIME",
+            "date_posted": date_posted,
+            "posted_at": date_posted,
+            "apply_url": req.apply_url.strip(),
+            "visa_types": req.visa_types,
+            "visa_sponsorship_type": req.visa_types[0] if req.visa_types else "Verified Employer",
+            "visa_sponsorship_confidence": 100,  # Direct employer listings carry 100% verified confidence
+            "visa_sponsorship_verified": True,
+            "salary_min": req.salary_min,
+            "salary_max": req.salary_max,
+            "salary_currency": req.salary_currency or "USD",
+            "job_status": "Open",
+            "status": "active",
+            "is_active": True,
+            "source": "employer_direct",
+            "employer_id": req.employer_id or "emp_direct_owner",
+            "created_at": now,
+            "updated_at": now,
         }
 
-    # 3. Construct Record
-    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
-    job_id = f"job_direct_{uuid.uuid4().hex[:12]}"
-    slug = generate_job_slug(req.title, req.company_name, job_id)
-    date_posted = req.date_posted or now
+        # 4. Save to in-memory employer store and global jobs store
+        _MOCK_EMPLOYER_JOBS[job_id] = job_dict
 
-    work_mode = "remote" if req.is_remote else "on_site"
-
-    job_dict: Dict[str, Any] = {
-        "id": job_id,
-        "slug": slug,
-        "title": req.title.strip(),
-        "description": req.description.strip(),
-        "description_html": req.description_html or f"<p>{req.description.strip()}</p>",
-        "company_name": req.company_name.strip(),
-        "company_slug": company_slug,
-        "company_website": req.company_website,
-        "company_logo_url": req.company_logo_url,
-        "companies": {
-            "name": req.company_name.strip(),
-            "slug": company_slug,
-            "logo_url": req.company_logo_url,
-            "website": req.company_website,
-        },
-        "location": req.location,
-        "location_raw": req.location,
-        "city": req.city,
-        "country": req.country,
-        "country_code": req.country_code.upper() if req.country_code else None,
-        "is_remote": req.is_remote,
-        "work_mode": work_mode,
-        "employment_type": req.employment_type or "FULL_TIME",
-        "date_posted": date_posted,
-        "posted_at": date_posted,
-        "apply_url": req.apply_url.strip(),
-        "visa_types": req.visa_types,
-        "visa_sponsorship_type": req.visa_types[0] if req.visa_types else "Verified Employer",
-        "visa_sponsorship_confidence": 100,  # Direct employer listings carry 100% verified confidence
-        "visa_sponsorship_verified": True,
-        "salary_min": req.salary_min,
-        "salary_max": req.salary_max,
-        "salary_currency": req.salary_currency or "USD",
-        "job_status": "Open",
-        "status": "active",
-        "is_active": True,
-        "source": "employer_direct",
-        "employer_id": req.employer_id or "emp_direct_owner",
-        "created_at": now,
-        "updated_at": now,
-    }
-
-    # 4. Save to in-memory employer store and global jobs store
-    _MOCK_EMPLOYER_JOBS[job_id] = job_dict
-
-    from engine.api.jobs_routes import _MOCK_JOBS_STORE
-    _MOCK_JOBS_STORE.insert(0, job_dict)
+        from engine.api.jobs_routes import _MOCK_JOBS_STORE
+        _MOCK_JOBS_STORE.insert(0, job_dict)
 
     # 5. Clear caches so job is instantly indexable and searchable
     clear_cache()
@@ -378,11 +383,34 @@ def update_employer_job(
             "validation_errors": validation_errors,
         }
 
+    # Enforce quota if reopening a previously closed job
+    was_closed = (str(job_dict.get("job_status", "Open")).lower() == "closed" or not job_dict.get("is_active", True))
+    will_be_open = (str(merged.get("job_status", "Open")).lower() != "closed" and merged.get("is_active", True))
+    if was_closed and will_be_open:
+        with _QUOTA_MUTEX:
+            can_post, quota_err = evaluate_employer_listing_quota(
+                employer_id=job_dict.get("employer_id"),
+                company_slug=job_dict.get("company_slug"),
+            )
+            if not can_post and quota_err is not None:
+                return None, {
+                    "status_code": 403,
+                    **quota_err.model_dump(),
+                }
+
     # Apply updates
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
     merged["updated_at"] = now
     if "is_remote" in update_data:
         merged["work_mode"] = "remote" if update_data["is_remote"] else "on_site"
+    if will_be_open and was_closed:
+        merged["job_status"] = "Open"
+        merged["status"] = "active"
+        merged["is_active"] = True
+    elif "job_status" in update_data and str(update_data["job_status"]).lower() == "closed":
+        merged["job_status"] = "Closed"
+        merged["status"] = "closed"
+        merged["is_active"] = False
 
     _MOCK_EMPLOYER_JOBS[job_id] = merged
 
@@ -442,8 +470,11 @@ def close_employer_job(
     return EmployerJobResponse(**job_dict), None
 
 
-def get_employer_job(job_id: str) -> Optional[EmployerJobResponse]:
-    """Retrieves a direct employer job."""
+def get_employer_job(
+    job_id: str,
+    employer_id: Optional[str] = None,
+) -> Tuple[Optional[EmployerJobResponse], Optional[Dict[str, Any]]]:
+    """Retrieves a direct employer job with ownership enforcement."""
     job_dict = _MOCK_EMPLOYER_JOBS.get(job_id)
     if not job_dict:
         from engine.api.jobs_routes import _MOCK_JOBS_STORE
@@ -451,9 +482,13 @@ def get_employer_job(job_id: str) -> Optional[EmployerJobResponse]:
             if j.get("id") == job_id:
                 job_dict = j
                 break
-    if job_dict:
-        return EmployerJobResponse(**job_dict)
-    return None
+    if not job_dict:
+        return None, {"status_code": 404, "error": "JOB_NOT_FOUND", "message": f"Job {job_id} not found."}
+
+    if employer_id and job_dict.get("employer_id") and job_dict["employer_id"] != employer_id:
+        return None, {"status_code": 403, "error": "FORBIDDEN", "message": "You do not have permission to view this listing."}
+
+    return EmployerJobResponse(**job_dict), None
 
 
 def list_employer_jobs(
@@ -516,11 +551,28 @@ def get_job_analytics(
     job_id: str,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-) -> JobAnalyticsResponse:
+    employer_id: Optional[str] = None,
+) -> Tuple[Optional[JobAnalyticsResponse], Optional[Dict[str, Any]]]:
     """
     Aggregates first-party engagement events ('job_viewed', 'apply_click')
     scoped to this specific job ID over the selected date range.
+    Enforces tenant ownership when employer_id is supplied.
     """
+    # 1. Check job existence and tenant ownership
+    job_dict = _MOCK_EMPLOYER_JOBS.get(job_id)
+    if not job_dict:
+        from engine.api.jobs_routes import _MOCK_JOBS_STORE
+        for j in _MOCK_JOBS_STORE:
+            if j.get("id") == job_id:
+                job_dict = j
+                break
+
+    if not job_dict:
+        return None, {"status_code": 404, "error": "JOB_NOT_FOUND", "message": f"Job {job_id} not found."}
+
+    if employer_id and job_dict.get("employer_id") and job_dict["employer_id"] != employer_id:
+        return None, {"status_code": 403, "error": "FORBIDDEN", "message": "You do not have permission to view analytics for this listing."}
+
     from engine.api.jobs_routes import _MOCK_EVENTS_STORE
 
     now = datetime.datetime.now(datetime.timezone.utc)
@@ -610,4 +662,4 @@ def get_job_analytics(
         apply_clicks=apply_clicks,
         click_through_rate=ctr,
         daily_breakdown=daily_breakdown,
-    )
+    ), None
