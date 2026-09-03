@@ -59,6 +59,10 @@ class CompanySummary(BaseModel):
     website: Optional[str] = None
     ats_type: Optional[str] = None
     slug: Optional[str] = None
+    badge_status: Optional[str] = "none"
+    is_verified_sponsor: bool = False
+    badge_verified_at: Optional[str] = None
+    badge_expires_at: Optional[str] = None
 
 
 class JobSummary(BaseModel):
@@ -358,6 +362,10 @@ class CompanyDetailSummary(BaseModel):
     recent_jobs: List[JobSummary] = Field(default_factory=list)
     last_verified: Optional[str] = None
     disclaimer: str = CENTRAL_LEGAL_DISCLAIMER
+    badge_status: Optional[str] = "none"
+    is_verified_sponsor: bool = False
+    badge_verified_at: Optional[str] = None
+    badge_expires_at: Optional[str] = None
 
 
 class MatchReportCreateRequest(BaseModel):

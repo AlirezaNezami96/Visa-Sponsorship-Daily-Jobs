@@ -685,6 +685,10 @@ def dispatch_email_notification(
     return True
 
 
+# Alias for cross-phase transactional email dispatch
+send_transactional_email = dispatch_email_notification
+
+
 def dispatch_telegram_alert(
     chat_id: str,
     jobs: List[Dict[str, Any]],

@@ -157,6 +157,26 @@ from .employer_service import (
     update_employer_job,
     validate_job_schema_completeness,
 )
+from .badge_models import (
+    BadgeApplicationResponse,
+    BadgeApplicationResubmitRequest,
+    BadgeApplicationSubmitRequest,
+    BadgeRenewalCheckResult,
+    BadgeReviewDecisionRequest,
+    BadgeReviewLogEntry,
+)
+from .badge_service import (
+    approve_badge_application,
+    clear_mock_badge_stores,
+    get_badge_application,
+    get_badge_application_by_company,
+    get_badge_review_logs,
+    list_badge_applications,
+    reject_badge_application,
+    resubmit_badge_application,
+    run_badge_renewal_check,
+    submit_badge_application,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -176,7 +196,7 @@ ADMIN_SECRET_KEY = os.environ.get("ADMIN_SECRET_KEY", "visalane_admin_secret_key
 # In-memory test store for offline / mock testing when Supabase is not connected
 _MOCK_JOBS_STORE: List[Dict[str, Any]] = []
 _MOCK_EVENTS_STORE: List[Dict[str, Any]] = []
-_MOCK_MATCH_REPORTS: Dict[str, Dict[str, Any]] = []
+_MOCK_MATCH_REPORTS: Dict[str, Dict[str, Any]] = {}
 _MOCK_POSTS_STORE: Dict[str, Dict[str, Any]] = {}
 _MOCK_POST_TRANSLATIONS_STORE: Dict[str, Dict[str, Dict[str, Any]]] = {}  # post_id -> { locale -> translation }
 
@@ -205,12 +225,14 @@ def get_mock_events_store() -> List[Dict[str, Any]]:
 def clear_mock_stores() -> None:
     """Helper to reset mock stores."""
     global _MOCK_JOBS_STORE, _MOCK_EVENTS_STORE, _MOCK_MATCH_REPORTS, _MOCK_POSTS_STORE, _MOCK_POST_TRANSLATIONS_STORE
-    _MOCK_JOBS_STORE = []
-    _MOCK_EVENTS_STORE = []
-    _MOCK_MATCH_REPORTS = {}
-    _MOCK_POSTS_STORE = {}
-    _MOCK_POST_TRANSLATIONS_STORE = {}
+    _MOCK_JOBS_STORE.clear()
+    _MOCK_EVENTS_STORE.clear()
+    _MOCK_MATCH_REPORTS.clear()
+    _MOCK_POSTS_STORE.clear()
+    _MOCK_POST_TRANSLATIONS_STORE.clear()
     clear_mock_employer_stores()
+    clear_mock_badge_stores()
+    clear_all_caches()
 
 
 def _get_supabase_client():
@@ -349,7 +371,19 @@ def _format_job_summary(row: Dict[str, Any]) -> JobSummary:
     company_name = (comp_raw.get("name") if isinstance(comp_raw, dict) else None) or row.get("company_name") or row.get("company") or "Company"
     logo_url = (comp_raw.get("logo_url") if isinstance(comp_raw, dict) else None) or row.get("company_logo_url")
     website = comp_raw.get("website") if isinstance(comp_raw, dict) else None
-    company_slug = generate_company_slug(company_name)
+    company_slug = (comp_raw.get("slug") if isinstance(comp_raw, dict) else None) or row.get("company_slug") or generate_company_slug(company_name)
+
+    from engine.api.billing_service import _MOCK_COMPANY_BILLING
+    from engine.api.badge_service import get_badge_application_by_company
+    cb = _MOCK_COMPANY_BILLING.get(company_slug, {})
+    badge_app = get_badge_application_by_company(company_slug)
+    comp_badge_status = (
+        (badge_app.badge_status if badge_app else None)
+        or (comp_raw.get("badge_status") if isinstance(comp_raw, dict) else None)
+        or cb.get("badge_status", "none")
+        or "none"
+    )
+    comp_is_verified = (comp_badge_status == "verified")
 
     slug = row.get("slug") or generate_job_slug(title, company_name, job_id)
 
@@ -368,7 +402,16 @@ def _format_job_summary(row: Dict[str, Any]) -> JobSummary:
         id=job_id,
         slug=slug,
         title=title,
-        company=CompanySummary(name=company_name, logo_url=logo_url, website=website, slug=company_slug),
+        company=CompanySummary(
+            name=company_name,
+            logo_url=logo_url,
+            website=website,
+            slug=company_slug,
+            badge_status=comp_badge_status,
+            is_verified_sponsor=comp_is_verified,
+            badge_verified_at=cb.get("verified_at"),
+            badge_expires_at=cb.get("expires_at"),
+        ),
         location=row.get("location_raw") or row.get("location"),
         city=row.get("city"),
         country=row.get("country"),
@@ -1308,6 +1351,24 @@ async def get_company_summary(slug: str):
                 break
 
     if not matched_data:
+        from engine.api.badge_service import get_badge_application_by_company
+        badge_app_pre = get_badge_application_by_company(target_slug)
+        if badge_app_pre:
+            matched_data = {
+                "name": badge_app_pre.company_name,
+                "slug": badge_app_pre.company_slug,
+                "logo_url": None,
+                "website": None,
+                "ats_type": None,
+                "active_jobs": [],
+                "historical_jobs": [],
+                "visa_types": set(),
+                "latest_date": None,
+                "confidence_scores": [85],
+                "verified_count": 1 if badge_app_pre.badge_status == "verified" else 0,
+            }
+
+    if not matched_data:
         raise HTTPException(status_code=404, detail=f"Employer '{slug}' not found.")
 
     active_jobs = matched_data["active_jobs"]
@@ -1356,6 +1417,16 @@ async def get_company_summary(slug: str):
 
     recent_jobs = [_format_job_summary(j) for j in active_jobs[:10]]
 
+    from engine.api.billing_service import get_company_billing
+    from engine.api.badge_service import get_badge_application_by_company
+    comp_billing = get_company_billing(matched_data["slug"])
+    badge_app = get_badge_application_by_company(matched_data["slug"])
+
+    b_status = (badge_app.badge_status if badge_app else comp_billing.get("badge_status", "none")) or "none"
+    is_verified = (b_status == "verified")
+    b_verified_at = badge_app.verified_at if badge_app else comp_billing.get("verified_at")
+    b_expires_at = badge_app.expires_at if badge_app else comp_billing.get("expires_at")
+
     response = CompanyDetailSummary(
         company=CompanySummary(
             name=matched_data["name"],
@@ -1363,6 +1434,10 @@ async def get_company_summary(slug: str):
             website=matched_data["website"],
             ats_type=matched_data["ats_type"],
             slug=matched_data["slug"],
+            badge_status=b_status,
+            is_verified_sponsor=is_verified,
+            badge_verified_at=b_verified_at,
+            badge_expires_at=b_expires_at,
         ),
         total_active_jobs=total_active,
         total_historical_jobs=total_hist,
@@ -1374,6 +1449,10 @@ async def get_company_summary(slug: str):
         recent_jobs=recent_jobs,
         last_verified=matched_data["latest_date"],
         disclaimer=CENTRAL_LEGAL_DISCLAIMER,
+        badge_status=b_status,
+        is_verified_sponsor=is_verified,
+        badge_verified_at=b_verified_at,
+        badge_expires_at=b_expires_at,
     )
     set_cache(cache_key, response.model_dump(), ttl_seconds=METADATA_CACHE_TTL)
     return response
@@ -2695,3 +2774,167 @@ async def get_single_employer_job_analytics(
 ):
     """Aggregates first-party views, unique viewers, apply clicks, and CTR for an employer listing."""
     return get_job_analytics(job_id=job_id, start_date=start_date, end_date=end_date)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 11. Phase 9: Verified Sponsor Badge Review Workflow & Audit Trail
+# ─────────────────────────────────────────────────────────────────────────────
+
+# --- Admin Review Endpoints (Strictly Gated by _require_admin_auth) ---
+
+@router.get(
+    "/admin/badge-applications",
+    response_model=List[BadgeApplicationResponse],
+    summary="List employer verified sponsor badge applications in review queue",
+)
+async def list_admin_badge_applications(
+    status: Optional[str] = Query(None, description="Filter: 'pending_review', 'verified', 'rejected', or 'all'"),
+    authorization: Optional[str] = Header(None),
+    x_admin_key: Optional[str] = Header(None),
+):
+    """Admin queue listing badge applications with submitted evidence."""
+    _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
+    return list_badge_applications(status=status)
+
+
+@router.post(
+    "/admin/badge-applications/{employer_id}/approve",
+    response_model=BadgeApplicationResponse,
+    summary="Approve employer verified sponsor badge application",
+)
+async def admin_approve_badge_application(
+    employer_id: str,
+    body: Optional[BadgeReviewDecisionRequest] = None,
+    authorization: Optional[str] = Header(None),
+    x_admin_key: Optional[str] = Header(None),
+):
+    """
+    Approves badge application:
+    - Writes immutable audit log row to badge_review_log
+    - Transitions badge_status to 'verified' with 12 months validity
+    - Dispatches Phase 7 notification email to employer
+    - Badge becomes publicly visible on employer profile and job cards
+    """
+    admin_ident = _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
+    reviewer_id = admin_ident.get("user_id", "admin_reviewer")
+    notes = body.notes if body else None
+
+    app_res, err = approve_badge_application(employer_id=employer_id, reviewer_id=reviewer_id, notes=notes)
+    if err is not None:
+        raise HTTPException(status_code=err.get("status_code", 400), detail=err)
+    return app_res
+
+
+@router.post(
+    "/admin/badge-applications/{employer_id}/reject",
+    response_model=BadgeApplicationResponse,
+    summary="Reject employer verified sponsor badge application",
+)
+async def admin_reject_badge_application(
+    employer_id: str,
+    body: BadgeReviewDecisionRequest,
+    authorization: Optional[str] = Header(None),
+    x_admin_key: Optional[str] = Header(None),
+):
+    """
+    Rejects badge application:
+    - Requires mandatory reviewer notes explaining the decision
+    - Writes immutable audit log row to badge_review_log
+    - Transitions badge_status to 'rejected'
+    - Dispatches Phase 7 email with reviewer feedback and resubmit link
+    """
+    admin_ident = _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
+    reviewer_id = admin_ident.get("user_id", "admin_reviewer")
+
+    if not body.notes or not body.notes.strip():
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "status_code": 422,
+                "error": "REJECTION_NOTES_MANDATORY",
+                "message": "Reviewer notes detailing the rejection reason are strictly mandatory.",
+            },
+        )
+
+    app_res, err = reject_badge_application(employer_id=employer_id, reviewer_id=reviewer_id, notes=body.notes)
+    if err is not None:
+        raise HTTPException(status_code=err.get("status_code", 400), detail=err)
+    return app_res
+
+
+@router.get(
+    "/admin/badge-applications/{employer_id}/logs",
+    response_model=List[BadgeReviewLogEntry],
+    summary="Retrieve immutable audit review trail for an employer",
+)
+async def get_admin_badge_review_logs(
+    employer_id: str,
+    authorization: Optional[str] = Header(None),
+    x_admin_key: Optional[str] = Header(None),
+):
+    """Returns complete audit trail from badge_review_log for an employer."""
+    _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
+    return get_badge_review_logs(employer_id=employer_id)
+
+
+@router.post(
+    "/admin/badge-renewals/run-check",
+    response_model=BadgeRenewalCheckResult,
+    summary="Trigger scheduled check for expiring verified sponsor badges (30-day window)",
+)
+async def trigger_badge_renewal_check(
+    dry_run: bool = Query(False, description="Simulate check without sending renewal emails"),
+    authorization: Optional[str] = Header(None),
+    x_admin_key: Optional[str] = Header(None),
+):
+    """Flags badges within 30 days of 12-month expiration date, notifying employer and admin."""
+    _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
+    return run_badge_renewal_check(dry_run=dry_run)
+
+
+# --- Employer Badge Application & Resubmission Endpoints ---
+
+@router.post(
+    "/employer/badge/apply",
+    response_model=BadgeApplicationResponse,
+    status_code=201,
+    summary="Submit evidence for Verified Sponsor Badge audit",
+)
+async def apply_for_verified_sponsor_badge(body: BadgeApplicationSubmitRequest):
+    """Submits evidence documents, sponsorship history, and contact details for badge review."""
+    return submit_badge_application(req=body)
+
+
+@router.post(
+    "/employer/badge/resubmit",
+    response_model=BadgeApplicationResponse,
+    summary="Resubmit amended evidence for rejected Verified Sponsor Badge",
+)
+async def resubmit_verified_sponsor_badge(body: BadgeApplicationResubmitRequest):
+    """Re-enters rejected application into review queue as fresh pending_review submission."""
+    res, err = resubmit_badge_application(req=body)
+    if err is not None:
+        raise HTTPException(status_code=err.get("status_code", 400), detail=err)
+    return res
+
+
+@router.get(
+    "/employer/badge/status",
+    response_model=BadgeApplicationResponse,
+    summary="Check current Verified Sponsor Badge status and review history",
+)
+async def get_verified_sponsor_badge_status(
+    employer_id: Optional[str] = Query(None, description="Employer account ID"),
+    company_slug: Optional[str] = Query(None, description="Company slug"),
+):
+    """Returns application state, payment status, reviewer notes, and audit history."""
+    if employer_id:
+        app = get_badge_application(employer_id)
+        if app:
+            return app
+    if company_slug:
+        app = get_badge_application_by_company(company_slug)
+        if app:
+            return app
+
+    raise HTTPException(status_code=404, detail="No badge application found for given employer_id or company_slug.")

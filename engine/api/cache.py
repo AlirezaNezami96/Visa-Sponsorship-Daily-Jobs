@@ -95,13 +95,15 @@ def clear_all_caches() -> None:
 
 
 def clear_cache(key: Optional[str] = None) -> None:
-    """Clear specific cache key or all caches if key is None."""
+    """Clear specific cache key or prefix, or all caches if key is None."""
     if key is None:
         clear_all_caches()
         return
     with _LOCK:
         for c in _IN_MEMORY_CACHES.values():
-            c.pop(key, None)
+            keys_to_del = [k for k in list(c.keys()) if k == key or k.startswith(f"{key}:")]
+            for k in keys_to_del:
+                c.pop(k, None)
     r = _get_redis()
     if r is not None:
         try:
