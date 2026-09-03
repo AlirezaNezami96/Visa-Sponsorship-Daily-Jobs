@@ -444,3 +444,115 @@ def test_partner_edge_cases_and_error_handling():
     record_affiliate_click(click_partner.id, session_id="sess_click_1")
     rep_click = generate_partner_report(click_partner.id)
     assert rep_click.estimated_commission_usd == 2.50
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 6. Hardening Tests: Self-Referral, Redirect Allowlist & Click Burst Sanity
+# ═════════════════════════════════════════════════════════════════════════════
+
+def test_named_self_referral_fraud_pattern_flagged_and_excluded():
+    """
+    Hardening Rule:
+    The system does not silently credit an obviously self-referential pattern
+    as a legitimate referral.
+    Self-referrals are detected, flagged in attribution metadata, and excluded
+    from payable commission math in the admin report.
+    """
+    clear_mock_partner_stores()
+    from engine.api.partner_service import _MOCK_USER_PARTNER_ATTRIBUTIONS_METADATA
+
+    sess_fraud = "sess_self_referral_01"
+    # Candidate signs up with an email matching the partner organization domain
+    client.post("/api/v1/auth/signup/step1", json={
+        "session_id": sess_fraud,
+        "email": "attorney.smith@fragomen.com",
+        "password": "Password123!",
+        "referral_code": "FRAGOMEN2026",
+    })
+    client.post("/api/v1/auth/signup/step2", json={
+        "session_id": sess_fraud,
+        "visa_status": "Citizen",
+        "target_role": "Partner",
+    })
+    res_comp = client.post("/api/v1/auth/signup/complete", json={
+        "session_id": sess_fraud,
+        "full_name": "Attorney Smith",
+    })
+    assert res_comp.status_code == 200
+    uid = res_comp.json()["user_id"]
+
+    # Assert attribution metadata flags this as self-referral
+    meta = _MOCK_USER_PARTNER_ATTRIBUTIONS_METADATA.get(uid)
+    assert meta is not None
+    assert meta["is_self_referral"] is True
+
+    # Generate admin report: Fragomen has $100 flat/signup contract
+    res_rep = client.get("/api/v1/admin/partners/part_fragomen_law/report", headers=ADMIN_HEADERS)
+    assert res_rep.status_code == 200
+    rep = res_rep.json()
+
+    assert rep["referred_signups"] == 1
+    assert rep["self_referrals_flagged"] == 1
+    # Payable signups is 0 -> Commission must be $0.00
+    assert rep["estimated_commission_usd"] == 0.0
+    assert rep["commission_breakdown"]["flagged_self_referrals"] == 1
+    assert rep["commission_breakdown"]["payable_signups"] == 0
+
+
+def test_named_redirect_allowlist_enforcement():
+    """
+    Hardening Rule:
+    Confirm the redirect service cannot be used as an open redirect to launder
+    arbitrary external URLs through VisaLane's domain.
+    Only pre-registered destinations to real partners are allowed.
+    """
+    # 1. Non-existent slug returns 404
+    res_404 = client.get("/go/unauthorized-external-slug")
+    assert res_404.status_code == 404
+
+    # 2. Attempt to override destination via query params is ignored
+    res_inject = client.get("/go/revolut-expat?dest=https://phishing-site.com/steal-creds")
+    assert res_inject.status_code == 307
+    location = res_inject.headers["Location"]
+    assert "revolut.com" in location
+    assert "phishing-site.com" not in location
+
+    # 3. Insecure non-HTTPS destination template is rejected
+    from engine.api.partner_models import AffiliatePartner
+    from engine.api.partner_service import build_destination_url
+    bad_partner = AffiliatePartner(
+        id="bad_partner",
+        slug="bad-partner",
+        name="Insecure Partner",
+        category="banking",
+        destination_url_template="http://insecure-site.com/tracker",
+    )
+    with pytest.raises(ValueError, match="Insecure partner destination URL"):
+        build_destination_url(bad_partner, session_id="s1")
+
+
+def test_named_click_volume_burst_sanity_50_clicks():
+    """
+    Hardening Rule:
+    Fire 50 rapid clicks through /go/{slug} from one source in a short window.
+    Confirm the resulting data makes this artificial burst clearly distinguishable
+    from organic volume via duplicate tagging and burst detection.
+    """
+    clear_mock_partner_stores()
+    burst_session = "sess_burst_attacker_50"
+
+    for _ in range(50):
+        res = client.get(f"/go/revolut-expat?session_id={burst_session}")
+        assert res.status_code == 307
+
+    # Verify admin report distinguishes the burst
+    res_rep = client.get("/api/v1/admin/partners/aff_revolut_expat/report", headers=ADMIN_HEADERS)
+    assert res_rep.status_code == 200
+    rep = res_rep.json()
+
+    # Out of 50 clicks: exactly 1 unique organic click, 49 duplicate clicks, and burst detected
+    assert rep["total_clicks"] == 50
+    assert rep["unique_clicks"] == 1
+    assert rep["duplicate_clicks"] == 49
+    assert rep["burst_clicks"] >= 45
+    assert rep["commission_breakdown"]["burst_clicks"] >= 45

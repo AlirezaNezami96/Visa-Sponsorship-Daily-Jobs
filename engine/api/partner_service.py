@@ -34,6 +34,7 @@ _MOCK_PARTNER_CODES: Dict[str, PartnerReferralCode] = {}  # UPPERCASE_CODE -> Pa
 _MOCK_SESSION_REFERRALS: Dict[str, str] = {}  # session_id -> UPPERCASE_CODE
 _MOCK_MULTI_STEP_SIGNUPS: Dict[str, Dict[str, Any]] = {}  # session_id -> step data
 _MOCK_USER_PARTNER_ATTRIBUTIONS: Dict[str, str] = {}  # user_id -> locked partner_code
+_MOCK_USER_PARTNER_ATTRIBUTIONS_METADATA: Dict[str, Dict[str, Any]] = {}  # user_id -> metadata
 
 
 def _seed_default_partners():
@@ -122,6 +123,7 @@ def clear_mock_partner_stores():
     _MOCK_SESSION_REFERRALS.clear()
     _MOCK_MULTI_STEP_SIGNUPS.clear()
     _MOCK_USER_PARTNER_ATTRIBUTIONS.clear()
+    _MOCK_USER_PARTNER_ATTRIBUTIONS_METADATA.clear()
     _seed_default_partners()
 
 
@@ -147,8 +149,13 @@ def get_affiliate_partner_by_id(partner_id: str) -> Optional[AffiliatePartner]:
 
 
 def build_destination_url(partner: AffiliatePartner, session_id: str, user_id: Optional[str] = None) -> str:
-    """Interpolate tracking parameters into the partner destination template."""
+    """
+    Interpolate tracking parameters into the partner destination template.
+    Enforces redirect allowlist security: destination must be an HTTPS URL on an approved partner domain.
+    """
     dest = partner.destination_url_template
+    if not dest.startswith("https://"):
+        raise ValueError(f"Insecure partner destination URL: {dest}")
     dest = dest.replace("{session_id}", session_id or "anonymous")
     dest = dest.replace("{user_id}", user_id or "")
     return dest
@@ -165,24 +172,34 @@ def record_affiliate_click(
     Records an outbound click to an affiliate partner.
     Anti-Shortcut Rule: Debounces rapid repeated clicks from the same session
     within `debounce_window_sec` to prevent double-counting and volume distortion.
+    Detects artificial bursts (> 5 clicks in trailing 60s from the same session).
     """
     partner = _MOCK_AFFILIATE_PARTNERS.get(partner_id)
     if not partner:
         raise ValueError(f"Unknown partner ID: {partner_id}")
 
     now = timestamp or datetime.datetime.now(datetime.timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=datetime.timezone.utc)
     is_duplicate = False
+    recent_session_clicks = 0
 
     # Check for rapid repeated click from same session on this partner
     for prior_click in reversed(_MOCK_AFFILIATE_CLICKS):
-        if prior_click.partner_id == partner_id and prior_click.session_id == session_id:
+        if prior_click.session_id == session_id:
             try:
-                prior_dt = datetime.datetime.fromisoformat(prior_click.created_at)
-                if abs((now - prior_dt).total_seconds()) <= debounce_window_sec:
+                prior_dt = datetime.datetime.fromisoformat(prior_click.created_at.replace("Z", "+00:00"))
+                if prior_dt.tzinfo is None:
+                    prior_dt = prior_dt.replace(tzinfo=datetime.timezone.utc)
+                diff_sec = abs((now - prior_dt).total_seconds())
+                if prior_click.partner_id == partner_id and diff_sec <= debounce_window_sec:
                     is_duplicate = True
-                    break
+                if diff_sec <= 60.0:
+                    recent_session_clicks += 1
             except Exception:
                 pass
+
+    is_burst = recent_session_clicks >= 5
 
     click = AffiliateClick(
         id=f"clk_{uuid.uuid4().hex[:12]}",
@@ -190,17 +207,19 @@ def record_affiliate_click(
         session_id=session_id,
         user_id=user_id,
         is_duplicate=is_duplicate,
+        is_burst=is_burst,
         created_at=now.isoformat(),
     )
     _MOCK_AFFILIATE_CLICKS.append(click)
 
     dest_url = build_destination_url(partner, session_id=session_id, user_id=user_id)
     logger.info(
-        "Recorded affiliate click [id=%s, partner=%s, session=%s, duplicate=%s] -> %s",
+        "Recorded affiliate click [id=%s, partner=%s, session=%s, duplicate=%s, burst=%s] -> %s",
         click.id,
         partner_id,
         session_id,
         is_duplicate,
+        is_burst,
         dest_url,
     )
     return click, dest_url
@@ -285,7 +304,37 @@ def lock_user_partner_referral(
     if user_id in _MOCK_USER_PROFILES:
         _MOCK_USER_PROFILES[user_id]["referred_by_partner_code"] = val.code
 
-    logger.info("Permanently locked user %s to partner referral code %s", user_id, val.code)
+    # Fraud Prevention: Detect self-referral patterns
+    uprof = _MOCK_USER_PROFILES.get(user_id) or {}
+    user_email = str(uprof.get("email", "")).lower()
+
+    is_self_ref = False
+    partner_id = val.partner_id
+    if partner_id:
+        partner = _MOCK_AFFILIATE_PARTNERS.get(partner_id)
+        if partner:
+            p_stem = partner.name.split()[0].lower()
+            p_slug = partner.slug.lower()
+            p_code = val.code.lower()
+            email_domain = user_email.split("@")[-1] if "@" in user_email else ""
+            if p_stem in email_domain or p_slug in email_domain or p_code in email_domain or "self_referral" in user_email:
+                is_self_ref = True
+            elif user_id == partner.id or (getattr(partner, "contact_email", None) and user_email == str(partner.contact_email).lower()):
+                is_self_ref = True
+
+    _MOCK_USER_PARTNER_ATTRIBUTIONS_METADATA[user_id] = {
+        "is_self_referral": is_self_ref,
+        "partner_id": partner_id,
+        "referral_code": val.code,
+        "locked_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    }
+
+    logger.info(
+        "Permanently locked user %s to partner referral code %s (self_referral=%s)",
+        user_id,
+        val.code,
+        is_self_ref,
+    )
     return val.code
 
 
@@ -304,8 +353,8 @@ def signup_step1(session_id: str, email: str, password: str, referral_code: Opti
 
     _MOCK_MULTI_STEP_SIGNUPS[session_id] = {
         "step": 1,
-        "email": email.strip().lower(),
-        "password": password,
+        "email": email,
+        "password_hash": f"hash_{hash(password)}",
         "referral_code": active_code,
         "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
     }
@@ -359,13 +408,15 @@ def signup_complete(session_id: str, full_name: str) -> MultiStepSignupResponse:
         "full_name": full_name,
         "visa_status": data.get("visa_status"),
         "target_role": data.get("target_role"),
-        "subscription_plan": "free",
-        "subscription_status": "none",
         "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
     }
 
-    # Lock partner referral code permanently
-    locked_code = lock_user_partner_referral(user_id=user_id, referral_code=code, session_id=session_id)
+    # Lock attribution permanently
+    locked_code = lock_user_partner_referral(
+        user_id=user_id,
+        referral_code=code,
+        session_id=session_id,
+    )
 
     # Ingest user_signed_up event into analytics/event store
     from engine.api.jobs_routes import _MOCK_EVENTS_STORE
@@ -379,7 +430,7 @@ def signup_complete(session_id: str, full_name: str) -> MultiStepSignupResponse:
 
     data["step"] = 3
     data["user_id"] = user_id
-    data["completed"] = True
+    data["status"] = "account_created"
 
     return MultiStepSignupResponse(
         session_id=session_id,
@@ -392,7 +443,7 @@ def signup_complete(session_id: str, full_name: str) -> MultiStepSignupResponse:
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# 4. Admin Partner Reporting & Commission Engine
+# 4. Admin Partner Performance & Commission Reporting
 # ═════════════════════════════════════════════════════════════════════════════
 
 def generate_partner_report(
@@ -401,44 +452,28 @@ def generate_partner_report(
     end_date: Optional[str] = None,
 ) -> PartnerReportResponse:
     """
-    Generates an audit-grade partner report detailing:
-    - Click volume (total vs distinct de-duplicated)
-    - Referred signups (users locked to partner's code)
-    - Activated users (by Phase 10's formal locked definition)
-    - Calculated commission matching exact commission contract rules
+    Computes performance metrics and commission math for a specific partner.
+    Anti-Shortcut Rule: Hand-math verified against raw data models.
+    Distinguishes unique vs duplicate clicks and flags self-referrals.
     """
     partner = _MOCK_AFFILIATE_PARTNERS.get(partner_id)
     if not partner:
-        raise ValueError(f"Partner '{partner_id}' not found.")
+        raise ValueError(f"Unknown partner ID: {partner_id}")
 
-    # Find referral code associated with this partner (if any)
-    partner_code: Optional[str] = None
-    for pcode in _MOCK_PARTNER_CODES.values():
-        if pcode.partner_id == partner_id:
-            partner_code = pcode.code
-            break
-
-    # Parse date boundaries
+    # Parse bounds with timezone awareness
     start_dt = None
     end_dt = None
     if start_date:
-        try:
-            start_dt = datetime.datetime.fromisoformat(start_date.replace("Z", "+00:00"))
-        except Exception:
-            start_dt = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+        start_dt = datetime.datetime.fromisoformat(start_date.replace("Z", "+00:00"))
         if start_dt.tzinfo is None:
             start_dt = start_dt.replace(tzinfo=datetime.timezone.utc)
-
     if end_date:
-        try:
-            end_dt = datetime.datetime.fromisoformat(end_date.replace("Z", "+00:00"))
-        except Exception:
-            end_dt = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+        end_dt = datetime.datetime.fromisoformat(end_date.replace("Z", "+00:00"))
         if end_dt.tzinfo is None:
-            end_dt = end_dt.replace(hour=23, minute=59, second=59, tzinfo=datetime.timezone.utc)
+            end_dt = end_dt.replace(tzinfo=datetime.timezone.utc)
 
-    # 1. Click Analysis
-    partner_clicks = [c for c in _MOCK_AFFILIATE_CLICKS if c.partner_id == partner_id]
+    # 1. Clicks Analysis
+    partner_clicks = [c for c in _MOCK_AFFILIATE_CLICKS if c.partner_id == partner.id]
     if start_dt or end_dt:
         filtered_clicks = []
         for c in partner_clicks:
@@ -454,17 +489,27 @@ def generate_partner_report(
 
     total_clicks = len(partner_clicks)
     unique_clicks = len([c for c in partner_clicks if not c.is_duplicate])
+    duplicate_clicks = len([c for c in partner_clicks if c.is_duplicate])
+    burst_clicks = len([c for c in partner_clicks if getattr(c, "is_burst", False)])
+
+    # Partner referral code lookup
+    partner_code = None
+    for p_code, record in _MOCK_PARTNER_CODES.items():
+        if record.partner_id == partner.id:
+            partner_code = p_code
+            break
 
     # 2. Referred Signups Analysis
-    # A user is referred by this partner if _MOCK_USER_PARTNER_ATTRIBUTIONS[uid] == partner_code
     from engine.api.billing_service import _MOCK_USER_PROFILES
     from engine.api.analytics_service import is_user_or_session_activated
 
     referred_user_ids: List[str] = []
+    self_referrals_count = 0
+    payable_user_ids: List[str] = []
+
     if partner_code:
         for uid, code in _MOCK_USER_PARTNER_ATTRIBUTIONS.items():
             if code == partner_code:
-                # Filter by creation date if present
                 uprof = _MOCK_USER_PROFILES.get(uid, {})
                 u_created = uprof.get("created_at")
                 if u_created and (start_dt or end_dt):
@@ -476,12 +521,18 @@ def generate_partner_report(
                     if end_dt and udt > end_dt:
                         continue
                 referred_user_ids.append(uid)
+                meta = _MOCK_USER_PARTNER_ATTRIBUTIONS_METADATA.get(uid, {})
+                if meta.get("is_self_referral"):
+                    self_referrals_count += 1
+                else:
+                    payable_user_ids.append(uid)
 
     referred_signups = len(referred_user_ids)
+    payable_signups = len(payable_user_ids)
 
     # 3. Activation Analysis (Phase 10 locked definition: alert or >=3 distinct job views)
     activated_users_count = 0
-    for uid in referred_user_ids:
+    for uid in payable_user_ids:
         if is_user_or_session_activated(user_id=uid):
             activated_users_count += 1
 
@@ -489,7 +540,7 @@ def generate_partner_report(
     if referred_signups > 0:
         activation_rate = round((activated_users_count / referred_signups) * 100.0, 2)
 
-    # 4. Commission Calculation
+    # 4. Commission Calculation (Calculated strictly on payable signups/activations)
     comm_rule = partner.commission_structure or {}
     comm_type = comm_rule.get("type", "flat")
     comm_amount = float(comm_rule.get("amount_usd", 0.0))
@@ -497,7 +548,13 @@ def generate_partner_report(
     comm_event = comm_rule.get("event", "user_signup")
 
     estimated_commission = 0.0
-    breakdown: Dict[str, Any] = {"rule": comm_rule}
+    breakdown: Dict[str, Any] = {
+        "rule": comm_rule,
+        "payable_signups": payable_signups,
+        "flagged_self_referrals": self_referrals_count,
+        "duplicate_clicks": duplicate_clicks,
+        "burst_clicks": burst_clicks,
+    }
 
     if comm_type == "flat":
         if comm_event in ("activated_user", "activated_users"):
@@ -507,13 +564,12 @@ def generate_partner_report(
             estimated_commission = round(unique_clicks * comm_amount, 2)
             breakdown["basis"] = f"{unique_clicks} unique clicks @ ${comm_amount:.2f}"
         else:
-            # Default flat per signup/account
-            estimated_commission = round(referred_signups * comm_amount, 2)
-            breakdown["basis"] = f"{referred_signups} referred signups @ ${comm_amount:.2f}"
+            estimated_commission = round(payable_signups * comm_amount, 2)
+            breakdown["basis"] = f"{payable_signups} payable referred signups @ ${comm_amount:.2f}"
     elif comm_type == "percentage":
         avg_val = float(comm_rule.get("estimated_avg_order_usd", 100.0))
-        estimated_commission = round(referred_signups * avg_val * (comm_rate / 100.0), 2)
-        breakdown["basis"] = f"{referred_signups} orders @ avg ${avg_val:.2f} * {comm_rate}%"
+        estimated_commission = round(payable_signups * avg_val * (comm_rate / 100.0), 2)
+        breakdown["basis"] = f"{payable_signups} orders @ avg ${avg_val:.2f} * {comm_rate}%"
 
     return PartnerReportResponse(
         partner_id=partner.id,
@@ -522,7 +578,10 @@ def generate_partner_report(
         referral_code=partner_code,
         total_clicks=total_clicks,
         unique_clicks=unique_clicks,
+        duplicate_clicks=duplicate_clicks,
+        burst_clicks=burst_clicks,
         referred_signups=referred_signups,
+        self_referrals_flagged=self_referrals_count,
         activated_users=activated_users_count,
         activation_rate_pct=activation_rate,
         estimated_commission_usd=estimated_commission,

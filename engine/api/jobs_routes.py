@@ -203,8 +203,8 @@ _MOCK_POST_TRANSLATIONS_STORE: Dict[str, Dict[str, Dict[str, Any]]] = {}  # post
 
 def set_mock_jobs_store(jobs: List[Dict[str, Any]]) -> None:
     """Helper for automated tests to populate in-memory jobs."""
-    global _MOCK_JOBS_STORE
-    _MOCK_JOBS_STORE = jobs
+    _MOCK_JOBS_STORE.clear()
+    _MOCK_JOBS_STORE.extend(jobs)
 
 
 def set_mock_posts_store(
@@ -3073,7 +3073,10 @@ async def admin_analytics_overview(
 ):
     """Admin-only overview KPIs, activation rate, WAU/MAU stickiness, and alert engagement."""
     _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
-    return get_analytics_overview(start_date=start_date, end_date=end_date)
+    try:
+        return get_analytics_overview(start_date=start_date, end_date=end_date)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get(
@@ -3104,7 +3107,10 @@ async def admin_analytics_channels(
 ):
     """Admin-only breakdown of signups, activations, retention, and CAC by acquisition channel."""
     _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
-    return get_analytics_channels(start_date=start_date, end_date=end_date)
+    try:
+        return get_analytics_channels(start_date=start_date, end_date=end_date)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get(

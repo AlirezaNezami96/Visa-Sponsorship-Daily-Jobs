@@ -276,11 +276,20 @@ def is_user_or_session_activated(
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _parse_iso_date(date_str: str) -> Optional[datetime.date]:
+    """Parse ISO date or timestamp string into a normalized UTC date object."""
+    if not date_str:
+        return None
+    s = str(date_str).strip()
     try:
-        dt = datetime.datetime.fromisoformat(str(date_str).replace("Z", "+00:00"))
+        dt = datetime.datetime.fromisoformat(s.replace("Z", "+00:00"))
+        if dt.tzinfo is not None:
+            dt = dt.astimezone(datetime.timezone.utc)
         return dt.date()
     except Exception:
-        return None
+        try:
+            return datetime.datetime.strptime(s, "%Y-%m-%d").date()
+        except Exception:
+            return None
 
 
 def run_analytics_rollups(
@@ -457,8 +466,19 @@ def get_analytics_overview(
     - New visitors, new signups, activation rate, DAU/WAU/MAU, stickiness ratio, alert CTR.
     """
     now_dt = datetime.datetime.now(datetime.timezone.utc).date()
-    end_d = _parse_iso_date(end_date) if end_date else now_dt
-    start_d = _parse_iso_date(start_date) if start_date else (end_d - datetime.timedelta(days=30))
+    if end_date:
+        end_d = _parse_iso_date(end_date)
+        if not end_d:
+            raise ValueError(f"Invalid end_date parameter: '{end_date}'. Expected format YYYY-MM-DD.")
+    else:
+        end_d = now_dt
+
+    if start_date:
+        start_d = _parse_iso_date(start_date)
+        if not start_d:
+            raise ValueError(f"Invalid start_date parameter: '{start_date}'. Expected format YYYY-MM-DD.")
+    else:
+        start_d = end_d - datetime.timedelta(days=30)
 
     # Auto-run rollups if empty
     if not _MOCK_DAILY_ROLLUPS:
@@ -566,8 +586,19 @@ def get_analytics_channels(
     Channel attribution breakdown: signups, activation, retention, and CAC by channel.
     """
     now_dt = datetime.datetime.now(datetime.timezone.utc).date()
-    end_d = _parse_iso_date(end_date) if end_date else now_dt
-    start_d = _parse_iso_date(start_date) if start_date else (end_d - datetime.timedelta(days=30))
+    if end_date:
+        end_d = _parse_iso_date(end_date)
+        if not end_d:
+            raise ValueError(f"Invalid end_date parameter: '{end_date}'. Expected format YYYY-MM-DD.")
+    else:
+        end_d = now_dt
+
+    if start_date:
+        start_d = _parse_iso_date(start_date)
+        if not start_d:
+            raise ValueError(f"Invalid start_date parameter: '{start_date}'. Expected format YYYY-MM-DD.")
+    else:
+        start_d = end_d - datetime.timedelta(days=30)
 
     if not _MOCK_DAILY_ROLLUPS:
         run_analytics_rollups()

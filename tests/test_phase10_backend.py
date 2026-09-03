@@ -445,3 +445,115 @@ def test_dashboard_performance_against_at_scale_synthetic_dataset():
 
         assert res.status_code == 200
         assert latency < 2.0, f"Endpoint {ep} exceeded 2-second target! Latency: {latency:.4f}s"
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 6. Hardening Tests: Timezone Consistency & Parameterized Query Safety
+# ═════════════════════════════════════════════════════════════════════════════
+
+def test_timezone_boundary_midnight_utc_consistency():
+    """
+    Hardening Rule:
+    Every date-range boundary is computed strictly in UTC across every endpoint.
+    Test events occurring within 5 minutes of a midnight UTC day boundary:
+    - Event A: 2026-08-10T23:58:00Z (2 mins before day boundary)
+    - Event B: 2026-08-11T00:02:00Z (2 mins after day boundary)
+    Confirm bucketing is strictly identical across overview, channels, and retention.
+    """
+    clear_mock_analytics_stores()
+    _MOCK_EVENTS_STORE.clear()
+
+    # Ingest near-boundary events
+    _MOCK_EVENTS_STORE.append({
+        "event_name": "page_view",
+        "session_id": "sess_pre_midnight",
+        "user_id": "user_pre_midnight",
+        "created_at": "2026-08-10T23:58:00Z",
+    })
+    _MOCK_EVENTS_STORE.append({
+        "event_name": "page_view",
+        "session_id": "sess_post_midnight",
+        "user_id": "user_post_midnight",
+        "created_at": "2026-08-11T00:02:00Z",
+    })
+
+    # Ingest corresponding first-touch attribution records
+    _MOCK_FIRST_TOUCH_STORE["sess_pre_midnight"] = {
+        "session_id": "sess_pre_midnight",
+        "acquisition_channel": "organic_search",
+        "captured_at": "2026-08-10T23:58:00Z",
+    }
+    _MOCK_FIRST_TOUCH_STORE["sess_post_midnight"] = {
+        "session_id": "sess_post_midnight",
+        "acquisition_channel": "social",
+        "captured_at": "2026-08-11T00:02:00Z",
+    }
+
+    # Execute rollup job
+    run_analytics_rollups(full_rebuild=True)
+
+    # 1. Query Day 1 (2026-08-10): Only Event A should be present
+    res_day1 = client.get(
+        "/api/v1/admin/analytics/overview?start_date=2026-08-10&end_date=2026-08-10",
+        headers=ADMIN_HEADERS,
+    )
+    assert res_day1.status_code == 200
+    ov_day1 = res_day1.json()
+    assert ov_day1["new_visitors"] == 1
+
+    ch_day1 = client.get(
+        "/api/v1/admin/analytics/channels?start_date=2026-08-10&end_date=2026-08-10",
+        headers=ADMIN_HEADERS,
+    )
+    assert ch_day1.status_code == 200
+    channels_day1 = {c["channel"]: c["visitors"] for c in ch_day1.json()["channels"]}
+    assert channels_day1.get("organic_search", 0) == 1
+    assert channels_day1.get("social", 0) == 0
+
+    # 2. Query Day 2 (2026-08-11): Only Event B should be present
+    res_day2 = client.get(
+        "/api/v1/admin/analytics/overview?start_date=2026-08-11&end_date=2026-08-11",
+        headers=ADMIN_HEADERS,
+    )
+    assert res_day2.status_code == 200
+    ov_day2 = res_day2.json()
+    assert ov_day2["new_visitors"] == 1
+
+    ch_day2 = client.get(
+        "/api/v1/admin/analytics/channels?start_date=2026-08-11&end_date=2026-08-11",
+        headers=ADMIN_HEADERS,
+    )
+    assert ch_day2.status_code == 200
+    channels_day2 = {c["channel"]: c["visitors"] for c in ch_day2.json()["channels"]}
+    assert channels_day2.get("organic_search", 0) == 0
+    assert channels_day2.get("social", 0) == 1
+
+
+def test_parameterized_query_safety_malformed_inputs():
+    """
+    Hardening Rule:
+    Ensure date-range and filter parameters reject malformed, SQL-injection,
+    or script-injection values safely with HTTP 400 Bad Request, avoiding query corruption.
+    """
+    # 1. SQL injection pattern in start_date
+    res_sql = client.get(
+        "/api/v1/admin/analytics/overview?start_date=2026-08-01'%20OR%20'1'='1",
+        headers=ADMIN_HEADERS,
+    )
+    assert res_sql.status_code == 400
+    assert "Invalid start_date parameter" in res_sql.json()["detail"]
+
+    # 2. Script injection pattern in end_date
+    res_xss = client.get(
+        "/api/v1/admin/analytics/channels?end_date=<script>alert(1)</script>",
+        headers=ADMIN_HEADERS,
+    )
+    assert res_xss.status_code == 400
+    assert "Invalid end_date parameter" in res_xss.json()["detail"]
+
+    # 3. Random malformed date string
+    res_bad = client.get(
+        "/api/v1/admin/analytics/overview?start_date=not-a-valid-date",
+        headers=ADMIN_HEADERS,
+    )
+    assert res_bad.status_code == 400

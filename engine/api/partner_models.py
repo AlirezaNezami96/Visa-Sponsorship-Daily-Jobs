@@ -17,6 +17,7 @@ class AffiliatePartner(BaseModel):
     destination_url_template: str = Field(..., description="Target landing page URL with {session_id} and tracking macros")
     commission_structure: Dict[str, Any] = Field(default_factory=dict, description="Payout rules (e.g., flat $35 or 15% rev-share)")
     status: str = Field("active", description="'active' | 'paused'")
+    contact_email: Optional[str] = Field(None, description="Administrative contact email for the partner")
     created_at: Optional[str] = None
 
 
@@ -27,6 +28,7 @@ class AffiliateClick(BaseModel):
     session_id: str
     user_id: Optional[str] = None
     is_duplicate: bool = False
+    is_burst: bool = False
     created_at: str
 
 
@@ -55,7 +57,10 @@ class PartnerReportResponse(BaseModel):
     referral_code: Optional[str] = None
     total_clicks: int = 0
     unique_clicks: int = 0
+    duplicate_clicks: int = 0
+    burst_clicks: int = 0
     referred_signups: int = 0
+    self_referrals_flagged: int = 0
     activated_users: int = 0
     activation_rate_pct: float = 0.0
     estimated_commission_usd: float = 0.0
