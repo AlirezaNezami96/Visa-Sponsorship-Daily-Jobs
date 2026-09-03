@@ -34,7 +34,7 @@ import uuid
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, Request, Response
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -3204,3 +3204,179 @@ async def admin_evaluate_policy_shock(
     """Admin-only evaluation of company sponsorship posture and email alert dispatch."""
     _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
     return run_company_policy_shock_check(company_slug=company_slug, trigger_alerts=trigger_alerts)
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# Phase 12: Partnership & Affiliate Infrastructure Routes
+# ═════════════════════════════════════════════════════════════════════════════
+
+from .partner_models import (
+    AffiliatePartner,
+    AffiliateClick,
+    PartnerReferralCode,
+    ReferralValidationResponse,
+    PartnerReportResponse,
+    MultiStepSignupStep1Request,
+    MultiStepSignupStep2Request,
+    MultiStepSignupCompleteRequest,
+    MultiStepSignupResponse,
+)
+from .partner_service import (
+    get_affiliate_partner_by_slug,
+    get_affiliate_partner_by_id,
+    record_affiliate_click,
+    build_destination_url,
+    validate_referral_code,
+    capture_landing_referral_code,
+    get_session_referral_code,
+    lock_user_partner_referral,
+    signup_step1,
+    signup_step2,
+    signup_complete,
+    generate_partner_report,
+)
+
+root_router = APIRouter(tags=["Affiliate Redirect"])
+
+
+async def _handle_affiliate_redirect(
+    affiliate_slug: str,
+    request: Request,
+    session_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+):
+    """
+    Core handler for /go/{affiliate_slug} redirect service.
+    Records click, applies 5-second rapid click debounce, and redirects with HTTP 307.
+    """
+    partner = get_affiliate_partner_by_slug(affiliate_slug)
+    if not partner:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Affiliate partner '{affiliate_slug}' not found or inactive",
+        )
+
+    # Derive session identifier from query, cookie, header, or generate fallback
+    sess = session_id or request.cookies.get("session_id") or request.headers.get("X-Session-ID") or "anonymous_session"
+
+    _, dest_url = record_affiliate_click(
+        partner_id=partner.id,
+        session_id=sess,
+        user_id=user_id,
+    )
+    return RedirectResponse(url=dest_url, status_code=307)
+
+
+@root_router.get(
+    "/go/{affiliate_slug}",
+    summary="Cloaked affiliate redirect service with tracking parameter insertion",
+)
+async def affiliate_redirect_root(
+    affiliate_slug: str,
+    request: Request,
+    session_id: Optional[str] = Query(None),
+    user_id: Optional[str] = Query(None),
+):
+    return await _handle_affiliate_redirect(affiliate_slug, request, session_id, user_id)
+
+
+@router.get(
+    "/go/{affiliate_slug}",
+    summary="Cloaked affiliate redirect service (API router mount)",
+)
+async def affiliate_redirect_api(
+    affiliate_slug: str,
+    request: Request,
+    session_id: Optional[str] = Query(None),
+    user_id: Optional[str] = Query(None),
+):
+    return await _handle_affiliate_redirect(affiliate_slug, request, session_id, user_id)
+
+
+@router.get(
+    "/partners/referral/validate",
+    response_model=ReferralValidationResponse,
+    summary="Validate partner referral code",
+)
+async def api_validate_partner_referral_code(code: str = Query(..., description="Referral code string")):
+    return validate_referral_code(code)
+
+
+@router.post(
+    "/partners/referral/capture",
+    summary="Capture landing referral code into visitor session",
+)
+async def api_capture_partner_referral(
+    session_id: str = Query(..., description="Visitor session ID"),
+    code: str = Query(..., description="Referral code string"),
+):
+    captured = capture_landing_referral_code(session_id=session_id, code=code)
+    return {
+        "session_id": session_id,
+        "referral_code": captured,
+        "valid": bool(captured),
+    }
+
+
+@router.post(
+    "/auth/signup/step1",
+    response_model=MultiStepSignupResponse,
+    summary="Multi-step candidate registration: Step 1 (Credentials & Referral code)",
+)
+async def api_signup_step1(body: MultiStepSignupStep1Request):
+    return signup_step1(
+        session_id=body.session_id,
+        email=body.email,
+        password=body.password,
+        referral_code=body.referral_code,
+    )
+
+
+@router.post(
+    "/auth/signup/step2",
+    response_model=MultiStepSignupResponse,
+    summary="Multi-step candidate registration: Step 2 (Visa & Role preferences)",
+)
+async def api_signup_step2(body: MultiStepSignupStep2Request):
+    try:
+        return signup_step2(
+            session_id=body.session_id,
+            visa_status=body.visa_status,
+            target_role=body.target_role,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post(
+    "/auth/signup/complete",
+    response_model=MultiStepSignupResponse,
+    summary="Multi-step candidate registration: Complete (Account creation & Referral lock)",
+)
+async def api_signup_complete(body: MultiStepSignupCompleteRequest):
+    try:
+        return signup_complete(
+            session_id=body.session_id,
+            full_name=body.full_name,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get(
+    "/admin/partners/{id}/report",
+    response_model=PartnerReportResponse,
+    summary="Admin partner and affiliate performance & commission report",
+)
+async def get_partner_commission_report(
+    id: str,
+    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD or ISO)"),
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD or ISO)"),
+    authorization: Optional[str] = Header(None),
+    x_admin_key: Optional[str] = Header(None),
+):
+    _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
+    try:
+        return generate_partner_report(partner_id=id, start_date=start_date, end_date=end_date)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))

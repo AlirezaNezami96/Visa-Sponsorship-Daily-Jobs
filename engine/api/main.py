@@ -119,10 +119,11 @@ app.add_middleware(
 
 # ── Internal document rendering (Edge Function callback) ─────────────────────
 from .document_render import router as document_render_router  # noqa: E402
-from .jobs_routes import router as jobs_router  # noqa: E402
+from .jobs_routes import router as jobs_router, root_router as jobs_root_router  # noqa: E402
 
 app.include_router(document_render_router)
 app.include_router(jobs_router)
+app.include_router(jobs_root_router)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

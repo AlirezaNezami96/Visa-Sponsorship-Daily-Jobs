@@ -249,7 +249,7 @@ def is_user_or_session_activated(
         if not matches_target:
             continue
 
-        evt_type = str(e.get("event_type", "")).lower()
+        evt_type = str(e.get("event_type") or e.get("event_name") or e.get("event") or "").lower()
 
         # Alert event match
         if evt_type in ("alert_created", "job_alert_created"):
