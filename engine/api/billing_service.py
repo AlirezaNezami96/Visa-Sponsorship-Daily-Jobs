@@ -91,11 +91,11 @@ _PROCESSED_EVENT_IDS: set[str] = set()
 def clear_mock_billing_stores() -> None:
     """Reset mock stores between test executions."""
     global _MOCK_USER_PROFILES, _MOCK_COMPANY_BILLING, _MOCK_USAGE_TRACKING, _MOCK_PROCESSED_WEBHOOKS, _PROCESSED_EVENT_IDS
-    _MOCK_USER_PROFILES = {}
-    _MOCK_COMPANY_BILLING = {}
-    _MOCK_USAGE_TRACKING = {}
-    _MOCK_PROCESSED_WEBHOOKS = []
-    _PROCESSED_EVENT_IDS = set()
+    _MOCK_USER_PROFILES.clear()
+    _MOCK_COMPANY_BILLING.clear()
+    _MOCK_USAGE_TRACKING.clear()
+    _MOCK_PROCESSED_WEBHOOKS.clear()
+    _PROCESSED_EVENT_IDS.clear()
 
 
 def set_mock_user_profile(user_id: str, profile_data: Dict[str, Any]) -> None:

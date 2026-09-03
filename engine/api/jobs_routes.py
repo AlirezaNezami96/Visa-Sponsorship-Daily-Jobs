@@ -2429,6 +2429,28 @@ async def log_event(body: EventLogRequest, background_tasks: BackgroundTasks):
     - Core: 'page_view', 'search_executed', 'job_clicked', 'filter_applied', 'share_generated'
     - Extension: 'extension_badge_shown', 'extension_badge_clicked' (with source_platform: linkedin|indeed)
     """
+    # Phase 10: First-touch attribution capture and user signup channel locking
+    try:
+        from engine.api.analytics_service import capture_first_touch_attribution, lock_user_acquisition_channel
+        meta = body.metadata or {}
+        if body.event_type == "page_view" and body.session_id:
+            capture_first_touch_attribution(
+                session_id=body.session_id,
+                utm_source=meta.get("utm_source"),
+                utm_medium=meta.get("utm_medium"),
+                utm_campaign=meta.get("utm_campaign"),
+                referrer=meta.get("referrer"),
+            )
+        elif body.event_type in ("user_signed_up", "signup", "user_created") and body.user_id:
+            lock_user_acquisition_channel(
+                user_id=body.user_id,
+                session_id=body.session_id,
+                email=meta.get("email"),
+                explicit_channel=meta.get("acquisition_channel") or meta.get("utm_source"),
+            )
+    except Exception as e:
+        logger.warning("Failed to process first-touch attribution: %s", e)
+
     event_dict = body.model_dump()
     background_tasks.add_task(_record_event_background, event_dict)
     return EventLogResponse(success=True, message="Event logged successfully.")
@@ -2997,3 +3019,116 @@ async def get_badge_by_slug(company_slug: str):
     if app:
         return app
     raise HTTPException(status_code=404, detail=f"No badge application found for {company_slug}.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 13. Phase 10: Internal Analytics, Cohort Retention & Channel Attribution
+# ─────────────────────────────────────────────────────────────────────────────
+
+from engine.api.analytics_models import (
+    OverviewAnalyticsResponse,
+    RetentionCohortResponse,
+    ChannelsAnalyticsResponse,
+    RevenueAnalyticsResponse,
+    ViralityAnalyticsResponse,
+    RollupJobResult,
+)
+from engine.api.analytics_service import (
+    get_analytics_overview,
+    get_analytics_retention,
+    get_analytics_channels,
+    get_analytics_revenue,
+    get_analytics_virality,
+    run_analytics_rollups,
+)
+
+
+@router.get(
+    "/admin/analytics/overview",
+    response_model=OverviewAnalyticsResponse,
+    summary="Get internal overview metrics (visitors, signups, activation rate, WAU/MAU)",
+)
+async def admin_analytics_overview(
+    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    authorization: Optional[str] = Header(None),
+    x_admin_key: Optional[str] = Header(None),
+):
+    """Admin-only overview KPIs, activation rate, WAU/MAU stickiness, and alert engagement."""
+    _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
+    return get_analytics_overview(start_date=start_date, end_date=end_date)
+
+
+@router.get(
+    "/admin/analytics/retention",
+    response_model=RetentionCohortResponse,
+    summary="Get weekly signup cohort retention matrix (W1, W4, W8)",
+)
+async def admin_analytics_retention(
+    weeks: int = Query(8, ge=1, le=52, description="Number of weekly cohorts to evaluate"),
+    authorization: Optional[str] = Header(None),
+    x_admin_key: Optional[str] = Header(None),
+):
+    """Admin-only cohort retention matrix tracking user activity across 7, 28, and 56-day marks."""
+    _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
+    return get_analytics_retention(weeks=weeks)
+
+
+@router.get(
+    "/admin/analytics/channels",
+    response_model=ChannelsAnalyticsResponse,
+    summary="Get first-touch acquisition channel breakdown and CAC",
+)
+async def admin_analytics_channels(
+    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    authorization: Optional[str] = Header(None),
+    x_admin_key: Optional[str] = Header(None),
+):
+    """Admin-only breakdown of signups, activations, retention, and CAC by acquisition channel."""
+    _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
+    return get_analytics_channels(start_date=start_date, end_date=end_date)
+
+
+@router.get(
+    "/admin/analytics/revenue",
+    response_model=RevenueAnalyticsResponse,
+    summary="Get real-time MRR and ARR revenue analytics from Stripe",
+)
+async def admin_analytics_revenue(
+    authorization: Optional[str] = Header(None),
+    x_admin_key: Optional[str] = Header(None),
+):
+    """Admin-only real-time MRR, ARR, active subscriber breakdown, and ARPU."""
+    _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
+    return get_analytics_revenue()
+
+
+@router.get(
+    "/admin/analytics/virality",
+    response_model=ViralityAnalyticsResponse,
+    summary="Get K-factor and match report social virality metrics",
+)
+async def admin_analytics_virality(
+    authorization: Optional[str] = Header(None),
+    x_admin_key: Optional[str] = Header(None),
+):
+    """Admin-only K-factor virality calculation based on Phase 3 referral events."""
+    _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
+    return get_analytics_virality()
+
+
+@router.post(
+    "/admin/analytics/run-rollups",
+    response_model=RollupJobResult,
+    summary="Trigger pre-aggregation rollup job computing daily and cohort summaries",
+)
+async def admin_run_analytics_rollups(
+    full_rebuild: bool = Query(False, description="Rebuild rollups across entire historical dataset"),
+    target_date: Optional[str] = Query(None, description="Optional target date for single-day rollup"),
+    authorization: Optional[str] = Header(None),
+    x_admin_key: Optional[str] = Header(None),
+):
+    """Admin-only trigger to compute and persist pre-aggregated rollup tables."""
+    _require_admin_auth(authorization=authorization, x_admin_key=x_admin_key)
+    return run_analytics_rollups(target_date=target_date, full_rebuild=full_rebuild)
